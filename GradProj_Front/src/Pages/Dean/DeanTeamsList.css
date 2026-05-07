@@ -1,0 +1,88 @@
+.dean-teams-container {
+  padding: 20px 30px;
+  background-color: #fbfbfb;
+  min-height: 100vh;
+}
+
+.breadcrumb-nav {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-bottom: 5px;
+}
+
+.page-title {
+  font-size: 20px;
+  color: #2d3748;
+}
+
+.section-label {
+  font-size: 11px;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* عمودين كما في الصورة */
+  gap: 20px;
+}
+
+.team-card {
+  background: white;
+  border: 1px solid #edf2f7;
+  border-radius: 4px;
+  padding: 20px;
+  transition: box-shadow 0.2s;
+}
+
+.team-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.team-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #f7fafc;
+  padding-bottom: 10px;
+}
+
+.team-card-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #2d3748;
+}
+
+.member-count {
+  font-size: 11px;
+  color: #a0aec0;
+}
+
+.team-details p {
+  margin: 5px 0;
+  font-size: 13px;
+  color: #718096;
+}
+
+.team-details strong {
+  color: #4a5568;
+}
+
+.team-members-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.member-tag {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #4a5568;
+}

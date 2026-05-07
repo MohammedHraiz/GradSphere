@@ -1,0 +1,110 @@
+/* =========================================================
+   LOGIN PAGE - PREMIUM UI
+========================================================= */
+.login-full-page {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--bg-app); /* استخدام المتغير العالمي */
+  background-image: radial-gradient(circle at top right, rgba(79, 70, 229, 0.05), transparent 40%);
+}
+
+.login-card {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  height: 600px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+/* Side Info (Dark Part) */
+.login-side-info {
+  flex: 1;
+  background-color: var(--bg-sidebar);
+  background-image: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  color: var(--text-inverse);
+  position: relative;
+}
+
+.side-content h1 { font-size: 46px; font-weight: 800; margin-bottom: 15px; letter-spacing: -1.5px; }
+.side-content p { color: #94A3B8; font-size: 16px; line-height: 1.6; font-weight: 500;}
+
+.branding-badge {
+  margin-top: 30px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Form Area */
+.login-form-area {
+  flex: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+.form-wrapper { width: 100%; max-width: 380px; }
+.form-wrapper h2 { font-size: 32px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.5px; }
+.subtitle { color: var(--text-muted); font-size: 15px; font-weight: 500; margin-bottom: 40px; }
+
+/* Inputs */
+.input-group-login { margin-bottom: 25px; }
+.input-group-login label { 
+  display: block; font-size: 12px; font-weight: 700; 
+  color: var(--text-main); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;
+}
+
+.label-row { display: flex; justify-content: space-between; align-items: center; }
+.forgot-trigger { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 700; transition: var(--transition-fast); }
+.forgot-trigger:hover { color: var(--primary-hover); text-decoration: underline; }
+
+.input-group-login input {
+  width: 100%; padding: 14px 16px; border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); font-size: 14px; font-family: inherit;
+  transition: var(--transition-smooth); background-color: #F8FAFC; color: var(--text-main);
+}
+
+.input-group-login input:focus {
+  outline: none; border-color: var(--primary); background-color: white;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Buttons */
+.login-main-btn {
+  width: 100%; background-color: var(--primary); color: white; border: none;
+  padding: 14px; border-radius: var(--radius-md); font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: var(--transition-smooth); margin-top: 10px;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+.login-main-btn:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.3); }
+.login-main-btn:active { transform: translateY(0); }
+
+/* Quick Access (Demo) */
+.quick-test-access { margin-top: 30px; padding-top: 25px; border-top: 1px solid var(--border-light); text-align: center; }
+.test-label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
+.test-buttons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.test-buttons-grid button {
+  padding: 10px; font-size: 13px; font-weight: 700; font-family: inherit;
+  background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md);
+  cursor: pointer; color: var(--text-main); transition: var(--transition-fast);
+}
+.test-buttons-grid button:hover { background: var(--bg-sidebar); color: white; border-color: var(--bg-sidebar); }
+
+.login-footer { margin-top: 40px; text-align: center; font-size: 12px; color: var(--text-muted); font-weight: 500; }

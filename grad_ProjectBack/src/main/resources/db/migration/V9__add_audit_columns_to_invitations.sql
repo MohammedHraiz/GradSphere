@@ -1,0 +1,6 @@
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS updated_by UUID;
+UPDATE invitations SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL;
+ALTER TABLE invitations ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE invitations ALTER COLUMN updated_at SET NOT NULL;
+

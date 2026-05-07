@@ -1,0 +1,586 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
+import './App.css';
+
+import { useAuth } from './auth/AuthContext';
+
+// --- Imports: Authentication ---
+import Login from './Pages/Login/Login';
+
+// --- Imports: Supervisor ---
+import SupervisorSidebar from './Pages/Supervisor/SupervisorSidebar';
+import SupervisorDashboard from './Pages/Supervisor/SupervisorDashboard';
+import StudentsList from './Pages/Supervisor/StudentsList';
+import ProjectsList from './Pages/Supervisor/ProjectsList';
+import TaskManager from './Pages/Supervisor/TaskManager';
+import MilestoneManagement from './Pages/Supervisor/MilestoneManagement';
+import MeetingsScheduler from './Pages/Supervisor/MeetingsScheduler';
+import MeetingHistoryView from './Pages/Supervisor/MeetingHistoryView';
+import MeetingProgressForm from './Pages/Supervisor/MeetingProgressForm';
+import NewMeetingForm from './Pages/Supervisor/NewMeetingForm';
+
+// --- Imports: Student ---
+import Sidebar from './Pages/Student/Sidebar';
+import Overview from './Pages/Student/Overview';
+import Milestones from './Pages/Student/Milestones';
+import Tasks from './Pages/Student/Tasks';
+import Meetings from './Pages/Student/Meetings';
+import TeamManagement from './Pages/Student/TeamManagement';
+import InvitationsInbox from './Pages/Student/InvitationsInbox';
+import ChatComponent from './Pages/Student/ChatComponent';
+import ProjectProposal from './Pages/Student/ProjectProposal';
+
+// --- Imports: Dean ---
+import DeanDashboard from './Pages/Dean/DeanDashboard';
+import DeanProjectsList from './Pages/Dean/DeanProjectsList';
+import DeanSidebar from './Pages/Dean/DeanSidebar';
+import DeanStudentsList from './Pages/Dean/DeanStudentsList';
+import DeanTeamsList from './Pages/Dean/DeanTeamsList';
+import SupervisorsList from './Pages/Dean/SupervisorsList';
+import DeanReports from './Pages/Dean/DeanReports'; 
+import DeanSupervisorRequests from './Pages/Dean/DeanSupervisorRequests';
+
+// --- Imports: Admin ---
+import AdminSidebar from './Pages/Admin/AdminSidebar';
+import AdminDashboard from './Pages/Admin/AdminDashboard';
+import ManageUsers from './Pages/Admin/ManageUsers';
+import ImportProjects from './Pages/Admin/ImportProjects';
+import AdminForms from './Pages/Admin/AdminForms';
+import AIRecommendations from './Pages/Admin/AIRecommendations';
+import SystemLogs from './Pages/Admin/SystemLogs';
+import Settings from './Pages/Admin/Settings';
+
+// ==========================================
+// 💡 Premium Top Header Component (Chameleon + Modals)
+// ==========================================
+const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme, globalLang, setGlobalLang }) => {
+  const navigate = useNavigate();
+  const { user, role: authRole } = useAuth();
+  const isAdmin = userRole === 'admin'; 
+  
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  
+  // 💡 Modals States
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  const headerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getDisplayName = () => {
+    return user?.name || user?.userName || 'User';
+  };
+
+  const getRoleColor = () => {
+    if (isAdmin) return '#06b6d4';
+    if (userRole === 'dean') return '#f59e0b';
+    if (userRole === 'supervisor') return '#3b82f6';
+    return '#4f46e5';
+  };
+
+  const mockMessages = [
+    { id: 1, sender: 'Dr. Ahmad Ali', msg: 'Please review the latest milestone update.', time: '10m ago', color: '#3b82f6' },
+    { id: 2, sender: 'Team Alpha', msg: 'The backend API is now ready for testing.', time: '1h ago', color: '#10b981' },
+    { id: 3, sender: 'System Admin', msg: 'Scheduled maintenance tonight at 12 AM.', time: '5h ago', color: '#06b6d4' }
+  ];
+
+  const mockNotifs = [
+    { id: 1, title: 'Project Approved', desc: 'Your final project phase was approved.', time: 'Just now', icon: '✅', bg: '#d1fae5', c: '#059669' },
+    { id: 2, title: 'Meeting Reminder', desc: 'Sync meeting with supervisor in 30 mins.', time: '30m ago', icon: '📅', bg: '#e0e7ff', c: '#4f46e5' },
+    { id: 3, title: 'Storage Warning', desc: 'Database storage is at 84% capacity.', time: '2h ago', icon: '⚠️', bg: '#fef3c7', c: '#d97706' },
+  ];
+
+  const handleChatRedirect = () => {
+    setActiveDropdown(null);
+    if (onOpenChat) onOpenChat();
+  };
+
+  const handleSaveSettings = () => {
+    setIsSavingSettings(true);
+    setTimeout(() => {
+      setIsSavingSettings(false);
+      setShowSettingsModal(false);
+    }, 1000);
+  };
+
+  // Header Colors
+  const isDark = globalTheme === 'dark' || isAdmin;
+  const headerBg = isDark ? '#0b1121' : 'white';
+  const headerBorder = isDark ? '1px solid #1e293b' : '1px solid #e2e8f0';
+  const textColor = isDark ? '#f8fafc' : '#0f172a';
+  const iconColor = isDark ? '#94a3b8' : 'currentColor';
+  const modalBg = isDark ? '#0f172a' : '#ffffff';
+  const modalBorder = isDark ? '#1e293b' : '#e2e8f0';
+
+  // 💡 Premium CSS for Header Modals
+  const headerModalsStyles = `
+    .th-modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.3s ease; }
+    .th-modal-card { background: ${modalBg}; border: 1px solid ${modalBorder}; border-radius: 24px; width: 90%; max-width: 420px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUp 0.3s ease; position: relative; color: ${textColor}; }
+    .th-cover-photo { height: 120px; background: linear-gradient(135deg, ${getRoleColor()}, #8b5cf6); position: relative; }
+    .th-close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.3); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; backdrop-filter: blur(5px); }
+    .th-close-btn:hover { background: rgba(0,0,0,0.6); transform: scale(1.1); }
+    .th-avatar-wrapper { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: ${modalBg}; border-radius: 20px; padding: 5px; }
+    .th-avatar { width: 100%; height: 100%; background: ${getRoleColor()}; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 900; box-shadow: 0 10px 20px ${getRoleColor()}40; }
+    .th-profile-body { padding: 50px 30px 30px 30px; text-align: center; }
+    .th-name { font-size: 22px; font-weight: 900; margin: 0 0 5px 0; }
+    .th-role-badge { display: inline-block; padding: 4px 12px; background: ${getRoleColor()}20; color: ${getRoleColor()}; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 25px; }
+    
+    .th-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
+    .th-info-box { background: ${isDark ? '#1e293b' : '#f8fafc'}; padding: 15px; border-radius: 16px; border: 1px solid ${modalBorder}; }
+    .th-info-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+    .th-info-val { font-size: 14px; font-weight: 800; color: ${textColor}; }
+    
+    .th-interactive-pill { display: flex; align-items: center; gap: 10px; padding: 12px 15px; background: ${isDark ? '#1e293b' : '#f8fafc'}; border: 1px solid ${modalBorder}; border-radius: 12px; margin-top: 15px; cursor: pointer; transition: 0.2s; text-align: left; }
+    .th-interactive-pill:hover { border-color: ${getRoleColor()}; transform: translateY(-2px); box-shadow: 0 5px 15px ${getRoleColor()}20; }
+    .th-interactive-icon { width: 35px; height: 35px; border-radius: 10px; background: ${getRoleColor()}20; color: ${getRoleColor()}; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    /* Settings Specific */
+    .th-settings-body { padding: 30px; }
+    .th-settings-title { font-size: 20px; font-weight: 900; margin: 0 0 25px 0; display: flex; align-items: center; gap: 10px; }
+    .seg-control { display: flex; background: ${isDark ? '#1e293b' : '#f1f5f9'}; padding: 5px; border-radius: 12px; margin-bottom: 25px; }
+    .seg-btn { flex: 1; padding: 10px; border: none; background: transparent; color: #94a3b8; font-weight: 800; font-size: 13px; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+    .seg-btn.active { background: ${modalBg}; color: ${textColor}; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  `;
+
+  return (
+    <>
+      <style>{headerModalsStyles}</style>
+      <header className="top-header" ref={headerRef} style={{position: 'relative', zIndex: 99, backgroundColor: headerBg, borderBottom: headerBorder, transition: 'background 0.3s'}}>
+        <div className="header-right-actions">
+          
+          {/* 💬 Messages Dropdown */}
+          <div style={{position: 'relative'}}>
+            <button className="header-icon-btn" style={{color: iconColor}} onClick={() => setActiveDropdown(activeDropdown === 'msgs' ? null : 'msgs')}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <span className="icon-badge blue">3</span>
+            </button>
+            
+            {activeDropdown === 'msgs' && (
+              <div style={{position: 'absolute', top: '50px', right: '-60px', width: '320px', background: isDark ? '#0f172a' : 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', border: headerBorder, overflow: 'hidden', textAlign: 'left', animation: 'fadeIn 0.2s ease'}}>
+                <div style={{padding: '15px 20px', background: isDark ? '#1e293b' : '#f8fafc', borderBottom: headerBorder, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <h4 style={{margin: 0, fontSize: '14px', fontWeight: 800, color: textColor}}>Messages</h4>
+                  <span style={{fontSize: '11px', color: isDark ? '#22d3ee' : '#4f46e5', fontWeight: 700, cursor: 'pointer'}}>Mark all read</span>
+                </div>
+                <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+                  {mockMessages.map(m => (
+                    <div key={m.id} style={{padding: '15px 20px', borderBottom: headerBorder, display: 'flex', gap: '12px', cursor: 'pointer', transition: '0.2s'}} onClick={handleChatRedirect} onMouseOver={(e) => e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <div style={{width: '36px', height: '36px', borderRadius: '50%', background: m.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0}}>
+                        {m.sender.charAt(0)}
+                      </div>
+                      <div>
+                        <h5 style={{margin: '0 0 3px 0', fontSize: '13px', fontWeight: 800, color: textColor}}>{m.sender}</h5>
+                        <p style={{margin: '0 0 5px 0', fontSize: '12px', color: '#64748b'}}>{m.msg}</p>
+                        <span style={{fontSize: '10px', color: '#94a3b8', fontWeight: 600}}>{m.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{padding: '12px', textAlign: 'center', background: isDark ? '#1e293b' : '#f8fafc', borderTop: headerBorder, fontSize: '12px', fontWeight: 800, color: isDark ? '#22d3ee' : '#4f46e5', cursor: 'pointer'}} onClick={handleChatRedirect}>
+                  View All Messages →
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 🔔 Notifications Dropdown */}
+          <div style={{position: 'relative'}}>
+            <button className="header-icon-btn" style={{color: iconColor}} onClick={() => setActiveDropdown(activeDropdown === 'notifs' ? null : 'notifs')}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span className="icon-badge red">5</span>
+            </button>
+
+            {activeDropdown === 'notifs' && (
+              <div style={{position: 'absolute', top: '50px', right: '-20px', width: '320px', background: isDark ? '#0f172a' : 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', border: headerBorder, overflow: 'hidden', textAlign: 'left', animation: 'fadeIn 0.2s ease'}}>
+                <div style={{padding: '15px 20px', background: isDark ? '#1e293b' : '#f8fafc', borderBottom: headerBorder, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                  <h4 style={{margin: 0, fontSize: '14px', fontWeight: 800, color: textColor}}>Notifications</h4>
+                  <span style={{fontSize: '11px', color: isDark ? '#22d3ee' : '#4f46e5', fontWeight: 700, cursor: 'pointer'}} onClick={() => setActiveDropdown(null)}>Clear All</span>
+                </div>
+                <div style={{maxHeight: '300px', overflowY: 'auto'}}>
+                  {mockNotifs.map(n => (
+                    <div key={n.id} style={{padding: '15px 20px', borderBottom: headerBorder, display: 'flex', gap: '15px', cursor: 'pointer', transition: '0.2s'}} onMouseOver={(e) => e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => setActiveDropdown(null)}>
+                      <div style={{width: '36px', height: '36px', borderRadius: '10px', background: isDark ? '#1e293b' : n.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0}}>
+                        {n.icon}
+                      </div>
+                      <div>
+                        <h5 style={{margin: '0 0 3px 0', fontSize: '13px', fontWeight: 800, color: textColor}}>{n.title}</h5>
+                        <p style={{margin: '0 0 5px 0', fontSize: '12px', color: '#64748b'}}>{n.desc}</p>
+                        <span style={{fontSize: '10px', color: n.c, fontWeight: 800}}>{n.time}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="header-divider" style={{background: isDark ? '#1e293b' : '#e2e8f0'}}></div>
+
+          {/* 👤 Profile Dropdown */}
+          <div style={{position: 'relative'}}>
+            <div className="profile-trigger" onClick={() => setActiveDropdown(activeDropdown === 'profile' ? null : 'profile')} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}}>
+              <div className="user-info-text" style={{textAlign: 'right'}}>
+                <span className="user-name" style={{display: 'block', fontSize: '13px', fontWeight: 800, color: textColor}}>{getDisplayName()}</span>
+                <span className="user-role" style={{display: 'block', fontSize: '11px', fontWeight: 700, color: getRoleColor(), textTransform: 'uppercase'}}>{(authRole || userRole)?.replace(/^ROLE_/i, '')}</span>
+              </div>
+              <div className="user-avatar" style={{width: '40px', height: '40px', borderRadius: '12px', background: getRoleColor(), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '16px', boxShadow: isDark ? `0 0 10px ${getRoleColor()}40` : 'none'}}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+            </div>
+            
+            {activeDropdown === 'profile' && (
+              <div style={{position: 'absolute', top: '55px', right: '0', width: '200px', background: isDark ? '#0f172a' : 'white', borderRadius: '14px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', border: headerBorder, padding: '8px', textAlign: 'left', animation: 'fadeIn 0.2s ease'}}>
+                <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: textColor, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => {e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc';}} onMouseOut={(e) => {e.currentTarget.style.background = 'none';}} onClick={() => {setActiveDropdown(null); setShowProfileModal(true);}}>
+                  <span style={{fontSize:'16px'}}>👤</span> My Profile
+                </button>
+                
+                <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: textColor, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => {e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc';}} onMouseOut={(e) => {e.currentTarget.style.background = 'none';}} onClick={() => {setActiveDropdown(null); setShowSettingsModal(true);}}>
+                  <span style={{fontSize:'16px'}}>⚙️</span> Quick Settings
+                </button>
+                
+                <div style={{height: '1px', background: isDark ? '#1e293b' : '#f1f5f9', margin: '5px 0'}}></div>
+                
+                <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 800, color: '#ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => e.currentTarget.style.background = isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'} onMouseOut={(e) => e.currentTarget.style.background = 'none'} onClick={() => {setActiveDropdown(null); onLogout();}}>
+                  <span style={{fontSize:'16px'}}>🚪</span> Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ================================================= */}
+      {/* 🚀 PREMIUM MODAL: SMART PROFILE                     */}
+      {/* ================================================= */}
+      {showProfileModal && (
+        <div className="th-modal-overlay" onClick={() => setShowProfileModal(false)}>
+          <div className="th-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="th-cover-photo">
+              <button className="th-close-btn" onClick={() => setShowProfileModal(false)}>✕</button>
+            </div>
+            <div className="th-avatar-wrapper">
+              <div className="th-avatar">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
+            </div>
+            
+            <div className="th-profile-body">
+              <h2 className="th-name">{user?.name || 'User'}</h2>
+              <div className="th-role-badge">{(authRole || userRole)?.replace(/^ROLE_/i, '')}</div>
+
+              <div className="th-info-grid">
+                <div className="th-info-box">
+                  <div className="th-info-label">ID Number</div>
+                  <div className="th-info-val">{user?.id || (userRole === 'student' ? 'ST-20221001' : userRole === 'supervisor' ? 'FAC-091' : 'SYS-ROOT')}</div>
+                </div>
+                <div className="th-info-box">
+                  <div className="th-info-label">{userRole === 'student' ? 'Major' : userRole === 'supervisor' ? 'Department' : 'Access Level'}</div>
+                  <div className="th-info-val">{user?.department || user?.major || (userRole === 'student' ? 'Software Eng.' : userRole === 'supervisor' ? 'AI / ML' : 'Full Control')}</div>
+                </div>
+              </div>
+
+              {/* 💡 Interactive Relational Pills based on Role */}
+              {userRole === 'student' && (
+                <>
+                  <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate('/student/my-team'); }}>
+                    <div className="th-interactive-icon">👥</div>
+                    <div>
+                      <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Current Team</div>
+                      <div style={{fontSize: '14px', fontWeight: 800, color: textColor}}>Team Alpha</div>
+                    </div>
+                  </div>
+                  <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); onOpenChat(user?.supervisor?.name || 'Supervisor', 'student'); }}>
+                    <div className="th-interactive-icon">👨‍🏫</div>
+                    <div>
+                      <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Supervisor (Click to Chat)</div>
+                      <div style={{fontSize: '14px', fontWeight: 800, color: getRoleColor()}}>{user?.supervisor?.name || 'Supervisor'}</div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {userRole === 'supervisor' && (
+                <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate('/supervisor/projects'); }}>
+                  <div className="th-interactive-icon">📂</div>
+                  <div>
+                    <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Supervised Projects</div>
+                    <div style={{fontSize: '14px', fontWeight: 800, color: textColor}}>5 Active Projects</div>
+                  </div>
+                </div>
+              )}
+
+              {(userRole === 'admin' || userRole === 'dean') && (
+                <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate(`/${userRole}/logs`); }}>
+                  <div className="th-interactive-icon">⚡</div>
+                  <div>
+                    <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>System Status</div>
+                    <div style={{fontSize: '14px', fontWeight: 800, color: '#10b981'}}>All Systems Operational</div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================= */}
+      {/* 🚀 PREMIUM MODAL: QUICK SETTINGS                    */}
+      {/* ================================================= */}
+      {showSettingsModal && (
+        <div className="th-modal-overlay" onClick={() => setShowSettingsModal(false)}>
+          <div className="th-modal-card" onClick={e => e.stopPropagation()} style={{padding: '0'}}>
+            <div className="th-settings-body">
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px'}}>
+                <h2 className="th-settings-title" style={{margin: 0}}>⚙️ Quick Preferences</h2>
+                <button className="th-close-btn" style={{position: 'static', background: 'rgba(148, 163, 184, 0.2)', color: textColor}} onClick={() => setShowSettingsModal(false)}>✕</button>
+              </div>
+
+              <div className="th-info-label" style={{marginBottom: '10px'}}>Appearance Theme</div>
+              <div className="seg-control">
+                <button className={`seg-btn ${globalTheme === 'light' && !isAdmin ? 'active' : ''}`} onClick={() => !isAdmin && setGlobalTheme('light')} disabled={isAdmin} style={{opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer'}} title={isAdmin ? "Admin forced to Dark Mode" : ""}>
+                  ☀️ Light
+                </button>
+                <button className={`seg-btn ${globalTheme === 'dark' || isAdmin ? 'active' : ''}`} onClick={() => setGlobalTheme('dark')}>
+                  🌙 Dark
+                </button>
+              </div>
+
+              <div className="th-info-label" style={{marginBottom: '10px'}}>Language / اللغة</div>
+              <div className="seg-control">
+                <button className={`seg-btn ${globalLang === 'en' ? 'active' : ''}`} onClick={() => setGlobalLang('en')}>
+                  English
+                </button>
+                <button className={`seg-btn ${globalLang === 'ar' ? 'active' : ''}`} onClick={() => setGlobalLang('ar')} style={{fontFamily: 'Tajawal, sans-serif'}}>
+                  العربية
+                </button>
+              </div>
+
+              <button 
+                onClick={handleSaveSettings} 
+                disabled={isSavingSettings}
+                style={{width: '100%', padding: '15px', background: `linear-gradient(135deg, ${getRoleColor()}, #8b5cf6)`, color: 'white', border: 'none', borderRadius: '14px', fontWeight: 900, fontSize: '14px', cursor: 'pointer', transition: '0.3s', marginTop: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}
+              >
+                {isSavingSettings ? <div className="spinner" style={{width:'18px', height:'18px', borderWidth:'2px'}}></div> : 'Apply Preferences'}
+              </button>
+
+              {isAdmin && (
+                <div style={{textAlign: 'center', marginTop: '15px'}}>
+                  <span style={{color: '#06b6d4', fontSize: '12px', fontWeight: 800, cursor: 'pointer'}} onClick={() => {setShowSettingsModal(false); navigate('/admin/settings');}}>
+                    Advanced Admin Settings →
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// ==========================================
+// 🛡️ Safe Placeholder
+// ==========================================
+const SafeAdminPlaceholder = ({ title, icon }) => (
+  <div style={{padding:'40px', background:'#0f172a', minHeight:'100vh', borderRadius: '24px', textAlign: 'left', animation: 'fadeIn 0.4s ease', border: '1px solid #1e293b'}}>
+    <h1 style={{fontSize: '32px', color: '#22d3ee', margin: '0 0 10px 0', fontWeight: 900}}>{title} {icon}</h1>
+    <p style={{color: '#94a3b8', margin: '0 0 30px 0', fontWeight: 500}}>This module is currently under active development.</p>
+  </div>
+);
+
+// ==========================================
+// 🚀 Main App Component & Routing
+// ==========================================
+
+// Small safe Navigate wrapper to avoid navigating to the same pathname
+const SafeNavigate = ({ to, replace = false, state = null }) => {
+  const location = useLocation();
+  if (!to) return null;
+  try {
+    // avoid same-path navigation which can trigger ping-pong loops
+    if (location?.pathname === to) return null;
+  } catch (e) {
+    // defensive: if location is unavailable, continue with normal Navigate
+  }
+  return <Navigate to={to} replace={replace} state={state} />;
+};
+function App() {
+  const navigate = useNavigate();
+  const { user: currentUser, role: userRole, logout: authLogout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [chatTarget, setChatTarget] = useState(null);
+
+  // 💡 Global Settings State
+  const [globalTheme, setGlobalTheme] = useState('light'); // 'light' or 'dark'
+  const [globalLang, setGlobalLang] = useState('en'); // 'en' or 'ar'
+
+  const mapRoleToRoute = (role) => {
+    const r = String(role || '').replace(/^ROLE_/i, '').toLowerCase();
+    // Map the specific office role to the dean route
+    if (r === 'dean_office' || r === 'deanoffice' || r === 'dean-office') return 'dean';
+    if (r.startsWith('dean')) return 'dean';
+    return r;
+  };
+
+  const normalizedUserRole = mapRoleToRoute(userRole);
+
+  const handleConfirmLogout = () => {
+    authLogout();
+    setShowLogoutConfirm(false);
+    navigate('/login');
+  };
+
+  const handleOpenChat = (userName) => {
+    setChatTarget(userName);
+    if (normalizedUserRole === 'supervisor') navigate('/supervisor/chat');
+    else if (normalizedUserRole === 'student') navigate('/student/chat');
+  };
+
+  // 💡 Dynamic Background based on Global Theme and Role
+  const isDark = globalTheme === 'dark' || normalizedUserRole === 'admin' || String(currentUser?.role || '').replace(/^ROLE_/i, '').toLowerCase() === 'admin';
+  const wrapperBg = isDark ? '#0b1121' : '#f8fafc';
+
+  return (
+    <div className={`App ${isDark ? 'dark-theme' : 'light-theme'}`} dir={globalLang === 'ar' ? 'rtl' : 'ltr'}>
+      <Routes>
+        <Route path="/login" element={!normalizedUserRole ? <Login /> : <Navigate to="/" />} />
+
+        {/* --- Student Routes --- */}
+        <Route path="/student/*" element={
+          normalizedUserRole === 'student' ? (
+            <div className="app-layout">
+              <div className="sidebar-wrapper"><Sidebar /></div>
+              <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <main className="main-content">
+                  <Routes>
+                    <Route path="overview" element={<Overview />} />
+                    <Route path="tasks" element={<Tasks />} />
+                    <Route path="milestones" element={<Milestones />} />
+                    <Route path="meetings" element={<Meetings />} />
+                    <Route path="my-team" element={<TeamManagement onMessageClick={(name) => handleOpenChat(name, 'student')} />} />
+                    <Route path="invitations" element={<InvitationsInbox />} />
+                    <Route path="project" element={<ProjectProposal />} />
+                    <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
+                    <Route path="*" element={<Navigate to="overview" />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+
+        <Route path="/my-team" element={<Navigate to="/student/my-team" replace />} />
+
+        {/* --- Supervisor Routes --- */}
+        <Route path="/supervisor/*" element={
+          normalizedUserRole === 'supervisor' ? (
+            <div className="app-layout">
+              <div className="sidebar-wrapper"><SupervisorSidebar /></div>
+              <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <main className="main-content">
+                  <Routes>
+                    <Route path="dashboard" element={<SupervisorDashboard />} />
+                    <Route path="students" element={<StudentsList onMessageClick={(name) => handleOpenChat(name, 'supervisor')} />} />
+                    <Route path="projects" element={<ProjectsList />} />
+                    <Route path="tasks" element={<TaskManager />} />
+                    <Route path="milestones" element={<MilestoneManagement />} />
+                    <Route path="meetings" element={<MeetingsScheduler />} />
+                    <Route path="meeting-history" element={<MeetingHistoryView />} />
+                    <Route path="meeting-progress" element={<MeetingProgressForm />} />
+                    <Route path="new-meeting" element={<NewMeetingForm />} />
+                    <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
+                    <Route path="*" element={<Navigate to="dashboard" />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+
+        {/* --- Dean Routes --- */}
+        <Route path="/dean/*" element={
+          normalizedUserRole === 'dean' ? (
+            <div className="app-layout">
+              <div className="sidebar-wrapper"><DeanSidebar /></div>
+              <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <main className="main-content">
+                  <Routes>
+                    <Route path="dashboard" element={<DeanDashboard />} />
+                    <Route path="projects" element={<DeanProjectsList />} />
+                    <Route path="supervisor-requests" element={<DeanSupervisorRequests />} />
+                    <Route path="supervisors" element={<SupervisorsList />} />
+                    <Route path="students" element={<DeanStudentsList />} />
+                    <Route path="teams" element={<DeanTeamsList />} />
+                    <Route path="reports" element={<DeanReports />} />
+                    <Route path="*" element={<Navigate to="dashboard" />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+
+        {/* --- Admin Routes (Root Access) --- */}
+        <Route path="/admin/*" element={
+          normalizedUserRole === 'admin' ? (
+            <div className="app-layout">
+              <div className="sidebar-wrapper"><AdminSidebar /></div>
+              <div className="content-wrapper" style={{backgroundColor: wrapperBg, minHeight: '100vh', transition: 'background 0.3s'}}> 
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <main className="main-content" style={{padding: 0}}>
+                  <Routes>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="projects" element={<DeanProjectsList />} />
+                    <Route path="supervisor-requests" element={<DeanSupervisorRequests />} />
+                    <Route path="users" element={<ManageUsers />} />
+                    <Route path="import" element={<ImportProjects />} />
+                    <Route path="forms" element={<AdminForms />} />
+                    <Route path="ai-recommendations" element={<AIRecommendations />} />
+                    <Route path="logs" element={<SystemLogs />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          ) : <Navigate to="/login" />
+        } />
+
+        <Route path="/" element={<Navigate to={
+          normalizedUserRole === 'student' ? "/student/overview" : 
+          normalizedUserRole === 'supervisor' ? "/supervisor/dashboard" : 
+          normalizedUserRole === 'dean' ? "/dean/dashboard" : 
+          normalizedUserRole === 'admin' ? "/admin/dashboard" : "/login"
+        } />} />
+      </Routes>
+
+      {/* Shared Premium Logout Modal */}
+      {showLogoutConfirm && (
+        <div className="modal-overlay" style={{position:'fixed', inset:0, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(5px)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:99999}}>
+          <div className="logout-modal" style={{background: isDark ? '#0f172a' : 'white', padding:'35px', borderRadius:'24px', width:'90%', maxWidth:'400px', textAlign:'center', boxShadow:'0 25px 50px -12px rgba(0,0,0,0.5)', border: isDark ? '1px solid #1e293b' : 'none', animation:'slideUp 0.3s ease-out'}}>
+            <div style={{width:'60px', height:'60px', background: isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2', color:'#ef4444', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'28px', margin:'0 auto 20px auto'}}>🚪</div>
+            <h3 style={{margin:'0 0 10px 0', fontSize:'22px', fontWeight:900, color: isDark ? '#f8fafc' : '#0f172a'}}>Sign Out?</h3>
+            <p style={{margin:'0 0 30px 0', color:'#94a3b8', fontSize:'14px', fontWeight:600}}>Are you sure you want to securely log out of the GP Portal?</p>
+            <div style={{display:'flex', gap:'15px'}}>
+              <button onClick={() => setShowLogoutConfirm(false)} style={{flex:1, padding:'14px', background: isDark ? '#1e293b' : '#f1f5f9', border: isDark ? '1px solid #334155' : 'none', borderRadius:'12px', fontWeight:800, color: isDark ? '#f8fafc' : '#475569', cursor:'pointer'}}>Cancel</button>
+              <button onClick={handleConfirmLogout} style={{flex:1, padding:'14px', background:'#ef4444', border:'none', borderRadius:'12px', fontWeight:800, color:'white', cursor:'pointer', boxShadow:'0 4px 10px rgba(239, 68, 68, 0.2)'}}>Yes, Sign Out</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
