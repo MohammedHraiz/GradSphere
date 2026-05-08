@@ -6,6 +6,8 @@ import { getMyProject } from '../../api/projectService';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import InviteModal from '../../components/InviteModal';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { normalizeProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
 .team-page-container {
@@ -492,7 +494,7 @@ const TeamManagement = ({ onMessageClick }) => {
   const leaderCannotLeave = isLeader && membersCount > 1;
   const leaderLeaveMessage = 'Team leader cannot leave or disband the team while other members are still in the team.';
   const projectExists = Boolean(projectInfo);
-  const projectArchived = String(projectInfo?.status ?? '').toUpperCase() === 'ARCHIVED';
+  const projectArchived = normalizeProjectStatus(projectInfo?.status) === 'ARCHIVED';
 
   const fetchPendingInvitations = useCallback(async () => {
     if (!hasAuthenticatedUser || !isLeader) {
@@ -848,6 +850,13 @@ const TeamManagement = ({ onMessageClick }) => {
                 <span className="value">{supervisorLabel}</span>
               </div>
             </div>
+
+            {projectExists && (
+              <div className="team-meta-row">
+                <span className="label">Project Status:</span>
+                <span className="value"><ProjectStatusBadge status={projectInfo?.status} /></span>
+              </div>
+            )}
 
             {projectExists && (
               <div className="team-meta-row">

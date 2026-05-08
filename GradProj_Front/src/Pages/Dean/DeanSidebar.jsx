@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const deanSidebarStyles = `
-  .dean-sidebar { width: 260px; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left;}
+  .dean-sidebar { width: 260px; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
   .dean-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 50px; padding-left: 10px; }
   .dean-logo-icon { font-size: 24px; background: linear-gradient(135deg, #d97706, #b45309); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 14px; box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.4); }
   .dean-logo-text h2 { font-size: 16px; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; }
@@ -20,11 +20,11 @@ const DeanSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 💡 تم ترتيب المسارات بشكل صحيح 100% لتطابق ما وضعناه في App.jsx
   const menuItems = [
     { name: 'Analytics Hub', path: '/dean/dashboard', icon: '📈' },
     { name: 'All Projects', path: '/dean/projects', icon: '📑' },
     { name: 'Supervisor Requests', path: '/dean/supervisor-requests', icon: '📨' },
+    { name: 'Meetings', path: '/dean/meetings', icon: '📅' },
     { name: 'Supervisors', path: '/dean/supervisors', icon: '👨‍🏫' },
     { name: 'All Teams', path: '/dean/teams', icon: '👥' },
     { name: 'All Students', path: '/dean/students', icon: '🎓' },
@@ -34,7 +34,7 @@ const DeanSidebar = () => {
   return (
     <aside className="dean-sidebar">
       <style>{deanSidebarStyles}</style>
-      
+
       <div className="dean-logo-container">
         <div className="dean-logo-icon">🏛️</div>
         <div className="dean-logo-text">
@@ -54,7 +54,7 @@ const DeanSidebar = () => {
             >
               <span className="dean-nav-icon">{item.icon}</span>
               <span className="dean-nav-label">{item.name}</span>
-              {isActive && <div className="dean-active-dot" />}
+              {isActive ? <div className="dean-active-dot" /> : null}
             </button>
           );
         })}

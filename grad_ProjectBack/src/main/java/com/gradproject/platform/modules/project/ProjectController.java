@@ -3,7 +3,6 @@ package com.gradproject.platform.modules.project;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.time.LocalDateTime;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,8 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.modules.meeting.BulkDownloadService;
-import com.gradproject.platform.modules.meeting.Meeting;
-import com.gradproject.platform.modules.meeting.MeetingRepository;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.dto.FeedbackRequestDTO;
@@ -53,17 +50,15 @@ public class ProjectController {
     private final FileStorageService fileStorageService;
     private final BulkDownloadService bulkDownloadService;
     private final TeamMemberRepository teamMemberRepository;
-    private final MeetingRepository meetingRepository;
     private final SupervisorRequestRepository supervisorRequestRepository;
 
-    public ProjectController(ProjectRepository projectRepository, UserRepository userRepository, ProjectService projectService, FileStorageService fileStorageService, BulkDownloadService bulkDownloadService, TeamMemberRepository teamMemberRepository, MeetingRepository meetingRepository, SupervisorRequestRepository supervisorRequestRepository) {
+    public ProjectController(ProjectRepository projectRepository, UserRepository userRepository, ProjectService projectService, FileStorageService fileStorageService, BulkDownloadService bulkDownloadService, TeamMemberRepository teamMemberRepository, SupervisorRequestRepository supervisorRequestRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectService = projectService;
         this.fileStorageService = fileStorageService;
         this.bulkDownloadService = bulkDownloadService;
         this.teamMemberRepository = teamMemberRepository;
-        this.meetingRepository = meetingRepository;
         this.supervisorRequestRepository = supervisorRequestRepository;
     }
 
@@ -113,14 +108,6 @@ public class ProjectController {
 
         Project savedProject = projectRepository.save(project);
         projectService.createSupervisorRequest(savedProject, membership, student, supervisorId, requestMessage);
-        meetingRepository.save(Meeting.builder()
-                .project(savedProject)
-                .meetingDate(LocalDateTime.now())
-                .summary("Initial proposal review form")
-                .tasks("Review the submitted proposal document and record feedback")
-                .progressRating(0)
-                .build());
-
         projectService.createProposalSubmission(savedProject, project.getDescription(), project.getDocumentPath(), "Initial submission", student);
 
         return ResponseEntity.ok(projectService.toResponse(savedProject));

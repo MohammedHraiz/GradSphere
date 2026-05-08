@@ -3,8 +3,10 @@ package com.gradproject.platform.modules.meeting;
 import com.gradproject.platform.exception.MeetingNotFoundException;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.team.Team;
+import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.user.User;
 import com.gradproject.platform.modules.user.UserRepository;
+import com.gradproject.platform.modules.user.UserRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
@@ -31,6 +33,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import java.io.ByteArrayOutputStream;
 import java.awt.Color;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.UUID;
 
 @Slf4j
@@ -43,9 +46,10 @@ public class PdfGeneratorService {
 
     private final MeetingRepository meetingRepository;
     private final UserRepository userRepository;
+    private final TeamMemberRepository teamMemberRepository;
 
     public Resource generateMeetingForm(UUID meetingId, Authentication authentication) {
-        Meeting meeting = meetingRepository.findById(meetingId)
+        Meeting meeting = meetingRepository.findDetailedById(meetingId)
                 .orElseThrow(() -> new MeetingNotFoundException(meetingId));
 
         User currentUser = resolveCurrentUser(authentication);
@@ -62,6 +66,7 @@ public class PdfGeneratorService {
             addHeader(document);
             addMeetingInfo(document, meeting);
             addSummarySection(document, meeting);
+            addAttendanceSection(document, meeting);
             addSignatureSection(document);
 
             document.close();
@@ -77,8 +82,20 @@ public class PdfGeneratorService {
             return true;
         }
 
-        Team team = meeting.getProject() != null ? meeting.getProject().getTeam() : null;
-        return team != null && team.getSupervisor() != null && currentUser.getId() != null && currentUser.getId().equals(team.getSupervisor().getId());
+        Project project = meeting.getProject();
+        Team team = project != null ? project.getTeam() : null;
+        if (currentUser.getRole() == UserRole.ROLE_SUPERVISOR) {
+            return project != null
+                    && project.getSupervisor() != null
+                    && currentUser.getId() != null
+                    && currentUser.getId().equals(project.getSupervisor().getId());
+        }
+
+        return currentUser.getRole() == UserRole.ROLE_STUDENT
+                && team != null
+                && currentUser.getId() != null
+                && ((team.getLeader() != null && currentUser.getId().equals(team.getLeader().getId()))
+                || teamMemberRepository.findByTeamIdAndUserId(team.getId(), currentUser.getId()).isPresent());
     }
 
     private User resolveCurrentUser(Authentication authentication) {
@@ -118,11 +135,15 @@ public class PdfGeneratorService {
         table.setSpacingBefore(8f);
         table.setSpacingAfter(10f);
 
-        addCell(table, "Project Group ID", team != null && team.getId() != null ? team.getId().toString() : "N/A");
+        addCell(table, "Team Name", team != null ? safeText(team.getName()) : "N/A");
+        addCell(table, "Meeting Title", safeText(meeting.getTitle()));
         addCell(table, "Meeting Date", meeting.getMeetingDate() != null ? meeting.getMeetingDate().format(DATE_TIME_FORMATTER) : "N/A");
+        addCell(table, "Supervisor", meeting.getSupervisor() != null ? safeText(meeting.getSupervisor().getName()) : "N/A");
         addCell(table, "Summary", safeText(meeting.getSummary()));
-        addCell(table, "Tasks", safeText(meeting.getTasks()));
-        addCell(table, "Progress Rating", meeting.getProgressRating() != null ? meeting.getProgressRating().toString() : "N/A");
+        addCell(table, "Progress Discussed", safeText(meeting.getProgressDiscussed()));
+        addCell(table, "Tasks Assigned", safeText(meeting.getTasksAssigned()));
+        addCell(table, "Next Steps", safeText(meeting.getNextSteps()));
+        addCell(table, "Next Meeting", meeting.getNextMeetingDate() != null ? meeting.getNextMeetingDate().format(DATE_TIME_FORMATTER) : "N/A");
         addCell(table, "Project Title", safeText(project.getTitle()));
 
         document.add(table);
@@ -135,13 +156,52 @@ public class PdfGeneratorService {
         sectionTitle.setSpacingAfter(6f);
         document.add(sectionTitle);
 
-        Paragraph summary = new Paragraph(safeText(meeting.getSummary()));
+        Paragraph summary = new Paragraph("Summary: " + safeText(meeting.getSummary()));
         summary.setLeading(18f);
         document.add(summary);
 
-        Paragraph tasks = new Paragraph("\nTasks: " + safeText(meeting.getTasks()));
+        Paragraph progress = new Paragraph("\nProgress Discussed: " + safeText(meeting.getProgressDiscussed()));
+        progress.setLeading(18f);
+        document.add(progress);
+
+        Paragraph tasks = new Paragraph("\nTasks Assigned: " + safeText(meeting.getTasksAssigned()));
         tasks.setLeading(18f);
         document.add(tasks);
+
+        Paragraph nextSteps = new Paragraph("\nNext Steps: " + safeText(meeting.getNextSteps()));
+        nextSteps.setLeading(18f);
+        document.add(nextSteps);
+    }
+
+    private void addAttendanceSection(Document document, Meeting meeting) throws Exception {
+        Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK);
+        Paragraph sectionTitle = new Paragraph("Attendance", sectionFont);
+        sectionTitle.setSpacingBefore(12f);
+        sectionTitle.setSpacingAfter(8f);
+        document.add(sectionTitle);
+
+        PdfPTable table = new PdfPTable(new float[]{3f, 2f, 3f});
+        table.setWidthPercentage(100f);
+
+        addHeaderCell(table, "Student Name");
+        addHeaderCell(table, "Status");
+        addHeaderCell(table, "Reason");
+
+        if (meeting.getAttendanceRecords() == null || meeting.getAttendanceRecords().isEmpty()) {
+            addBodyCell(table, "No attendance recorded.");
+            addBodyCell(table, "N/A");
+            addBodyCell(table, "N/A");
+        } else {
+            meeting.getAttendanceRecords().stream()
+                    .sorted(Comparator.comparing(record -> record.getStudent() != null ? record.getStudent().getName() : ""))
+                    .forEach(record -> {
+                        addBodyCell(table, record.getStudent() != null ? safeText(record.getStudent().getName()) : "Unknown student");
+                        addBodyCell(table, record.getStatus() != null ? record.getStatus().name() : "N/A");
+                        addBodyCell(table, safeText(record.getAbsenceReason()));
+                    });
+        }
+
+        document.add(table);
     }
 
     private void addSignatureSection(Document document) throws Exception {
@@ -184,6 +244,23 @@ public class PdfGeneratorService {
 
         table.addCell(labelCell);
         table.addCell(valueCell);
+    }
+
+    private void addHeaderCell(PdfPTable table, String value) {
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.BLACK);
+        PdfPCell cell = new PdfPCell(new Phrase(value, labelFont));
+        cell.setBackgroundColor(new Color(240, 240, 240));
+        cell.setPadding(8f);
+        cell.setBorder(Rectangle.BOX);
+        table.addCell(cell);
+    }
+
+    private void addBodyCell(PdfPTable table, String value) {
+        Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 11, Color.BLACK);
+        PdfPCell cell = new PdfPCell(new Phrase(value, valueFont));
+        cell.setPadding(8f);
+        cell.setBorder(Rectangle.BOX);
+        table.addCell(cell);
     }
 
     private void addSignatureCell(PdfPTable table, String label) {

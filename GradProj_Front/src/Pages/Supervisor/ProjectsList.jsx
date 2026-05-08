@@ -12,6 +12,8 @@ import {
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, triggerBrowserDownload } from '../../utils/downloadFile';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
 .sup-projects { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
@@ -46,14 +48,6 @@ const styles = `
 .sup-empty { padding: 18px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #f8fafc; text-align: center; }
 @media (max-width: 900px) { .sup-grid { grid-template-columns: 1fr; } .sup-header { flex-direction: column; align-items: flex-start; } }
 `;
-
-const visibleStatus = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
 
 const ProjectsList = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -234,8 +228,9 @@ const ProjectsList = () => {
             <div className="sup-list">
               {projects.map((project) => {
                 const state = feedbackById[project.id] ?? {};
-                const isArchived = project.status === 'ARCHIVED';
-                const isResubmitted = project.status === 'SUBMITTED' && (project.proposalVersion ?? 1) > 1;
+                const normalizedStatus = normalizeProjectStatus(project.status);
+                const isArchived = normalizedStatus === 'ARCHIVED';
+                const isResubmitted = normalizedStatus === 'SUBMITTED' && (project.proposalVersion ?? 1) > 1;
                 const historyItems = historyByProject[project.id] || [];
                 const historyLoading = historyLoadingByProject[project.id];
                 const historyError = historyErrorByProject[project.id];
@@ -243,7 +238,10 @@ const ProjectsList = () => {
                 return (
                   <div className="sup-card" key={project.id}>
                     <p className="sup-card-title">{project.title}</p>
-                    <p className="sup-meta">Team: {project.teamName || 'Not linked'} | Status: {visibleStatus(project.status).replace(/_/g, ' ')}</p>
+                    <div className="sup-meta" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span>Team: {project.teamName || 'Not linked'}</span>
+                      <ProjectStatusBadge status={project.status} />
+                    </div>
                     <div className="sup-meta" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <span>Proposal Version: {project.proposalVersion || 1}</span>
                       {isResubmitted ? <span className="sup-badge">Resubmitted</span> : null}

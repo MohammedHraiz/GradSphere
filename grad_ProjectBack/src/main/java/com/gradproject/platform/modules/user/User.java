@@ -42,6 +42,22 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "university_id")
     private String universityId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "department")
+    private UserDepartment department;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "specialty")
+    private String specialty;
+
+    @Column(name = "office_hours")
+    private String officeHours;
+
+    @Column(name = "profile_photo_url", length = 500)
+    private String profilePhotoUrl;
+
     @Column(name = "otp_code")
     private String otpCode;
 
@@ -108,6 +124,46 @@ public class User extends BaseEntity implements UserDetails {
 
     public void setUniversityId(String universityId) {
         this.universityId = universityId;
+    }
+
+    public UserDepartment getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(UserDepartment department) {
+        this.department = department;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getSpecialty() {
+        return specialty;
+    }
+
+    public void setSpecialty(String specialty) {
+        this.specialty = specialty;
+    }
+
+    public String getOfficeHours() {
+        return officeHours;
+    }
+
+    public void setOfficeHours(String officeHours) {
+        this.officeHours = officeHours;
+    }
+
+    public String getProfilePhotoUrl() {
+        return profilePhotoUrl;
+    }
+
+    public void setProfilePhotoUrl(String profilePhotoUrl) {
+        this.profilePhotoUrl = profilePhotoUrl;
     }
 
     public boolean isGraduated() {

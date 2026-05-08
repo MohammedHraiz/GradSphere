@@ -1,6 +1,8 @@
 package com.gradproject.platform.modules.admin;
 
 import com.gradproject.platform.exception.ProjectNotArchivableException;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.exception.ProjectNotFoundException;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectRepository;
@@ -35,6 +37,7 @@ public class ArchiveService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final NotificationService notificationService;
 
     public ArchiveProjectResponseDTO archiveProject(UUID projectId) {
         Project project = projectRepository.findById(projectId)
@@ -76,6 +79,18 @@ public class ArchiveService {
         project.setStatus(ProjectStatus.ARCHIVED);
         project.getHistoryEntries().add(history);
         projectRepository.save(project);
+
+        List<User> recipients = new ArrayList<>(students);
+        if (project.getSupervisor() != null) {
+            recipients.add(project.getSupervisor());
+        }
+        notificationService.createNotifications(
+                recipients,
+                "Project archived",
+                "Project \"" + project.getTitle() + "\" has been archived.",
+                NotificationType.PROJECT_ARCHIVED,
+                "/project?projectId=" + project.getId()
+        );
 
         return ArchiveProjectResponseDTO.builder()
                 .projectId(project.getId())

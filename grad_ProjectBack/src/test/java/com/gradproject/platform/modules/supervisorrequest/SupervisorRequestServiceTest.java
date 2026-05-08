@@ -1,6 +1,8 @@
 package com.gradproject.platform.modules.supervisorrequest;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.ProjectStatus;
@@ -27,6 +29,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +40,7 @@ class SupervisorRequestServiceTest {
     @Mock ProjectRepository projectRepository;
     @Mock UserRepository userRepository;
     @Mock TeamMemberRepository teamMemberRepository;
+    @Mock NotificationService notificationService;
 
     SupervisorRequestService service;
     User leader;
@@ -47,7 +52,7 @@ class SupervisorRequestServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SupervisorRequestService(requestRepository, projectRepository, userRepository, teamMemberRepository);
+        service = new SupervisorRequestService(requestRepository, projectRepository, userRepository, teamMemberRepository, notificationService);
         leader = user(UUID.randomUUID(), "leader@example.com", UserRole.ROLE_STUDENT);
         member = user(UUID.randomUUID(), "member@example.com", UserRole.ROLE_STUDENT);
         supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
@@ -67,6 +72,7 @@ class SupervisorRequestServiceTest {
 
         assertThat(dto.status()).isEqualTo(SupervisorRequestStatus.PENDING);
         assertThat(dto.supervisorId()).isEqualTo(supervisor.getId());
+        verify(notificationService).createNotification(eq(supervisor), any(), any(), eq(NotificationType.SUPERVISOR_REQUEST), eq("/project?projectId=" + project.getId()));
     }
 
     @Test
@@ -165,6 +171,7 @@ class SupervisorRequestServiceTest {
         assertThat(dto.status()).isEqualTo(SupervisorRequestStatus.ACCEPTED);
         assertThat(project.getSupervisor()).isEqualTo(supervisor);
         assertThat(project.getStatus()).isEqualTo(ProjectStatus.UNDER_REVIEW);
+        verify(notificationService).createNotification(eq(leader), any(), any(), eq(NotificationType.SUPERVISOR_REQUEST_ACCEPTED), eq("/project?projectId=" + project.getId()));
     }
 
     @Test
@@ -191,6 +198,7 @@ class SupervisorRequestServiceTest {
 
         assertThat(dto.status()).isEqualTo(SupervisorRequestStatus.REJECTED);
         assertThat(dto.responseMessage()).isEqualTo("No capacity");
+        verify(notificationService).createNotification(eq(leader), any(), any(), eq(NotificationType.SUPERVISOR_REQUEST_REJECTED), eq("/project?projectId=" + project.getId()));
     }
 
     @Test

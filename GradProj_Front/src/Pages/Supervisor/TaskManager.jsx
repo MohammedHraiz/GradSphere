@@ -1,701 +1,393 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getAssignedProjects } from '../../api/projectService';
+import { createProjectTask, deleteTask, getProjectTasks, updateTask } from '../../api/workflowService';
+import FeedbackToast from '../../components/FeedbackToast';
 
 const styles = `
-/* =========================================================
-   TASK MANAGER (KANBAN) - PREMIUM SAAS EDITION
-========================================================= */
-
-.task-manager-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  animation: fadeIn 0.4s ease-out;
-  padding: 30px; /* 💡 Added subtle padding for better framing */
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- 1. Page Header & Actions --- */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  border-bottom: 1px solid #E2E8F0;
-  padding-bottom: 20px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.subtitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: #4F46E5;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 5px;
-}
-
-.title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0F172A;
-  letter-spacing: -0.5px;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.btn-primary-saas {
-  background: #4F46E5;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
-}
-
-.btn-primary-saas:hover {
-  background: #4338CA;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.3);
-}
-
-/* 💡 NEW: Unified Filter Bar (Matches Image & Projects Page) */
-.filter-bar-saas-unified {
-  display: flex; gap: 15px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #E2E8F0;
-  margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); flex-wrap: wrap; align-items: center;
-}
-
-.search-wrapper-saas {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input-saas {
-  padding: 11px 15px 11px 40px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  outline: none;
-  transition: 0.2s;
-  font-family: inherit;
-  color: #0F172A;
-  background-color: #F8FAFC;
-}
-
-.search-input-saas:focus {
-  border-color: #4F46E5;
-  background-color: white;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.search-icon-saas {
-  position: absolute;
-  left: 15px;
-  color: #94A3B8;
-  font-size: 16px;
-}
-
-.saas-select-unified {
-  padding: 11px 15px; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 13px; font-weight: 600;
-  outline: none; background-color: #F8FAFC; color: #475569; cursor: pointer; transition: 0.2s; font-family: inherit;
-}
-
-.saas-select-unified:focus {
-  border-color: #4F46E5;
-  background-color: white;
-}
-
-/* --- Old Filter Dropdown (Kept for CSS safety, unused in UI) --- */
-.filter-wrapper { position: relative; }
-.filter-btn-saas { background: white; border: 1px solid #CBD5E1; color: #475569; padding: 11px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s ease; display: flex; align-items: center; gap: 8px; }
-.filter-btn-saas:hover { background: #F8FAFC; border-color: #94A3B8; }
-.filter-dropdown { position: absolute; top: calc(100% + 10px); right: 0; width: 280px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 20px; z-index: 1000; animation: dropdownFade 0.2s ease-out forwards; transform-origin: top right; }
-@keyframes dropdownFade { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-.filter-section { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-.filter-section span { font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; }
-.filter-section select { padding: 10px; border-radius: 6px; border: 1px solid #E2E8F0; font-size: 13px; font-weight: 600; outline: none; background-color: #F8FAFC; transition: 0.2s; color: #0F172A; }
-.filter-section select:focus { border-color: #4F46E5; background-color: white; }
-.filter-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #F1F5F9; }
-.clear-link { background: none; border: none; color: #EF4444; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.clear-link:hover { text-decoration: underline; }
-.apply-btn { background: #0F172A; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.apply-btn:hover { background: #334155; }
-
-/* --- 2. Kanban Board (The Core) --- */
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 25px;
-  align-items: start;
-  min-height: 60vh;
-}
-
-.kanban-column {
-  background-color: #F1F5F9; 
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #E2E8F0;
-  display: flex;
-  flex-direction: column;
-  min-height: 400px;
-}
-
-.column-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #CBD5E1;
-}
-
-.column-header h3 {
-  font-size: 13px;
-  color: #475569;
-  text-transform: uppercase;
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  margin: 0;
-}
-
-.task-count {
-  background: #E2E8F0;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 12px;
-}
-
-.tasks-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* --- 3. Task Cards (Jira Style) --- */
-.task-card {
-  background: white;
-  padding: 18px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border-left: 4px solid transparent; 
-}
-
-.task-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-  border-color: #CBD5E1;
-}
-
-.task-card:active { transform: scale(0.98); }
-
-.task-card.priority-high { border-left-color: #EF4444; }
-.task-card.priority-medium { border-left-color: #F59E0B; }
-.task-card.priority-low { border-left-color: #10B981; }
-
-.task-title {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #1E293B;
-  font-weight: 800;
-  line-height: 1.4;
-}
-
-.task-project {
-  font-size: 11px;
-  color: #4F46E5;
-  font-weight: 700;
-  background: #EEF2FF;
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-
-.task-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-}
-
-/* 💡 NEW: Clickable Task Assignee Pill */
-.task-assignee-clickable {
-  display: flex; align-items: center; gap: 6px; color: #64748B; font-weight: 700;
-  background: #F8FAFC; padding: 4px 10px 4px 4px; border-radius: 20px; border: 1px solid transparent; 
-  cursor: pointer; transition: 0.2s;
-}
-.task-assignee-clickable:hover {
-  background: white; border-color: #4F46E5; color: #4F46E5; box-shadow: 0 4px 6px rgba(79,70,229,0.1); transform: translateY(-2px);
-}
-.task-assignee-clickable .assignee-name { transition: 0.2s; }
-
-.avatar-micro {
-  width: 24px;
-  height: 24px;
-  background: #4F46E5;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.task-due {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #94A3B8;
-  font-weight: 600;
-}
-.task-due.overdue { color: #EF4444; font-weight: 800; }
-.btn-cancel-saas:hover { background: #F8FAFC; border-color: #CBD5E1;}
-.btn-submit-saas { background: #4F46E5; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(79,70,229,0.2); }
-.btn-submit-saas:hover { background: #4338CA; transform: translateY(-2px); }
-
-/* 💡 NEW: Advanced Task Detail Cards (Matches Uploaded Image) */
-.td-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  position: relative;
-  transition: 0.2s;
-}
-.td-card.clickable:hover {
-  border-color: #4F46E5;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
-  transform: translateY(-2px);
-  cursor: pointer;
-}
-.td-card-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: #64748B;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.td-card-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: #0F172A;
-}
-.td-card-value.primary {
-  color: #4F46E5;
-  font-size: 20px;
-}
-.td-input-seamless {
-  border: 1px solid transparent;
-  background: transparent;
-  font-size: 15px;
-  font-weight: 700;
-  color: #0F172A;
-  padding: 4px 8px;
-  margin-left: -8px;
-  border-radius: 6px;
-  width: calc(100% + 16px);
-  font-family: inherit;
-  transition: 0.2s;
-}
-.td-input-seamless:hover { background: #F8FAFC; border-color: #E2E8F0; }
-.td-input-seamless:focus { background: #FFFFFF; border-color: #4F46E5; outline: none; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-.td-textarea-seamless {
-  width: calc(100% + 16px);
-  min-height: 60px;
-  resize: vertical;
-  font-weight: 500;
-  color: #475569;
-  line-height: 1.5;
-}
-.btn-complete-task {
-  background: #10B981;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
-}
-.btn-complete-task:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 6px 10px rgba(16, 185, 129, 0.3); }
+.task-manager-container { display: flex; flex-direction: column; height: 100%; animation: fadeIn 0.4s ease-out; padding: 30px; text-align: left; font-family: 'Plus Jakarta Sans', sans-serif; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.page-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 25px; flex-wrap: wrap; gap: 20px; }
+.subtitle { font-size: 13px; font-weight: 700; color: #4F46E5; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+.title { font-size: 28px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px; margin: 0; }
+.btn-primary-saas { background: #4F46E5; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+.btn-primary-saas:disabled { opacity: .6; cursor: not-allowed; }
+.filter-bar { display: grid; grid-template-columns: 1.2fr repeat(3, minmax(180px, 1fr)); gap: 15px; background: white; padding: 15px; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+.search-box, .filter-bar select { border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; }
+.kanban-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.kanban-column { background-color: #F1F5F9; padding: 18px; border-radius: 18px; border: 1px solid #E2E8F0; min-height: 380px; }
+.column-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #CBD5E1; }
+.column-header h3 { font-size: 13px; color: #475569; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; margin: 0; }
+.task-count { background: #E2E8F0; color: #475569; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 12px; }
+.tasks-stack { display: grid; gap: 14px; }
+.task-card { background: white; padding: 18px; border: 1px solid #E2E8F0; border-radius: 14px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: grid; gap: 12px; }
+.task-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-color: #c7d2fe; }
+.task-title { margin: 0; font-size: 14px; color: #1E293B; font-weight: 800; line-height: 1.4; }
+.task-project { font-size: 11px; color: #4F46E5; font-weight: 700; background: #EEF2FF; display: inline-block; padding: 3px 8px; border-radius: 999px; }
+.task-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: #64748B; font-weight: 700; }
+.task-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
+.badge.status-not_started { background: #f1f5f9; color: #475569; }
+.badge.status-in_progress { background: #e0e7ff; color: #3730a3; }
+.badge.status-blocked { background: #fff7ed; color: #c2410c; }
+.badge.status-completed { background: #dcfce7; color: #15803d; }
+.badge.priority-low { background: #eff6ff; color: #1d4ed8; }
+.badge.priority-medium { background: #ede9fe; color: #6d28d9; }
+.badge.priority-high { background: #fef3c7; color: #b45309; }
+.badge.priority-critical { background: #fee2e2; color: #b91c1c; }
+.badge.overdue { background: #fff1f2; color: #be123c; }
+.empty-card { text-align: center; padding: 24px; color: #94A3B8; font-size: 13px; font-weight: 600; }
+.state { padding: 22px; border: 1px dashed #cbd5e1; border-radius: 18px; background: #f8fafc; color: #64748b; font-weight: 700; margin-bottom: 20px; }
+.state.error { border-color: #fecaca; background: #fff1f2; color: #be123c; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 24px; }
+.saas-modal { background: white; width: 100%; max-width: 760px; max-height: 88vh; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; display: flex; flex-direction: column; }
+.modal-header-saas { padding: 24px 28px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+.close-btn-saas { border: none; background: #f1f5f9; color: #64748b; width: 36px; height: 36px; border-radius: 999px; cursor: pointer; font-size: 18px; }
+.saas-form, .detail-body { padding: 28px; display: grid; gap: 18px; overflow-y: auto; }
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.form-group { display: grid; gap: 8px; }
+.form-group label { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: .08em; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; font: inherit; background: #F8FAFC; }
+.form-group textarea { min-height: 120px; resize: vertical; }
+.modal-footer-saas { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 28px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+.btn-cancel-saas { background: white; border: 1px solid #E2E8F0; color: #475569; padding: 12px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+.btn-danger { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; padding: 12px 18px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-right: auto; }
+.detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.detail-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px; }
+.detail-card span { display: block; font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 900; margin-bottom: 6px; }
+.detail-card strong { color: #0f172a; }
+@media (max-width: 980px) { .filter-bar, .kanban-board, .form-row, .detail-grid { grid-template-columns: 1fr; } }
 `;
 
+const TASK_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED'];
+const TASK_PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+const emptyForm = {
+  title: '',
+  description: '',
+  assignedToId: '',
+  dueDate: '',
+  priority: 'MEDIUM',
+};
+
+const columns = [
+  { key: 'NOT_STARTED', label: 'Not Started' },
+  { key: 'IN_PROGRESS', label: 'In Progress' },
+  { key: 'BLOCKED', label: 'Blocked' },
+  { key: 'COMPLETED', label: 'Completed' },
+];
+
+const labelize = (value) => String(value || '').replaceAll('_', ' ');
+const memberId = (member) => member?.id ?? member?.userId ?? '';
+
 const TaskManager = () => {
-  const location = useLocation();
-  const navigate = useNavigate(); // 💡 أضفنا useNavigate للتنقل لصفحة الطلاب
-
-  const [showModal, setShowModal] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
-
-  // حالات الفلترة والبحث
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStudent, setFilterStudent] = useState('All Students');
-  const [filterPriority, setFilterPriority] = useState('All Priorities');
-  const [filterProject, setFilterProject] = useState('All Projects');
+  const [filterStudent, setFilterStudent] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
 
-  // Auto-Search Logic
+  const selectedProject = useMemo(
+    () => projects.find((project) => project.id === selectedProjectId) ?? null,
+    [projects, selectedProjectId],
+  );
+
+  const teamMembers = selectedProject?.teamMembers ?? [];
+
+  const loadProjects = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await getAssignedProjects();
+      const assignedProjects = response?.data ?? [];
+      setProjects(assignedProjects);
+      const firstProjectId = assignedProjects?.[0]?.id ?? '';
+      setSelectedProjectId((current) => current || firstProjectId);
+    } catch (err) {
+      setError(err?.message || 'Unable to load assigned projects.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadTasks = async (projectId) => {
+    if (!projectId) {
+      setTasks([]);
+      return;
+    }
+    try {
+      const workflowTasks = await getProjectTasks(projectId);
+      setTasks(workflowTasks);
+    } catch (err) {
+      setToast({ type: 'error', message: err?.message || 'Unable to load tasks for this project.' });
+    }
+  };
+
   useEffect(() => {
-    if (location.state && location.state.targetProject) {
-      setSearchQuery(location.state.targetProject);
-    }
-    if (location.state && location.state.targetStudent) {
-      setSearchQuery(location.state.targetStudent);
-    }
-  }, [location]);
+    void loadProjects();
+  }, []);
 
-  const initialColumns = [
-    {
-      title: 'TO DO',
-      tasks: [
-        { id: 1, title: 'Design Database Schema', student: 'Ali M.', project: 'Smart Campus', due: 'Mar 15', priority: 'High', overdue: true, desc: 'Create the ERD for the IoT sensors database.' },
-        { id: 2, title: 'Setup Node.js Server', student: 'Sara A.', project: 'Smart Campus', due: 'Mar 20', priority: 'Medium', overdue: false, desc: 'Initialize the Express server and connect it to MongoDB.' },
-        { id: 3, title: 'Write Project Proposal', student: 'Omar K.', project: 'AI Chatbot', due: 'Mar 25', priority: 'Low', overdue: false, desc: 'Draft the initial IEEE proposal for the AI project.' },
-      ]
-    },
-    {
-      title: 'IN PROGRESS',
-      tasks: [
-        { id: 4, title: 'Implement Login API', student: 'Ali M.', project: 'Smart Campus', due: 'Mar 18', priority: 'High', overdue: false, desc: 'Setup JWT authentication and secure the main endpoints.' },
-        { id: 5, title: 'Create UI Wireframes', student: 'Mona Z.', project: 'AI Chatbot', due: 'Mar 19', priority: 'Medium', overdue: false, desc: 'Design Figma screens for the chatbot interface.' },
-      ]
-    },
-    {
-      title: 'DONE',
-      tasks: [
-        { id: 6, title: 'Project Initiation Meeting', student: 'Ali M.', project: 'Smart Campus', due: 'Mar 01', priority: 'High', overdue: false, desc: 'Kickoff meeting with all stakeholders.' },
-        { id: 7, title: 'Requirement Gathering', student: 'Huda Y.', project: 'Voting System', due: 'Mar 10', priority: 'Low', overdue: false, desc: 'Gather all functional and non-functional requirements.' },
-      ]
-    }
-  ];
+  useEffect(() => {
+    void loadTasks(selectedProjectId);
+  }, [selectedProjectId]);
 
-  // تطبيق نظام الفلترة
-  const filteredColumns = initialColumns.map(col => {
-    const filteredTasks = col.tasks.filter(task => {
-      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            task.student.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            task.project.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStudent = filterStudent === 'All Students' || task.student === filterStudent;
-      const matchesPriority = filterPriority === 'All Priorities' || task.priority === filterPriority;
-      const matchesProject = filterProject === 'All Projects' || task.project === filterProject;
+  const filteredTasks = useMemo(() => tasks.filter((task) => {
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch = !query
+      || task.title?.toLowerCase().includes(query)
+      || task.description?.toLowerCase().includes(query)
+      || task.assignedToName?.toLowerCase().includes(query);
+    const matchesStudent = filterStudent === 'ALL' || task.assignedToId === filterStudent;
+    const matchesStatus = filterStatus === 'ALL' || task.status === filterStatus;
+    return matchesSearch && matchesStudent && matchesStatus;
+  }), [tasks, searchQuery, filterStudent, filterStatus]);
 
-      return matchesSearch && matchesStudent && matchesPriority && matchesProject;
+  const tasksByColumn = useMemo(() => columns.map((column) => ({
+    ...column,
+    tasks: filteredTasks.filter((task) => task.status === column.key),
+  })), [filteredTasks]);
+
+  const openCreateModal = () => {
+    setForm(emptyForm);
+    setShowCreateModal(true);
+  };
+
+  const openDetailModal = (task) => {
+    setSelectedTask(task);
+    setForm({
+      title: task.title ?? '',
+      description: task.description ?? '',
+      assignedToId: task.assignedToId ?? '',
+      dueDate: task.dueDate ?? '',
+      priority: task.priority ?? 'MEDIUM',
     });
+  };
 
-    return { ...col, tasks: filteredTasks };
-  });
+  const closeModals = () => {
+    setSelectedTask(null);
+    setShowCreateModal(false);
+    setForm(emptyForm);
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    if (!selectedProjectId) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        assignedToId: form.assignedToId || null,
+        dueDate: form.dueDate || null,
+        priority: form.priority,
+      };
+
+      if (selectedTask?.id) {
+        const updated = await updateTask(selectedTask.id, payload);
+        setTasks((current) => current.map((task) => (task.id === updated.id ? updated : task)));
+        setToast({ type: 'success', message: 'Task details updated successfully.' });
+      } else {
+        const created = await createProjectTask(selectedProjectId, payload);
+        setTasks((current) => [...current, created]);
+        setToast({ type: 'success', message: 'Task assigned successfully.' });
+      }
+      closeModals();
+    } catch (err) {
+      setToast({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to save the task.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedTask?.id) return;
+    setIsSaving(true);
+    try {
+      await deleteTask(selectedTask.id);
+      setTasks((current) => current.filter((task) => task.id !== selectedTask.id));
+      setToast({ type: 'success', message: 'Task deleted successfully.' });
+      closeModals();
+    } catch (err) {
+      setToast({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to delete the task.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <>
       <style>{styles}</style>
       <div className="task-manager-container">
-        
-        {/* --- 1. Page Header --- */}
         <div className="page-header">
           <div>
             <p className="subtitle">Supervisor / Tasks</p>
-            <h1 className="title">Task Management (Kanban)</h1>
+            <h1 className="title">Task Management</h1>
           </div>
-          
-          <div className="header-actions">
-            <button className="btn-primary-saas" onClick={() => setShowModal(true)}>
-              + Assign Task
-            </button>
-          </div>
+          <button type="button" className="btn-primary-saas" onClick={openCreateModal} disabled={!selectedProjectId}>+ Assign Task</button>
         </div>
 
-        {/* --- 2. 💡 Unified Search & Filter Bar (Matched with image_27da8a.png) --- */}
-        <div className="filter-bar-saas-unified">
-          
-          <div className="search-wrapper-saas" style={{ flexGrow: 1 }}>
-            <span className="search-icon-saas">🔍</span>
-            <input 
-              type="text" 
-              className="search-input-saas" 
-              style={{ width: '100%', boxSizing: 'border-box' }}
-              placeholder="Search tasks, projects, or students..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} style={{position:'absolute', right:'15px', background:'none', border:'none', color:'#EF4444', fontWeight: '800', cursor:'pointer'}}>✕</button>
-            )}
-          </div>
-
-          <select className="saas-select-unified" value={filterProject} onChange={(e) => setFilterProject(e.target.value)}>
-            <option value="All Projects">All Projects</option>
-            <option value="Smart Campus">Smart Campus</option>
-            <option value="AI Chatbot">AI Chatbot</option>
-            <option value="Voting System">Voting System</option>
+        <div className="filter-bar">
+          <input className="search-box" placeholder="Search tasks, descriptions, or students..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+          <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
+            <option value="">Select project</option>
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
           </select>
-
-          <select className="saas-select-unified" value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-            <option value="All Students">All Students</option>
-            <option value="Ali M.">Ali M.</option>
-            <option value="Sara A.">Sara A.</option>
-            <option value="Omar K.">Omar K.</option>
-            <option value="Mona Z.">Mona Z.</option>
-            <option value="Huda Y.">Huda Y.</option>
+          <select value={filterStudent} onChange={(event) => setFilterStudent(event.target.value)}>
+            <option value="ALL">All students</option>
+            {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
           </select>
-
-          <select className="saas-select-unified" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-            <option value="All Priorities">All Priorities</option>
-            <option value="High">🔴 High Priority</option>
-            <option value="Medium">🟡 Medium Priority</option>
-            <option value="Low">🟢 Low Priority</option>
+          <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)}>
+            <option value="ALL">All statuses</option>
+            {TASK_STATUSES.map((status) => <option key={status} value={status}>{labelize(status)}</option>)}
           </select>
         </div>
 
-        {/* --- 3. Kanban Board --- */}
-        <div className="kanban-board">
-          {filteredColumns.map((col, idx) => (
-            <div key={idx} className="kanban-column">
-              <div className="column-header">
-                <h3>{col.title}</h3>
-                <span className="task-count">{col.tasks.length}</span>
-              </div>
-              
-              <div className="tasks-stack">
-                {col.tasks.map(task => (
-                  <div 
-                    key={task.id} 
-                    className={`task-card priority-${task.priority.toLowerCase()}`}
-                    onClick={() => setSelectedTask(task)} /* 💡 يفتح المودال فقط إذا لم ننقر على الطالب */
-                  >
-                    <h4 className="task-title">{task.title}</h4>
-                    <span className="task-project">{task.project}</span>
-                    <div className="task-meta">
-                      
-                      {/* 💡 الطالب كزر تفاعلي يوجه לصفحة الطلاب (بدون فتح المودال) */}
-                      <div 
-                        className="task-assignee-clickable"
-                        onClick={(e) => {
-                          e.stopPropagation(); // منع النقر من الوصول لـ task-card وفتح המودال
-                          navigate('/supervisor/students', { state: { targetStudent: task.student } });
-                        }}
-                        title={`View ${task.student}'s Profile`}
-                      >
-                        <div className="avatar-micro" style={{background: task.priority === 'High' ? '#EF4444' : task.priority === 'Medium' ? '#F59E0B' : '#10B981'}}>
-                          {task.student.charAt(0)}
-                        </div>
-                        <span className="assignee-name">{task.student}</span>
+        {isLoading ? <div className="state">Loading assigned projects...</div> : null}
+        {error ? <div className="state error">{error}</div> : null}
+        {!isLoading && !error && !projects.length ? <div className="state">No assigned projects yet, so task management is still empty.</div> : null}
+
+        {!isLoading && !error && projects.length ? (
+          <div className="kanban-board">
+            {tasksByColumn.map((column) => (
+              <div key={column.key} className="kanban-column">
+                <div className="column-header">
+                  <h3>{column.label}</h3>
+                  <span className="task-count">{column.tasks.length}</span>
+                </div>
+                <div className="tasks-stack">
+                  {column.tasks.map((task) => (
+                    <div key={task.id} className="task-card" onClick={() => openDetailModal(task)}>
+                      <div>
+                        <h4 className="task-title">{task.title}</h4>
+                        <span className="task-project">{selectedProject?.title}</span>
                       </div>
-
-                      <div className={`task-due ${task.overdue ? 'overdue' : ''}`}>
-                        <span>📅</span> {task.due}
+                      <div className="task-badges">
+                        <span className={`badge priority-${String(task.priority || '').toLowerCase()}`}>{labelize(task.priority)}</span>
+                        {task.overdue ? <span className="badge overdue">Overdue</span> : null}
+                      </div>
+                      <div className="task-meta">
+                        <span><strong>{task.assignedToName || 'Unassigned'}</strong></span>
+                        <span>{task.dueDate || 'No due date'}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {col.tasks.length === 0 && (
-                  <div style={{textAlign: 'center', padding: '20px', color: '#94A3B8', fontSize: '13px', fontWeight: '600'}}>No tasks found.</div>
-                )}
+                  ))}
+                  {!column.tasks.length ? <div className="empty-card">No tasks in this lane.</div> : null}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ========================================================= */}
-        {/* 4. نافذة إضافة مهمة (Create Task Modal) */}
-        {/* ========================================================= */}
-        {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="saas-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header-saas">
-                <h2>Assign New Task</h2>
-                <button className="close-btn-saas" onClick={() => setShowModal(false)}>&times;</button>
-              </div>
-
-              <form className="saas-form" onSubmit={(e) => { e.preventDefault(); setShowModal(false); alert('Task Assigned Successfully!'); }}>
-                <div className="form-group">
-                  <label>Task Title</label>
-                  <input type="text" placeholder="e.g., Implement Login Authentication" required />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Project</label>
-                    <select required>
-                      <option>Smart Campus</option>
-                      <option>AI Chatbot</option>
-                      <option>Voting System</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Assign to Student</label>
-                    <select required>
-                      <option>Ali M.</option>
-                      <option>Sara A.</option>
-                      <option>Omar K.</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Priority</label>
-                    <select>
-                      <option value="High">🔴 High Priority</option>
-                      <option value="Medium">🟡 Medium Priority</option>
-                      <option value="Low">🟢 Low Priority</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Due Date</label>
-                    <input type="date" required />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label>Task Description & Instructions</label>
-                  <textarea placeholder="Describe the task requirements, acceptance criteria..." required></textarea>
-                </div>
-
-                <div className="modal-footer-saas">
-                  <button type="button" className="btn-cancel-saas" onClick={() => setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn-primary-saas">🚀 Create Task</button>
-                </div>
-              </form>
-            </div>
+            ))}
           </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 5. نافذة تفاصيل المهمة (View/Edit Task Modal) */}
-        {/* ========================================================= */}
-        {selectedTask && (
-          <div className="modal-overlay" onClick={() => setSelectedTask(null)}>
-            <div className="saas-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: '700px', padding: '30px 40px', backgroundColor: '#F8FAFC'}}>
-              
-              <div className="modal-header-saas" style={{borderBottom: 'none', marginBottom: '15px', paddingBottom: '0'}}>
-                <h2 style={{fontSize: '22px'}}>Task Details</h2>
-                <button className="close-btn-saas" onClick={() => setSelectedTask(null)}>✕</button>
-              </div>
-              
-              <div style={{height: '1px', background: '#E2E8F0', margin: '0 -40px 25px -40px'}}></div>
-
-              <div style={{display: 'flex', flexDirection: 'column', gap: '20px'}}>
-                
-                {/* 💡 Task Title (Editable) */}
-                <div className="td-card">
-                  <span className="td-card-label">Task Title</span>
-                  <input 
-                    type="text"
-                    className="td-input-seamless td-card-value primary"
-                    value={selectedTask.title}
-                    onChange={(e) => setSelectedTask({...selectedTask, title: e.target.value})}
-                  />
-                </div>
-
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
-                  
-                  {/* 💡 Assigned To (Clickable -> Students) */}
-                  <div className="td-card clickable" onClick={() => navigate('/supervisor/students', { state: { targetStudent: selectedTask.student } })} title="View Student Profile">
-                    <span className="td-card-label">Assigned To</span>
-                    <div style={{display: 'flex', alignItems:'center', gap: '10px', marginTop: '6px'}}>
-                      <div className="avatar-micro" style={{background: '#0F172A', width: '28px', height: '28px', fontSize: '12px'}}>{selectedTask.student.charAt(0)}</div>
-                      <span className="td-card-value">{selectedTask.student}</span>
-                    </div>
-                  </div>
-
-                  {/* 💡 Project (Clickable -> Projects) */}
-                  <div className="td-card clickable" onClick={() => navigate('/supervisor/projects', { state: { targetProject: selectedTask.project } })} title="View Project Details">
-                    <span className="td-card-label">Project</span>
-                    <div className="td-card-value" style={{marginTop: '10px'}}>{selectedTask.project}</div>
-                  </div>
-
-                  {/* 💡 Priority (Editable) */}
-                  <div className="td-card">
-                    <span className="td-card-label">Priority</span>
-                    <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px'}}>
-                      <div style={{
-                        width: '16px', height: '16px', borderRadius: '50%', border: '2px solid #1E293B',
-                        background: selectedTask.priority === 'High' ? '#EF4444' : selectedTask.priority === 'Medium' ? '#F59E0B' : '#10B981'
-                      }}></div>
-                      <select 
-                        className="td-input-seamless" 
-                        value={selectedTask.priority}
-                        onChange={(e) => setSelectedTask({...selectedTask, priority: e.target.value})}
-                        style={{padding: '4px', marginLeft: 0}}
-                      >
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* 💡 Due Date (Editable) */}
-                  <div className="td-card">
-                    <span className="td-card-label">Due Date</span>
-                    <input 
-                      type="text" 
-                      className="td-input-seamless"
-                      value={selectedTask.due}
-                      onChange={(e) => setSelectedTask({...selectedTask, due: e.target.value})}
-                      style={{marginTop: '6px'}}
-                    />
-                  </div>
-
-                </div>
-
-                {/* 💡 Description (Editable) */}
-                <div className="td-card">
-                  <span className="td-card-label">Description</span>
-                  <textarea 
-                    className="td-input-seamless td-textarea-seamless"
-                    value={selectedTask.desc}
-                    onChange={(e) => setSelectedTask({...selectedTask, desc: e.target.value})}
-                  />
-                </div>
-
-              </div>
-
-              <div style={{height: '1px', background: '#E2E8F0', margin: '30px -40px 20px -40px'}}></div>
-
-              <div className="modal-footer-saas" style={{borderTop: 'none', margin: 0, padding: 0}}>
-                <button className="btn-cancel-saas" onClick={() => setSelectedTask(null)} style={{borderRadius: '8px', padding: '10px 20px', background: 'white'}}>Close</button>
-                <button className="btn-complete-task" onClick={() => { setSelectedTask(null); alert('Task marked as Completed!'); }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                  Mark as Completed
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
+        ) : null}
       </div>
+
+      {showCreateModal ? (
+        <div className="modal-overlay" onClick={closeModals}>
+          <div className="saas-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header-saas">
+              <h2>Assign New Task</h2>
+              <button type="button" className="close-btn-saas" onClick={closeModals}>×</button>
+            </div>
+            <form className="saas-form" onSubmit={handleSave}>
+              <div className="form-group">
+                <label htmlFor="task-title">Task Title</label>
+                <input id="task-title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Add a clear task title" required />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="task-assignee">Assign to Student</label>
+                  <select id="task-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
+                    <option value="">Unassigned</option>
+                    {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="task-priority">Priority</label>
+                  <select id="task-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
+                    {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{labelize(priority)}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="task-due-date">Due Date</label>
+                  <input id="task-due-date" type="date" value={form.dueDate} onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label htmlFor="task-description">Task Description & Instructions</label>
+                <textarea id="task-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} placeholder="Define the expected outcome, scope, and handoff details." required />
+              </div>
+              <div className="modal-footer-saas">
+                <button type="button" className="btn-cancel-saas" onClick={closeModals} disabled={isSaving}>Cancel</button>
+                <button type="submit" className="btn-primary-saas" disabled={isSaving}>{isSaving ? 'Assigning...' : 'Assign Task'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedTask ? (
+        <div className="modal-overlay" onClick={closeModals}>
+          <div className="saas-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header-saas">
+              <h2>Task Details</h2>
+              <button type="button" className="close-btn-saas" onClick={closeModals}>×</button>
+            </div>
+            <form onSubmit={handleSave}>
+              <div className="detail-body">
+                <div className="detail-grid">
+                  <div className="detail-card"><span>Project</span><strong>{selectedProject?.title || 'Project'}</strong></div>
+                  <div className="detail-card"><span>Assignee</span><strong>{selectedTask.assignedToName || 'Unassigned'}</strong></div>
+                  <div className="detail-card"><span>Status</span><strong>{labelize(selectedTask.status)}</strong></div>
+                  <div className="detail-card"><span>Priority</span><strong>{labelize(selectedTask.priority)}</strong></div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="detail-title">Task Title</label>
+                  <input id="detail-title" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="detail-assignee">Assigned To</label>
+                    <select id="detail-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
+                      <option value="">Unassigned</option>
+                      {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="detail-priority">Priority</label>
+                    <select id="detail-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
+                      {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{labelize(priority)}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="detail-date">Due Date</label>
+                    <input id="detail-date" type="date" value={form.dueDate} onChange={(event) => setForm((current) => ({ ...current, dueDate: event.target.value }))} />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="detail-description">Description</label>
+                  <textarea id="detail-description" value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
+                </div>
+              </div>
+              <div className="modal-footer-saas">
+                <button type="button" className="btn-danger" onClick={() => void handleDelete()} disabled={isSaving}>Delete</button>
+                <button type="button" className="btn-cancel-saas" onClick={closeModals} disabled={isSaving}>Close</button>
+                <button type="submit" className="btn-primary-saas" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Details'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      <FeedbackToast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </>
   );
 };

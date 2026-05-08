@@ -14,17 +14,12 @@ import StudentsList from './Pages/Supervisor/StudentsList';
 import ProjectsList from './Pages/Supervisor/ProjectsList';
 import TaskManager from './Pages/Supervisor/TaskManager';
 import MilestoneManagement from './Pages/Supervisor/MilestoneManagement';
-import MeetingsScheduler from './Pages/Supervisor/MeetingsScheduler';
-import MeetingHistoryView from './Pages/Supervisor/MeetingHistoryView';
-import MeetingProgressForm from './Pages/Supervisor/MeetingProgressForm';
-import NewMeetingForm from './Pages/Supervisor/NewMeetingForm';
 
 // --- Imports: Student ---
 import Sidebar from './Pages/Student/Sidebar';
 import Overview from './Pages/Student/Overview';
 import Milestones from './Pages/Student/Milestones';
 import Tasks from './Pages/Student/Tasks';
-import Meetings from './Pages/Student/Meetings';
 import TeamManagement from './Pages/Student/TeamManagement';
 import InvitationsInbox from './Pages/Student/InvitationsInbox';
 import ChatComponent from './Pages/Student/ChatComponent';
@@ -49,12 +44,19 @@ import AdminForms from './Pages/Admin/AdminForms';
 import AIRecommendations from './Pages/Admin/AIRecommendations';
 import SystemLogs from './Pages/Admin/SystemLogs';
 import Settings from './Pages/Admin/Settings';
+import MeetingsPage from './Pages/Shared/MeetingsPage';
+import NotificationsPage from './Pages/Shared/NotificationsPage';
+import { getNotifications, getUnreadNotificationCount, markAllNotificationsAsRead, markNotificationAsRead } from './api/notificationService';
+import { resolveNotificationLink } from './utils/appLinks';
+import { getUserInitials, resolveProfilePhotoUrl } from './utils/userMeta';
+import UserProfileModal from './components/UserProfileModal';
 
 // ==========================================
 // 💡 Premium Top Header Component (Chameleon + Modals)
 // ==========================================
 const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme, globalLang, setGlobalLang }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, role: authRole } = useAuth();
   const isAdmin = userRole === 'admin'; 
   
@@ -64,6 +66,9 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const headerRef = useRef(null);
 
@@ -80,6 +85,8 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
   const getDisplayName = () => {
     return user?.name || user?.userName || 'User';
   };
+
+  const profileAvatarSrc = resolveProfilePhotoUrl(user?.profilePhotoUrl);
 
   const getRoleColor = () => {
     if (isAdmin) return '#06b6d4';
@@ -99,6 +106,71 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
     { id: 2, title: 'Meeting Reminder', desc: 'Sync meeting with supervisor in 30 mins.', time: '30m ago', icon: '📅', bg: '#e0e7ff', c: '#4f46e5' },
     { id: 3, title: 'Storage Warning', desc: 'Database storage is at 84% capacity.', time: '2h ago', icon: '⚠️', bg: '#fef3c7', c: '#d97706' },
   ];
+
+  const formatNotificationTime = (value) => {
+    if (!value) return 'Unknown time';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  };
+
+  const loadUnreadCount = async () => {
+    try {
+      const response = await getUnreadNotificationCount();
+      setUnreadCount(response?.data?.unreadCount ?? 0);
+    } catch {
+      setUnreadCount(0);
+    }
+  };
+
+  const loadNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const response = await getNotifications();
+      setNotifications(response?.data ?? []);
+    } catch {
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUnreadCount();
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (activeDropdown === 'notifs') {
+      loadNotifications();
+    }
+  }, [activeDropdown]);
+
+  const openNotification = async (notification) => {
+    try {
+      if (!notification.read) {
+        await markNotificationAsRead(notification.id);
+        setNotifications((current) => current.map((item) => (item.id === notification.id ? { ...item, read: true } : item)));
+        setUnreadCount((current) => Math.max(0, current - 1));
+      }
+    } catch {
+      // Ignore header read failures and continue to navigation.
+    }
+
+    setActiveDropdown(null);
+    const target = resolveNotificationLink(authRole || userRole, notification.link);
+    if (target) {
+      navigate(target);
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await markAllNotificationsAsRead();
+      setNotifications((current) => current.map((item) => ({ ...item, read: true })));
+      setUnreadCount(0);
+    } catch {
+      // Full notification page still exposes retry state.
+    }
+  };
 
   const handleChatRedirect = () => {
     setActiveDropdown(null);
@@ -196,28 +268,35 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
           <div style={{position: 'relative'}}>
             <button className="header-icon-btn" style={{color: iconColor}} onClick={() => setActiveDropdown(activeDropdown === 'notifs' ? null : 'notifs')}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-              <span className="icon-badge red">5</span>
+              {unreadCount > 0 ? <span className="icon-badge red">{unreadCount}</span> : null}
             </button>
 
             {activeDropdown === 'notifs' && (
               <div style={{position: 'absolute', top: '50px', right: '-20px', width: '320px', background: isDark ? '#0f172a' : 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', border: headerBorder, overflow: 'hidden', textAlign: 'left', animation: 'fadeIn 0.2s ease'}}>
                 <div style={{padding: '15px 20px', background: isDark ? '#1e293b' : '#f8fafc', borderBottom: headerBorder, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                   <h4 style={{margin: 0, fontSize: '14px', fontWeight: 800, color: textColor}}>Notifications</h4>
-                  <span style={{fontSize: '11px', color: isDark ? '#22d3ee' : '#4f46e5', fontWeight: 700, cursor: 'pointer'}} onClick={() => setActiveDropdown(null)}>Clear All</span>
+                  <span style={{fontSize: '11px', color: isDark ? '#22d3ee' : '#4f46e5', fontWeight: 700, cursor: 'pointer'}} onClick={handleMarkAllNotificationsRead}>Mark all read</span>
                 </div>
                 <div style={{maxHeight: '300px', overflowY: 'auto'}}>
-                  {mockNotifs.map(n => (
-                    <div key={n.id} style={{padding: '15px 20px', borderBottom: headerBorder, display: 'flex', gap: '15px', cursor: 'pointer', transition: '0.2s'}} onMouseOver={(e) => e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'} onClick={() => setActiveDropdown(null)}>
-                      <div style={{width: '36px', height: '36px', borderRadius: '10px', background: isDark ? '#1e293b' : n.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0}}>
-                        {n.icon}
+                  {notificationsLoading ? (
+                    <div style={{padding: '18px 20px', color: '#64748b', fontSize: '13px', fontWeight: 700}}>Loading notifications...</div>
+                  ) : notifications.length === 0 ? (
+                    <div style={{padding: '18px 20px', color: '#64748b', fontSize: '13px', fontWeight: 700}}>No notifications yet.</div>
+                  ) : notifications.slice(0, 6).map((notification) => (
+                    <div key={notification.id} style={{padding: '15px 20px', borderBottom: headerBorder, display: 'flex', gap: '15px', cursor: 'pointer', transition: '0.2s', background: notification.read ? 'transparent' : (isDark ? 'rgba(79,70,229,0.12)' : '#eef2ff')}} onMouseOver={(e) => e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.background = notification.read ? 'transparent' : (isDark ? 'rgba(79,70,229,0.12)' : '#eef2ff')} onClick={() => openNotification(notification)}>
+                      <div style={{width: '36px', height: '36px', borderRadius: '10px', background: isDark ? '#1e293b' : (notification.read ? '#f1f5f9' : '#e0e7ff'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0}}>
+                        {notification.read ? '•' : '🔔'}
                       </div>
                       <div>
-                        <h5 style={{margin: '0 0 3px 0', fontSize: '13px', fontWeight: 800, color: textColor}}>{n.title}</h5>
-                        <p style={{margin: '0 0 5px 0', fontSize: '12px', color: '#64748b'}}>{n.desc}</p>
-                        <span style={{fontSize: '10px', color: n.c, fontWeight: 800}}>{n.time}</span>
+                        <h5 style={{margin: '0 0 3px 0', fontSize: '13px', fontWeight: 800, color: textColor}}>{notification.title}</h5>
+                        <p style={{margin: '0 0 5px 0', fontSize: '12px', color: '#64748b'}}>{notification.message}</p>
+                        <span style={{fontSize: '10px', color: notification.read ? '#94a3b8' : '#4f46e5', fontWeight: 800}}>{formatNotificationTime(notification.createdAt)}</span>
                       </div>
                     </div>
                   ))}
+                </div>
+                <div style={{padding: '12px', textAlign: 'center', background: isDark ? '#1e293b' : '#f8fafc', borderTop: headerBorder, fontSize: '12px', fontWeight: 800, color: isDark ? '#22d3ee' : '#4f46e5', cursor: 'pointer'}} onClick={() => { setActiveDropdown(null); navigate(resolveNotificationLink(authRole || userRole, '/notifications')); }}>
+                  View All Notifications →
                 </div>
               </div>
             )}
@@ -232,8 +311,12 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
                 <span className="user-name" style={{display: 'block', fontSize: '13px', fontWeight: 800, color: textColor}}>{getDisplayName()}</span>
                 <span className="user-role" style={{display: 'block', fontSize: '11px', fontWeight: 700, color: getRoleColor(), textTransform: 'uppercase'}}>{(authRole || userRole)?.replace(/^ROLE_/i, '')}</span>
               </div>
-              <div className="user-avatar" style={{width: '40px', height: '40px', borderRadius: '12px', background: getRoleColor(), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '16px', boxShadow: isDark ? `0 0 10px ${getRoleColor()}40` : 'none'}}>
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              <div className="user-avatar" style={{width: '40px', height: '40px', borderRadius: '12px', background: getRoleColor(), color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '16px', boxShadow: isDark ? `0 0 10px ${getRoleColor()}40` : 'none', overflow: 'hidden'}}>
+                {profileAvatarSrc ? (
+                  <img src={profileAvatarSrc} alt={getDisplayName()} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  getUserInitials(user?.name)
+                )}
               </div>
             </div>
             
@@ -258,78 +341,7 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
         </div>
       </header>
 
-      {/* ================================================= */}
-      {/* 🚀 PREMIUM MODAL: SMART PROFILE                     */}
-      {/* ================================================= */}
-      {showProfileModal && (
-        <div className="th-modal-overlay" onClick={() => setShowProfileModal(false)}>
-          <div className="th-modal-card" onClick={e => e.stopPropagation()}>
-            <div className="th-cover-photo">
-              <button className="th-close-btn" onClick={() => setShowProfileModal(false)}>✕</button>
-            </div>
-            <div className="th-avatar-wrapper">
-              <div className="th-avatar">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</div>
-            </div>
-            
-            <div className="th-profile-body">
-              <h2 className="th-name">{user?.name || 'User'}</h2>
-              <div className="th-role-badge">{(authRole || userRole)?.replace(/^ROLE_/i, '')}</div>
-
-              <div className="th-info-grid">
-                <div className="th-info-box">
-                  <div className="th-info-label">ID Number</div>
-                  <div className="th-info-val">{user?.id || (userRole === 'student' ? 'ST-20221001' : userRole === 'supervisor' ? 'FAC-091' : 'SYS-ROOT')}</div>
-                </div>
-                <div className="th-info-box">
-                  <div className="th-info-label">{userRole === 'student' ? 'Major' : userRole === 'supervisor' ? 'Department' : 'Access Level'}</div>
-                  <div className="th-info-val">{user?.department || user?.major || (userRole === 'student' ? 'Software Eng.' : userRole === 'supervisor' ? 'AI / ML' : 'Full Control')}</div>
-                </div>
-              </div>
-
-              {/* 💡 Interactive Relational Pills based on Role */}
-              {userRole === 'student' && (
-                <>
-                  <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate('/student/my-team'); }}>
-                    <div className="th-interactive-icon">👥</div>
-                    <div>
-                      <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Current Team</div>
-                      <div style={{fontSize: '14px', fontWeight: 800, color: textColor}}>Team Alpha</div>
-                    </div>
-                  </div>
-                  <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); onOpenChat(user?.supervisor?.name || 'Supervisor', 'student'); }}>
-                    <div className="th-interactive-icon">👨‍🏫</div>
-                    <div>
-                      <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Supervisor (Click to Chat)</div>
-                      <div style={{fontSize: '14px', fontWeight: 800, color: getRoleColor()}}>{user?.supervisor?.name || 'Supervisor'}</div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {userRole === 'supervisor' && (
-                <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate('/supervisor/projects'); }}>
-                  <div className="th-interactive-icon">📂</div>
-                  <div>
-                    <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>Supervised Projects</div>
-                    <div style={{fontSize: '14px', fontWeight: 800, color: textColor}}>5 Active Projects</div>
-                  </div>
-                </div>
-              )}
-
-              {(userRole === 'admin' || userRole === 'dean') && (
-                <div className="th-interactive-pill" onClick={() => { setShowProfileModal(false); navigate(`/${userRole}/logs`); }}>
-                  <div className="th-interactive-icon">⚡</div>
-                  <div>
-                    <div style={{fontSize: '11px', color: '#94a3b8', fontWeight: 800}}>System Status</div>
-                    <div style={{fontSize: '14px', fontWeight: 800, color: '#10b981'}}>All Systems Operational</div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </div>
-      )}
+      <UserProfileModal open={showProfileModal} onClose={() => setShowProfileModal(false)} />
 
       {/* ================================================= */}
       {/* 🚀 PREMIUM MODAL: QUICK SETTINGS                    */}
@@ -465,9 +477,10 @@ function App() {
                     <Route path="overview" element={<Overview />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="milestones" element={<Milestones />} />
-                    <Route path="meetings" element={<Meetings />} />
+                    <Route path="meetings" element={<MeetingsPage />} />
                     <Route path="my-team" element={<TeamManagement onMessageClick={(name) => handleOpenChat(name, 'student')} />} />
                     <Route path="invitations" element={<InvitationsInbox />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="project" element={<ProjectProposal />} />
                     <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
                     <Route path="*" element={<Navigate to="overview" />} />
@@ -494,10 +507,11 @@ function App() {
                     <Route path="projects" element={<ProjectsList />} />
                     <Route path="tasks" element={<TaskManager />} />
                     <Route path="milestones" element={<MilestoneManagement />} />
-                    <Route path="meetings" element={<MeetingsScheduler />} />
-                    <Route path="meeting-history" element={<MeetingHistoryView />} />
-                    <Route path="meeting-progress" element={<MeetingProgressForm />} />
-                    <Route path="new-meeting" element={<NewMeetingForm />} />
+                    <Route path="meetings" element={<MeetingsPage />} />
+                    <Route path="meeting-history" element={<Navigate to="../meetings" replace />} />
+                    <Route path="meeting-progress" element={<Navigate to="../meetings" replace />} />
+                    <Route path="new-meeting" element={<Navigate to="../meetings" replace />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
                     <Route path="*" element={<Navigate to="dashboard" />} />
                   </Routes>
@@ -522,6 +536,8 @@ function App() {
                     <Route path="supervisors" element={<SupervisorsList />} />
                     <Route path="students" element={<DeanStudentsList />} />
                     <Route path="teams" element={<DeanTeamsList />} />
+                    <Route path="meetings" element={<MeetingsPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="reports" element={<DeanReports />} />
                     <Route path="*" element={<Navigate to="dashboard" />} />
                   </Routes>
@@ -546,6 +562,8 @@ function App() {
                     <Route path="users" element={<ManageUsers />} />
                     <Route path="import" element={<ImportProjects />} />
                     <Route path="forms" element={<AdminForms />} />
+                    <Route path="meetings" element={<MeetingsPage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="ai-recommendations" element={<AIRecommendations />} />
                     <Route path="logs" element={<SystemLogs />} />
                     <Route path="settings" element={<Settings />} />

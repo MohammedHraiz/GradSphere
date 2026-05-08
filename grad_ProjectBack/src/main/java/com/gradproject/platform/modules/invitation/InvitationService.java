@@ -7,6 +7,8 @@ import com.gradproject.platform.modules.invitation.dto.InviteEligibility;
 import com.gradproject.platform.modules.invitation.dto.InvitationActionResponseDTO;
 import com.gradproject.platform.modules.invitation.dto.InvitationResponseDTO;
 import com.gradproject.platform.modules.invitation.dto.SentInvitationResponseDTO;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.team.Team;
@@ -30,16 +32,19 @@ public class InvitationService {
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final NotificationService notificationService;
 
     public InvitationService(
             InvitationRepository invitationRepository,
             UserRepository userRepository,
             TeamRepository teamRepository,
-            TeamMemberRepository teamMemberRepository) {
+            TeamMemberRepository teamMemberRepository,
+            NotificationService notificationService) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -61,7 +66,15 @@ public class InvitationService {
         invitation.setTeam(eligibility.getTeam());
         invitation.setStatus(InvitationStatus.PENDING);
 
-        return invitationRepository.save(invitation);
+        Invitation savedInvitation = invitationRepository.save(invitation);
+        notificationService.createNotification(
+                savedInvitation.getReceiver(),
+                "New team invitation",
+                sender.getName() + " invited you to join team \"" + savedInvitation.getTeam().getName() + "\".",
+                NotificationType.TEAM_INVITATION,
+                "/invitations"
+        );
+        return savedInvitation;
     }
 
     @Transactional(readOnly = true)
@@ -131,6 +144,15 @@ public class InvitationService {
         teamMemberRepository.save(teamMember);
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);
+        if (invitation.getSender() != null) {
+            notificationService.createNotification(
+                    invitation.getSender(),
+                    "Invitation accepted",
+                    currentUser.getName() + " accepted your invitation to join team \"" + invitation.getTeam().getName() + "\".",
+                    NotificationType.INVITATION_ACCEPTED,
+                    "/my-team"
+            );
+        }
         return new InvitationActionResponseDTO("ACCEPTED", "Invitation accepted", invitation.getId(), invitation.getTeam().getId());
     }
 
@@ -140,6 +162,15 @@ public class InvitationService {
         Invitation invitation = getOwnedPendingInvitation(invitationId, currentUser);
         invitation.setStatus(InvitationStatus.REJECTED);
         invitationRepository.save(invitation);
+        if (invitation.getSender() != null) {
+            notificationService.createNotification(
+                    invitation.getSender(),
+                    "Invitation rejected",
+                    currentUser.getName() + " rejected your invitation to join team \"" + invitation.getTeam().getName() + "\".",
+                    NotificationType.INVITATION_REJECTED,
+                    "/my-team"
+            );
+        }
         return new InvitationActionResponseDTO("REJECTED", "Invitation rejected", invitation.getId(), invitation.getTeam().getId());
     }
 

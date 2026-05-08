@@ -2,13 +2,16 @@ package com.gradproject.platform.modules.meeting;
 
 import com.gradproject.platform.core.BaseEntity;
 import com.gradproject.platform.modules.project.Project;
+import com.gradproject.platform.modules.user.User;
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +20,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -35,17 +40,53 @@ public class Meeting extends BaseEntity {
     @Column(name = "meeting_date", nullable = false)
     private LocalDateTime meetingDate;
 
+    @Column(nullable = false)
+    private String title;
+
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    @Column(columnDefinition = "TEXT")
-    private String tasks;
+    @Column(name = "progress_discussed", columnDefinition = "TEXT")
+    private String progressDiscussed;
 
-    @Column(name = "progress_rating")
-    private Integer progressRating;
+    @Column(name = "tasks_assigned", columnDefinition = "TEXT")
+    private String tasksAssigned;
+
+    @Column(name = "next_steps", columnDefinition = "TEXT")
+    private String nextSteps;
+
+    @Column(name = "next_meeting_date")
+    private LocalDateTime nextMeetingDate;
+
+    @Builder.Default
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(nullable = false)
+    private MeetingStatus status = MeetingStatus.SCHEDULED;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "meeting_type")
+    private MeetingType meetingType;
+
+    @Column(name = "request_message", columnDefinition = "TEXT")
+    private String requestMessage;
+
+    @Column(name = "location_or_link", columnDefinition = "TEXT")
+    private String locationOrLink;
+
+    @ManyToOne
+    @JoinColumn(name = "requested_by_id")
+    private User requestedBy;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
+
+    @ManyToOne
+    @JoinColumn(name = "supervisor_id")
+    private User supervisor;
+
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<MeetingAttendance> attendanceRecords = new ArrayList<>();
 }
 

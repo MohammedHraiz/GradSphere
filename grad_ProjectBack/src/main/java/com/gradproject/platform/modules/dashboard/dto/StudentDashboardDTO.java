@@ -4,6 +4,7 @@ import com.gradproject.platform.modules.project.ProjectStatus;
 import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestStatus;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record StudentDashboardDTO(
@@ -28,6 +29,9 @@ public record StudentDashboardDTO(
         boolean proposalSubmitted,
         boolean proposalCanResubmit,
         long upcomingMeetingsCount,
-        long completedMeetingsCount
+        long completedMeetingsCount,
+        DashboardTaskSummaryDTO taskSummary,
+        DashboardMilestoneSummaryDTO milestoneSummary,
+        List<DashboardProjectProgressDTO> projectProgress
 ) {
 }

@@ -2,6 +2,8 @@ package com.gradproject.platform.modules.supervisorrequest;
 
 import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.exception.InvitationAccessDeniedException;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.ProjectStatus;
@@ -30,16 +32,19 @@ public class SupervisorRequestService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final NotificationService notificationService;
 
     public SupervisorRequestService(
             SupervisorRequestRepository supervisorRequestRepository,
             ProjectRepository projectRepository,
             UserRepository userRepository,
-            TeamMemberRepository teamMemberRepository) {
+            TeamMemberRepository teamMemberRepository,
+            NotificationService notificationService) {
         this.supervisorRequestRepository = supervisorRequestRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.teamMemberRepository = teamMemberRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -95,7 +100,16 @@ public class SupervisorRequestService {
         supervisorRequest.setStatus(SupervisorRequestStatus.PENDING);
         supervisorRequest.setMessage(request != null ? trimToNull(request.message()) : null);
 
-        return toDto(supervisorRequestRepository.save(supervisorRequest));
+        SupervisorRequest savedRequest = supervisorRequestRepository.save(supervisorRequest);
+        notificationService.createNotification(
+                supervisor,
+                "Supervisor request received",
+                currentUser.getName() + " requested you to supervise project \"" + project.getTitle() + "\".",
+                NotificationType.SUPERVISOR_REQUEST,
+                buildProjectLink(project.getId())
+        );
+
+        return toDto(savedRequest);
     }
 
     @Transactional(readOnly = true)
@@ -144,6 +158,10 @@ public class SupervisorRequestService {
         }
 
         project.setSupervisor(currentUser);
+        ProjectStatus previousStatus = project.getStatus();
+        if (project.getTeam() != null) {
+            project.getTeam().setSupervisor(currentUser);
+        }
         if (project.getStatus() == ProjectStatus.SUBMITTED || project.getStatus() == ProjectStatus.PENDING) {
             project.setStatus(ProjectStatus.UNDER_REVIEW);
         }
@@ -160,7 +178,46 @@ public class SupervisorRequestService {
                 });
 
         projectRepository.save(project);
-        return toDto(supervisorRequestRepository.save(supervisorRequest));
+        SupervisorRequest savedRequest = supervisorRequestRepository.save(supervisorRequest);
+        User teamLeader = supervisorRequest.getRequestedBy();
+        if (teamLeader != null) {
+            notificationService.createNotification(
+                    teamLeader,
+                    "Supervisor request accepted",
+                    currentUser.getName() + " accepted your supervisor request for project \"" + project.getTitle() + "\".",
+                    NotificationType.SUPERVISOR_REQUEST_ACCEPTED,
+                    buildProjectLink(project.getId())
+            );
+        }
+
+        List<User> assignedRecipients = new java.util.ArrayList<>();
+        if (teamLeader != null) {
+            assignedRecipients.add(teamLeader);
+        }
+        assignedRecipients.add(currentUser);
+        notificationService.createNotifications(
+                assignedRecipients,
+                "Supervisor assigned",
+                currentUser.getName() + " is now assigned to project \"" + project.getTitle() + "\".",
+                NotificationType.SUPERVISOR_ASSIGNED,
+                buildProjectLink(project.getId())
+        );
+
+        if (previousStatus != project.getStatus()) {
+            List<User> statusRecipients = new java.util.ArrayList<>(assignedRecipients);
+            if (project.getTeam() != null) {
+                teamMemberRepository.findAllByTeamId(project.getTeam().getId()).forEach(member -> statusRecipients.add(member.getUser()));
+            }
+            notificationService.createNotifications(
+                    statusRecipients,
+                    "Project status updated",
+                    "Project \"" + project.getTitle() + "\" status changed to " + project.getStatus().name() + ".",
+                    NotificationType.PROJECT_STATUS_CHANGED,
+                    buildProjectLink(project.getId())
+            );
+        }
+
+        return toDto(savedRequest);
     }
 
     @Transactional
@@ -180,7 +237,17 @@ public class SupervisorRequestService {
         supervisorRequest.setStatus(SupervisorRequestStatus.REJECTED);
         supervisorRequest.setResponseMessage(request != null ? trimToNull(request.responseMessage()) : null);
         supervisorRequest.setRespondedAt(Instant.now());
-        return toDto(supervisorRequestRepository.save(supervisorRequest));
+        SupervisorRequest savedRequest = supervisorRequestRepository.save(supervisorRequest);
+        if (supervisorRequest.getRequestedBy() != null) {
+            notificationService.createNotification(
+                    supervisorRequest.getRequestedBy(),
+                    "Supervisor request rejected",
+                    currentUser.getName() + " rejected your supervisor request for project \"" + supervisorRequest.getProject().getTitle() + "\".",
+                    NotificationType.SUPERVISOR_REQUEST_REJECTED,
+                    buildProjectLink(supervisorRequest.getProject().getId())
+            );
+        }
+        return toDto(savedRequest);
     }
 
     @Transactional
@@ -263,5 +330,9 @@ public class SupervisorRequestService {
             return null;
         }
         return value.trim();
+    }
+
+    private String buildProjectLink(UUID projectId) {
+        return "/project?projectId=" + projectId;
     }
 }

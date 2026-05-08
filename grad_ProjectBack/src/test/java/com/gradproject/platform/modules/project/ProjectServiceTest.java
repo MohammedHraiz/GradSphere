@@ -1,6 +1,7 @@
 package com.gradproject.platform.modules.project;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.notification.NotificationService;
 import com.gradproject.platform.modules.project.comment.ProjectComment;
 import com.gradproject.platform.modules.project.dto.FeedbackRequestDTO;
 import com.gradproject.platform.modules.project.member.TeamMember;
@@ -46,6 +47,7 @@ class ProjectServiceTest {
     @Mock TeamMemberRepository teamMemberRepository;
     @Mock FileStorageService fileStorageService;
     @Mock ProposalSubmissionRepository proposalSubmissionRepository;
+    @Mock NotificationService notificationService;
 
     ProjectService service;
     User dean;
@@ -56,7 +58,7 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ProjectService(projectRepository, userRepository, supervisorRequestRepository, teamMemberRepository, fileStorageService, proposalSubmissionRepository);
+        service = new ProjectService(projectRepository, userRepository, supervisorRequestRepository, teamMemberRepository, fileStorageService, proposalSubmissionRepository, notificationService);
         dean = user(UUID.randomUUID(), "dean@example.com", UserRole.ROLE_DEAN_OFFICE);
         student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
         supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);

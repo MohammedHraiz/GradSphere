@@ -13,6 +13,8 @@ import { useAuth } from '../../auth/AuthContext';
 import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, triggerBrowserDownload } from '../../utils/downloadFile';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { formatProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
 .proposal-page { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
@@ -37,13 +39,6 @@ const styles = `
 .proposal-row:last-child { border-bottom: 0; }
 .proposal-label { margin: 0 0 5px; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .proposal-value { margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; line-height: 1.5; overflow-wrap: anywhere; }
-.proposal-badge { display: inline-flex; width: fit-content; border-radius: 9999px; padding: 7px 11px; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-.proposal-badge.submitted { background: #eef2ff; color: #4f46e5; }
-.proposal-badge.review { background: #fef3c7; color: #b45309; }
-.proposal-badge.changes { background: #fff7ed; color: #c2410c; }
-.proposal-badge.approved { background: #d1fae5; color: #047857; }
-.proposal-badge.rejected { background: #fee2e2; color: #b91c1c; }
-.proposal-badge.archived { background: #e2e8f0; color: #334155; }
 .proposal-empty { border: 1px dashed #cbd5e1; border-radius: 20px; padding: 24px; background: #f8fafc; color: #64748b; text-align: center; line-height: 1.7; }
 .proposal-notice { border-radius: 18px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-weight: 700; line-height: 1.6; margin-bottom: 18px; }
 .proposal-notice.warn { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
@@ -66,23 +61,6 @@ const styles = `
 @media (max-width: 900px) { .proposal-layout { grid-template-columns: 1fr; } .proposal-header { align-items: flex-start; flex-direction: column; } }
 `;
 
-const statusClass = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'UNDER_REVIEW') return 'review';
-  if (value === 'NEEDS_CHANGES' || value === 'REVISION_REQUIRED') return 'changes';
-  if (value === 'APPROVED' || value === 'FINAL_APPROVAL_DEAN') return 'approved';
-  if (value === 'REJECTED') return 'rejected';
-  if (value === 'ARCHIVED') return 'archived';
-  return 'submitted';
-};
-
-const statusLabel = (status) => {
-  const value = String(status || 'SUBMITTED').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS CHANGES';
-  return value.replace(/_/g, ' ');
-};
 const canResubmitStatus = (status) => ['NEEDS_CHANGES', 'REJECTED', 'REVISION_REQUIRED'].includes(String(status || '').toUpperCase());
 
 const ProjectProposal = () => {
@@ -267,7 +245,7 @@ const ProjectProposal = () => {
             <section className="proposal-history">
               <div className="proposal-history-header">
                 <h2 className="proposal-history-title">Proposal Versions</h2>
-                <span className="proposal-badge submitted">{project.proposalVersion ? `Version ${project.proposalVersion}` : 'Version history'}</span>
+                <span className="proposal-history-badge">{project.proposalVersion ? `Version ${project.proposalVersion}` : 'Version history'}</span>
               </div>
               {submissionsLoading ? (
                 <div className="proposal-empty">Loading submission history...</div>
@@ -340,7 +318,7 @@ const ProjectProposal = () => {
           <p className="proposal-kicker">Student Portal / Project</p>
           <h1 className="proposal-title">Project Proposal</h1>
         </div>
-        {project?.status ? <span className={`proposal-badge ${statusClass(project.status)}`}>{statusLabel(project.status)}</span> : null}
+        {project?.status ? <ProjectStatusBadge status={project.status} /> : null}
       </header>
 
       <div className="proposal-layout">
@@ -395,7 +373,7 @@ const ProjectProposal = () => {
               <div className="proposal-row"><p className="proposal-label">Title</p><p className="proposal-value">{project.title}</p></div>
               <div className="proposal-row"><p className="proposal-label">Description</p><p className="proposal-value">{project.description}</p></div>
               <div className="proposal-row"><p className="proposal-label">Proposal Version</p><p className="proposal-value">Proposal Version {project.proposalVersion || 1}</p></div>
-              <div className="proposal-row"><p className="proposal-label">Status</p><p className="proposal-value"><span className={`proposal-badge ${statusClass(project.status)}`}>{statusLabel(project.status)}</span></p></div>
+              <div className="proposal-row"><p className="proposal-label">Status</p><p className="proposal-value"><ProjectStatusBadge status={project.status} /></p></div>
               <div className="proposal-row"><p className="proposal-label">Status Guidance</p><p className="proposal-value">{statusMessage || 'No additional action is needed right now.'}</p></div>
               <div className="proposal-row"><p className="proposal-label">Assigned Supervisor</p><p className="proposal-value">{project.supervisor ? `${project.supervisor.name}${project.supervisor.email ? ` (${project.supervisor.email})` : ''}` : 'Not assigned yet'}</p></div>
               <div className="proposal-row">

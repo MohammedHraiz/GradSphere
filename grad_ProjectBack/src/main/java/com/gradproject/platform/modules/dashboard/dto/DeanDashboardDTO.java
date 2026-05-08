@@ -19,6 +19,11 @@ public record DeanDashboardDTO(
         long totalSupervisors,
         List<DashboardProjectItemDTO> recentProjects,
         List<DashboardSupervisorRequestItemDTO> recentSupervisorRequests,
-        Map<String, Long> projectsByStatus
+        Map<String, Long> projectsByStatus,
+        DashboardTaskSummaryDTO taskSummary,
+        DashboardMilestoneSummaryDTO milestoneSummary,
+        long overdueTasksCount,
+        List<DashboardProjectProgressDTO> highestPendingTaskLoadProjects,
+        List<DashboardMilestoneItemDTO> upcomingMilestones
 ) {
 }

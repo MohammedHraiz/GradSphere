@@ -1,9 +1,12 @@
 package com.gradproject.platform.modules.project;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.modules.project.comment.ProjectComment;
 import com.gradproject.platform.modules.project.dto.FeedbackRequestDTO;
 import com.gradproject.platform.modules.project.dto.ProposalSubmissionDTO;
+import com.gradproject.platform.modules.project.dto.ProjectTeamMemberDTO;
 import com.gradproject.platform.modules.project.dto.ProjectResponseDTO;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
@@ -30,7 +33,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -42,14 +48,16 @@ public class ProjectService {
     private final TeamMemberRepository teamMemberRepository;
     private final FileStorageService fileStorageService;
     private final ProposalSubmissionRepository proposalSubmissionRepository;
+    private final NotificationService notificationService;
 
-    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository, SupervisorRequestRepository supervisorRequestRepository, TeamMemberRepository teamMemberRepository, FileStorageService fileStorageService, ProposalSubmissionRepository proposalSubmissionRepository) {
+    public ProjectService(ProjectRepository projectRepository, UserRepository userRepository, SupervisorRequestRepository supervisorRequestRepository, TeamMemberRepository teamMemberRepository, FileStorageService fileStorageService, ProposalSubmissionRepository proposalSubmissionRepository, NotificationService notificationService) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.supervisorRequestRepository = supervisorRequestRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.fileStorageService = fileStorageService;
         this.proposalSubmissionRepository = proposalSubmissionRepository;
+        this.notificationService = notificationService;
     }
 
     @PreAuthorize("hasAnyRole('SUPERVISOR', 'DEAN_OFFICE', 'ADMIN')")
@@ -74,6 +82,7 @@ public class ProjectService {
             commentText = "Status changed to " + request.getNewStatus().name();
         }
 
+        boolean hasExplicitComment = StringUtils.hasText(request.getComment());
         ProjectComment comment = ProjectCommentMapper.toEntity(request);
         comment.setContent(commentText.trim());
         comment.setAuthor(author);
@@ -82,7 +91,9 @@ public class ProjectService {
         project.setStatus(request.getNewStatus());
         project.getComments().add(comment);
 
-        return projectRepository.save(project);
+        Project savedProject = projectRepository.save(project);
+        notifyProjectStatusUpdate(savedProject, author, hasExplicitComment ? comment.getContent() : null);
+        return savedProject;
     }
 
     public ProjectResponseDTO assignSupervisor(java.util.UUID projectId, java.util.UUID supervisorId) {
@@ -93,6 +104,7 @@ public class ProjectService {
 
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BadRequestException("Project not found."));
+        ProjectStatus previousStatus = project.getStatus();
 
         User supervisor = userRepository.findById(supervisorId)
                 .orElseThrow(() -> new BadRequestException("Supervisor not found."));
@@ -106,6 +118,9 @@ public class ProjectService {
         }
 
         project.setSupervisor(supervisor);
+        if (project.getTeam() != null) {
+            project.getTeam().setSupervisor(supervisor);
+        }
         if (project.getStatus() == ProjectStatus.SUBMITTED || project.getStatus() == ProjectStatus.PENDING) {
             project.setStatus(ProjectStatus.UNDER_REVIEW);
         }
@@ -116,7 +131,23 @@ public class ProjectService {
                     request.setRespondedAt(java.time.Instant.now());
                 });
 
-        return toResponse(projectRepository.save(project));
+        Project savedProject = projectRepository.save(project);
+        List<User> assignedRecipients = new ArrayList<>();
+        if (savedProject.getTeam() != null && savedProject.getTeam().getLeader() != null) {
+            assignedRecipients.add(savedProject.getTeam().getLeader());
+        }
+        assignedRecipients.add(supervisor);
+        notificationService.createNotifications(
+                assignedRecipients,
+                "Supervisor assigned",
+                supervisor.getName() + " was assigned to project \"" + savedProject.getTitle() + "\".",
+                NotificationType.SUPERVISOR_ASSIGNED,
+                buildProjectLink(savedProject.getId())
+        );
+        if (previousStatus != savedProject.getStatus()) {
+            notifyProjectStatusUpdate(savedProject, currentUser, null);
+        }
+        return toResponse(savedProject);
     }
 
     public java.util.List<ProjectResponseDTO> getMyAssignedProjects() {
@@ -315,7 +346,15 @@ public class ProjectService {
         supervisorRequest.setSupervisor(supervisor);
         supervisorRequest.setStatus(SupervisorRequestStatus.PENDING);
         supervisorRequest.setMessage(StringUtils.hasText(message) ? message.trim() : null);
-        return supervisorRequestRepository.save(supervisorRequest);
+        SupervisorRequest savedRequest = supervisorRequestRepository.save(supervisorRequest);
+        notificationService.createNotification(
+                supervisor,
+                "Supervisor request received",
+                requestedBy.getName() + " requested you to supervise project \"" + project.getTitle() + "\".",
+                NotificationType.SUPERVISOR_REQUEST,
+                buildProjectLink(project.getId())
+        );
+        return savedRequest;
     }
 
     public Resource loadProposalFile(java.util.UUID projectId) {
@@ -374,6 +413,7 @@ public class ProjectService {
                 student != null ? student.getEmail() : null,
                 team != null ? team.getId() : null,
                 team != null ? team.getName() : null,
+                team != null ? buildProjectTeamMembers(team) : List.of(),
                 supervisor != null ? new SupervisorSummaryDTO(
                         supervisor.getId(),
                         supervisor.getName(),
@@ -389,6 +429,37 @@ public class ProjectService {
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );
+    }
+
+    private List<ProjectTeamMemberDTO> buildProjectTeamMembers(com.gradproject.platform.modules.team.Team team) {
+        Map<java.util.UUID, ProjectTeamMemberDTO> members = new LinkedHashMap<>();
+
+        if (team.getLeader() != null && team.getLeader().getRole() == UserRole.ROLE_STUDENT) {
+            User leader = team.getLeader();
+            members.put(leader.getId(), new ProjectTeamMemberDTO(
+                    leader.getId(),
+                    leader.getName(),
+                    leader.getEmail(),
+                    leader.getUniversityId(),
+                    "LEADER"
+            ));
+        }
+
+        teamMemberRepository.findAllByTeamId(team.getId()).forEach(member -> {
+            User user = member.getUser();
+            if (user == null || user.getRole() != UserRole.ROLE_STUDENT) {
+                return;
+            }
+            members.putIfAbsent(user.getId(), new ProjectTeamMemberDTO(
+                    user.getId(),
+                    user.getName(),
+                    user.getEmail(),
+                    user.getUniversityId(),
+                    member.getMemberRole()
+            ));
+        });
+
+        return new ArrayList<>(members.values());
     }
 
     private User resolveCurrentAuthor() {
@@ -435,5 +506,78 @@ public class ProjectService {
 
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to access this proposal file.");
     }
-}
 
+    private void notifyProjectStatusUpdate(Project project, User author, String commentText) {
+        List<User> teamMembers = getProjectStudents(project);
+        List<User> statusRecipients = new ArrayList<>(teamMembers);
+        if (project.getSupervisor() != null) {
+            statusRecipients.add(project.getSupervisor());
+        }
+
+        notificationService.createNotifications(
+                statusRecipients,
+                "Project status updated",
+                "Project \"" + project.getTitle() + "\" status changed to " + project.getStatus().name() + ".",
+                NotificationType.PROJECT_STATUS_CHANGED,
+                buildProjectLink(project.getId())
+        );
+
+        if (StringUtils.hasText(commentText)) {
+            notificationService.createNotifications(
+                    teamMembers,
+                    "New project feedback",
+                    author.getName() + " added feedback to project \"" + project.getTitle() + "\".",
+                    NotificationType.PROJECT_FEEDBACK_ADDED,
+                    buildProjectLink(project.getId())
+            );
+        }
+
+        NotificationType statusSpecificType = switch (project.getStatus()) {
+            case NEEDS_CHANGES, REVISION_REQUIRED -> NotificationType.PROPOSAL_NEEDS_CHANGES;
+            case APPROVED, FINAL_APPROVAL_DEAN -> NotificationType.PROPOSAL_APPROVED;
+            case REJECTED -> NotificationType.PROPOSAL_REJECTED;
+            default -> null;
+        };
+
+        if (statusSpecificType != null) {
+            notificationService.createNotifications(
+                    teamMembers,
+                    "Proposal update",
+                    buildStatusSpecificMessage(project),
+                    statusSpecificType,
+                    buildProjectLink(project.getId())
+            );
+        }
+    }
+
+    private String buildStatusSpecificMessage(Project project) {
+        return switch (project.getStatus()) {
+            case NEEDS_CHANGES, REVISION_REQUIRED -> "Project \"" + project.getTitle() + "\" needs changes before approval.";
+            case APPROVED, FINAL_APPROVAL_DEAN -> "Project \"" + project.getTitle() + "\" was approved.";
+            case REJECTED -> "Project \"" + project.getTitle() + "\" was rejected.";
+            default -> "Project \"" + project.getTitle() + "\" status changed.";
+        };
+    }
+
+    private List<User> getProjectStudents(Project project) {
+        Map<java.util.UUID, User> users = new LinkedHashMap<>();
+        if (project.getTeam() == null) {
+            return List.of();
+        }
+        if (project.getTeam().getLeader() != null && project.getTeam().getLeader().getRole() == UserRole.ROLE_STUDENT) {
+            User leader = project.getTeam().getLeader();
+            users.put(leader.getId(), leader);
+        }
+        teamMemberRepository.findAllByTeamId(project.getTeam().getId()).forEach(member -> {
+            User user = member.getUser();
+            if (user != null && user.getRole() == UserRole.ROLE_STUDENT) {
+                users.putIfAbsent(user.getId(), user);
+            }
+        });
+        return new ArrayList<>(users.values());
+    }
+
+    private String buildProjectLink(java.util.UUID projectId) {
+        return "/project?projectId=" + projectId;
+    }
+}

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStudentDashboard } from '../../api/dashboardService';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { formatProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
 .overview-viewport { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
@@ -9,6 +11,7 @@ const styles = `
 .welcome-subtitle { font-size: 15px; opacity: .92; margin: 0; line-height: 1.6; }
 .date-badge { background: rgba(255,255,255,.18); padding: 11px 16px; border-radius: 14px; font-weight: 800; font-size: 13px; white-space: nowrap; }
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 24px 0; }
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 22px; }
 .stat-card, .dash-card { background: white; border: 1px solid #e2e8f0; border-radius: 22px; padding: 22px; box-shadow: 0 10px 22px -24px rgba(15,23,42,.7); }
 .stat-card { cursor: pointer; transition: .2s; }
 .stat-card:hover { transform: translateY(-2px); border-color: #4f46e5; }
@@ -20,37 +23,22 @@ const styles = `
 .info-row:last-child { border-bottom: 0; }
 .info-row span:first-child { color: #64748b; font-weight: 800; }
 .info-row span:last-child { color: #0f172a; font-weight: 900; text-align: right; }
-.status-badge { display: inline-flex; padding: 7px 11px; border-radius: 9999px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
-.status-badge.submitted { background: #eef2ff; color: #4f46e5; }
-.status-badge.review { background: #fef3c7; color: #b45309; }
-.status-badge.changes { background: #fff7ed; color: #c2410c; }
-.status-badge.approved { background: #d1fae5; color: #047857; }
-.status-badge.rejected { background: #fee2e2; color: #b91c1c; }
-.status-badge.archived { background: #e2e8f0; color: #334155; }
 .quick-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 .quick-links button { border: 0; border-radius: 12px; padding: 11px 14px; font-weight: 900; cursor: pointer; background: #0f172a; color: white; }
+.mini-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.mini-stat { border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; background: #f8fafc; }
+.mini-stat span { display: block; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+.mini-stat strong { font-size: 22px; color: #0f172a; }
+.progress-list { display: grid; gap: 12px; }
+.progress-row { border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px; background: #f8fafc; }
+.progress-top { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; font-weight: 800; }
+.progress-meta { color: #64748b; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+.progress-bar { height: 10px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4f46e5, #7c3aed); }
 .empty-state, .loading-state, .error-state { border: 1px dashed #cbd5e1; border-radius: 18px; background: #f8fafc; padding: 22px; color: #64748b; font-weight: 700; line-height: 1.6; }
 .error-state { border-color: #fecaca; background: #fff1f2; color: #be123c; }
-@media (max-width: 900px) { .hero-banner, .dash-grid { flex-direction: column; display: flex; align-items: stretch; } .stats-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .hero-banner, .dash-grid { flex-direction: column; display: flex; align-items: stretch; } .stats-grid, .workflow-grid { grid-template-columns: 1fr; } }
 `;
-
-const statusClass = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'UNDER_REVIEW') return 'review';
-  if (value === 'NEEDS_CHANGES' || value === 'REVISION_REQUIRED') return 'changes';
-  if (value === 'APPROVED' || value === 'FINAL_APPROVAL_DEAN') return 'approved';
-  if (value === 'REJECTED') return 'rejected';
-  if (value === 'ARCHIVED') return 'archived';
-  return 'submitted';
-};
-
-const visibleStatus = (status) => {
-  const value = String(status || 'SUBMITTED').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
 
 const Overview = () => {
   const navigate = useNavigate();
@@ -94,7 +82,7 @@ const Overview = () => {
         <>
           <div className="stats-grid">
             <div className="stat-card" onClick={() => navigate('/student/my-team')}><p className="stat-label">Team</p><p className="stat-value">{data.hasTeam ? data.teamName : 'No team yet'}</p></div>
-            <div className="stat-card" onClick={() => navigate('/student/project')}><p className="stat-label">Project Status</p><p className="stat-value">{data.proposalSubmitted ? visibleStatus(data.projectStatus).replace(/_/g, ' ') : 'No proposal'}</p></div>
+            <div className="stat-card" onClick={() => navigate('/student/project')}><p className="stat-label">Project Status</p><p className="stat-value">{data.proposalSubmitted ? formatProjectStatus(data.projectStatus) : 'No proposal'}</p></div>
             <div className="stat-card" onClick={() => navigate('/student/invitations')}><p className="stat-label">Pending Invitations</p><p className="stat-value">{data.pendingReceivedInvitationsCount}</p></div>
           </div>
 
@@ -108,7 +96,7 @@ const Overview = () => {
               ) : (
                 <>
                   <div className="info-row"><span>Project</span><span>{data.projectTitle}</span></div>
-                  <div className="info-row"><span>Status</span><span><span className={`status-badge ${statusClass(data.projectStatus)}`}>{visibleStatus(data.projectStatus).replace(/_/g, ' ')}</span></span></div>
+                  <div className="info-row"><span>Status</span><span><ProjectStatusBadge status={data.projectStatus} /></span></div>
                   <div className="info-row"><span>Supervisor</span><span>{data.assignedSupervisorName || 'Not assigned yet'}</span></div>
                   <div className="info-row"><span>Latest Feedback</span><span>{data.latestFeedback || 'No feedback yet'}</span></div>
                   <div className="info-row"><span>Can Resubmit</span><span>{data.proposalCanResubmit ? 'Yes' : 'No'}</span></div>
@@ -131,6 +119,58 @@ const Overview = () => {
               <div className="info-row"><span>Completed Meetings</span><span>{data.completedMeetingsCount}</span></div>
             </aside>
           </div>
+
+          <div className="workflow-grid">
+            <section className="dash-card">
+              <h3>Task Status</h3>
+              <div className="mini-stat-grid">
+                <div className="mini-stat"><span>Not Started</span><strong>{data.taskSummary?.todo ?? 0}</strong></div>
+                <div className="mini-stat"><span>In Progress</span><strong>{data.taskSummary?.inProgress ?? 0}</strong></div>
+                <div className="mini-stat"><span>Completed</span><strong>{data.taskSummary?.done ?? 0}</strong></div>
+                <div className="mini-stat"><span>Overdue</span><strong>{data.taskSummary?.overdue ?? 0}</strong></div>
+              </div>
+              <div className="quick-links">
+                <button onClick={() => navigate('/student/tasks')}>Open Tasks</button>
+              </div>
+            </section>
+
+            <section className="dash-card">
+              <h3>Milestones</h3>
+              <div className="mini-stat-grid">
+                <div className="mini-stat"><span>Total</span><strong>{data.milestoneSummary?.total ?? 0}</strong></div>
+                <div className="mini-stat"><span>Completed</span><strong>{data.milestoneSummary?.completed ?? 0}</strong></div>
+                <div className="mini-stat"><span>Pending</span><strong>{data.milestoneSummary?.pending ?? 0}</strong></div>
+                <div className="mini-stat"><span>Task Total</span><strong>{data.taskSummary?.total ?? 0}</strong></div>
+              </div>
+              <div className="quick-links">
+                <button onClick={() => navigate('/student/milestones')}>Open Milestones</button>
+              </div>
+            </section>
+          </div>
+
+          <section className="dash-card" style={{ marginTop: 22 }}>
+            <h3>Project Progress</h3>
+            {data.projectProgress?.length ? (
+              <div className="progress-list">
+                {data.projectProgress.map((projectProgress) => (
+                  <div key={projectProgress.projectId} className="progress-row">
+                    <div className="progress-top">
+                      <span>{projectProgress.projectTitle}</span>
+                      <span>{projectProgress.overallCompletionPercentage}%</span>
+                    </div>
+                    <div className="progress-meta">
+                      Tasks: {projectProgress.taskCompletionPercentage}% | Milestones: {projectProgress.milestoneCompletionPercentage}% | Overdue Tasks: {projectProgress.overdueTasksCount}
+                    </div>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${projectProgress.overallCompletionPercentage}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Progress bars will appear here once tasks or milestones are created for your project.</div>
+            )}
+          </section>
         </>
       ) : null}
     </div>

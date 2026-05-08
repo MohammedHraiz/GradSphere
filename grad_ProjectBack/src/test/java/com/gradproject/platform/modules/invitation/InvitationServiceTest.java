@@ -1,6 +1,8 @@
 package com.gradproject.platform.modules.invitation;
 
 import com.gradproject.platform.exception.InvitationConflictException;
+import com.gradproject.platform.modules.notification.NotificationService;
+import com.gradproject.platform.modules.notification.NotificationType;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.team.Team;
@@ -25,6 +27,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,6 +48,9 @@ class InvitationServiceTest {
     @Mock
     private TeamMemberRepository teamMemberRepository;
 
+    @Mock
+    private NotificationService notificationService;
+
     private InvitationService invitationService;
     private User sender;
     private User receiver;
@@ -51,14 +58,14 @@ class InvitationServiceTest {
 
     @BeforeEach
     void setUp() {
-        invitationService = new InvitationService(invitationRepository, userRepository, teamRepository, teamMemberRepository);
+        invitationService = new InvitationService(invitationRepository, userRepository, teamRepository, teamMemberRepository, notificationService);
         sender = student(UUID.randomUUID(), "leader@example.com");
         receiver = student(UUID.randomUUID(), "receiver@example.com");
         senderTeam = team(UUID.randomUUID(), sender);
 
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(sender, null, sender.getAuthorities()));
-        when(teamRepository.findByLeaderId(sender.getId())).thenReturn(senderTeam);
+        lenient().when(teamRepository.findByLeaderId(sender.getId())).thenReturn(senderTeam);
     }
 
     @AfterEach
@@ -125,6 +132,7 @@ class InvitationServiceTest {
         assertThat(invitation.getReceiver()).isEqualTo(receiver);
         verify(invitationRepository).existsByReceiverIdAndTeamIdAndStatus(receiver.getId(), senderTeam.getId(), InvitationStatus.PENDING);
         verify(invitationRepository).existsByReceiverIdAndStatus(receiver.getId(), InvitationStatus.PENDING);
+        verify(notificationService).createNotification(eq(receiver), any(), any(), eq(NotificationType.TEAM_INVITATION), eq("/invitations"));
     }
 
     @Test
@@ -213,6 +221,22 @@ class InvitationServiceTest {
         assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.PENDING);
         verify(invitationRepository).existsByReceiverIdAndTeamIdAndStatus(receiver.getId(), senderTeam.getId(), InvitationStatus.PENDING);
         verify(invitationRepository).existsByReceiverIdAndStatus(receiver.getId(), InvitationStatus.PENDING);
+    }
+
+    @Test
+    void leaderGetsNotificationWhenInvitationAccepted() {
+        Invitation invitation = invitation(InvitationStatus.PENDING, sender, receiver, senderTeam);
+        when(invitationRepository.findById(invitation.getId())).thenReturn(Optional.of(invitation));
+        when(teamMemberRepository.existsByUserId(receiver.getId())).thenReturn(false);
+        when(teamRepository.findByLeaderId(receiver.getId())).thenReturn(null);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(receiver, null, receiver.getAuthorities()));
+
+        invitationService.acceptInvitation(invitation.getId());
+
+        verify(notificationService).createNotification(eq(sender), any(), any(), eq(NotificationType.INVITATION_ACCEPTED), eq("/my-team"));
     }
 
     @Test

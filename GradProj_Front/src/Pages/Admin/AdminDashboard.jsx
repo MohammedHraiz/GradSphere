@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAdminDashboard } from '../../api/dashboardService';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 
 const adminStyles = `
 .admin-dash-container { padding: 20px 30px 60px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #f8fafc; background: #0b1121; min-height: 100vh; text-align: left; }
@@ -15,6 +16,7 @@ const adminStyles = `
 .ad-stat-info h4 { margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: .05em; }
 .ad-stat-info p { margin: 7px 0 0; font-size: 28px; font-weight: 900; color: #f8fafc; }
 .ad-main-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+.ad-workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
 .ad-card-title { font-size: 17px; font-weight: 900; color: #f8fafc; margin: 0 0 16px; }
 .row-item { border: 1px solid #1e293b; background: #111c31; border-radius: 15px; padding: 14px; margin-bottom: 10px; cursor: pointer; }
 .row-item strong { display: block; margin-bottom: 5px; color: #f8fafc; }
@@ -25,16 +27,11 @@ const adminStyles = `
 .role-pill { background: #111c31; border: 1px solid #1e293b; border-radius: 14px; padding: 13px; }
 .role-pill span { display: block; color: #94a3b8; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
 .role-pill strong { font-size: 22px; color: #f8fafc; }
-@media (max-width: 980px) { .ad-stats-bar { grid-template-columns: repeat(2, 1fr); } .ad-main-grid, .ad-header-box { grid-template-columns: 1fr; display: grid; gap: 16px; } }
+.mini-pill { background: #111c31; border: 1px solid #1e293b; border-radius: 14px; padding: 13px; }
+.mini-pill span { display: block; color: #94a3b8; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+.mini-pill strong { font-size: 22px; color: #f8fafc; }
+@media (max-width: 980px) { .ad-stats-bar { grid-template-columns: repeat(2, 1fr); } .ad-main-grid, .ad-header-box, .ad-workflow-grid { grid-template-columns: 1fr; display: grid; gap: 16px; } }
 `;
-
-const visibleStatus = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -91,7 +88,7 @@ const AdminDashboard = () => {
               {data.recentProjects?.length ? data.recentProjects.map((project) => (
                 <div className="row-item" key={project.projectId} onClick={() => navigate('/admin/projects')}>
                   <strong>{project.projectTitle}</strong>
-                  <span>Team: {project.teamName || 'Not linked'} | Status: {visibleStatus(project.status).replace(/_/g, ' ')}</span>
+                  <span>Team: {project.teamName || 'Not linked'} | <ProjectStatusBadge status={project.status} /></span>
                 </div>
               )) : <div className="state">No projects submitted yet.</div>}
             </section>
@@ -113,6 +110,38 @@ const AdminDashboard = () => {
               )) : <div className="state">No users found.</div>}
             </section>
           </div>
+
+          <div className="ad-workflow-grid">
+            <section className="ad-card">
+              <h3 className="ad-card-title">Task Overview</h3>
+              <div className="role-grid">
+                <div className="mini-pill"><span>Total Tasks</span><strong>{data.taskSummary?.total ?? 0}</strong></div>
+                <div className="mini-pill"><span>Not Started</span><strong>{data.taskSummary?.todo ?? 0}</strong></div>
+                <div className="mini-pill"><span>In Progress</span><strong>{data.taskSummary?.inProgress ?? 0}</strong></div>
+                <div className="mini-pill"><span>Overdue</span><strong>{data.overdueTasksCount ?? 0}</strong></div>
+              </div>
+            </section>
+
+            <section className="ad-card">
+              <h3 className="ad-card-title">Milestone Overview</h3>
+              <div className="role-grid">
+                <div className="mini-pill"><span>Total Milestones</span><strong>{data.milestoneSummary?.total ?? 0}</strong></div>
+                <div className="mini-pill"><span>Completed</span><strong>{data.milestoneSummary?.completed ?? 0}</strong></div>
+                <div className="mini-pill"><span>Pending</span><strong>{data.milestoneSummary?.pending ?? 0}</strong></div>
+                <div className="mini-pill"><span>Projects</span><strong>{data.totalProjects}</strong></div>
+              </div>
+            </section>
+          </div>
+
+          <section className="ad-card" style={{ marginTop: 24 }}>
+            <h3 className="ad-card-title">Projects With Highest Pending Task Load</h3>
+            {data.highestPendingTaskLoadProjects?.length ? data.highestPendingTaskLoadProjects.map((project) => (
+              <div className="row-item" key={project.projectId} onClick={() => navigate('/admin/projects')}>
+                <strong>{project.projectTitle}</strong>
+                <span>Pending Tasks: {project.pendingTasksCount} | Overdue: {project.overdueTasksCount} | Overall Progress: {project.overallCompletionPercentage}%</span>
+              </div>
+            )) : <div className="state">No workflow load data yet.</div>}
+          </section>
         </>
       ) : null}
     </div>

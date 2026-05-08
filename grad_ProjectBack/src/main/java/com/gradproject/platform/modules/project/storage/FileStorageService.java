@@ -25,18 +25,31 @@ import java.util.UUID;
 public class FileStorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
+    private static final long MAX_PROFILE_PHOTO_SIZE_BYTES = 2L * 1024 * 1024;
 
-    private final Path uploadDirectory;
+    private final Path proposalUploadDirectory;
+    private final Path profilePhotoUploadDirectory;
+    private final Path milestoneUploadDirectory;
 
-    public FileStorageService(@Value("${app.storage.proposals-dir:./uploads/proposals}") String uploadDir) {
-        this.uploadDirectory = Paths.get(uploadDir).toAbsolutePath().normalize();
+    public FileStorageService(
+            @Value("${app.storage.proposals-dir:./uploads/proposals}") String proposalUploadDir,
+            @Value("${app.storage.profile-photos-dir:./uploads/profile-photos}") String profilePhotoUploadDir,
+            @Value("${app.storage.milestones-dir:./uploads/milestones}") String milestoneUploadDir
+    ) {
+        this.proposalUploadDirectory = Paths.get(proposalUploadDir).toAbsolutePath().normalize();
+        this.profilePhotoUploadDirectory = Paths.get(profilePhotoUploadDir).toAbsolutePath().normalize();
+        this.milestoneUploadDirectory = Paths.get(milestoneUploadDir).toAbsolutePath().normalize();
     }
 
     @PostConstruct
     void init() {
         try {
-            Files.createDirectories(uploadDirectory);
-            log.info("Proposal upload directory ready at {}", uploadDirectory);
+            Files.createDirectories(proposalUploadDirectory);
+            Files.createDirectories(profilePhotoUploadDirectory);
+            Files.createDirectories(milestoneUploadDirectory);
+            log.info("Proposal upload directory ready at {}", proposalUploadDirectory);
+            log.info("Profile photo upload directory ready at {}", profilePhotoUploadDirectory);
+            log.info("Milestone upload directory ready at {}", milestoneUploadDirectory);
         } catch (IOException ex) {
             throw new FileStorageException("Could not create upload directory", ex);
         }
@@ -49,8 +62,8 @@ public class FileStorageService {
         String sanitizedName = sanitizeFilename(originalFilename);
         String storedFileName = appendUuidToFilename(sanitizedName);
 
-        Path targetLocation = uploadDirectory.resolve(storedFileName).normalize();
-        if (!targetLocation.startsWith(uploadDirectory)) {
+        Path targetLocation = proposalUploadDirectory.resolve(storedFileName).normalize();
+        if (!targetLocation.startsWith(proposalUploadDirectory)) {
             throw new FileStorageException("Invalid file storage path");
         }
 
@@ -64,9 +77,67 @@ public class FileStorageService {
         return "/files/" + storedFileName;
     }
 
+    public String storeProfilePhoto(MultipartFile file) {
+        validateProfilePhoto(file);
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
+        String sanitizedName = sanitizeProfilePhotoFilename(originalFilename);
+        Path targetLocation = profilePhotoUploadDirectory.resolve(sanitizedName).normalize();
+        if (!targetLocation.startsWith(profilePhotoUploadDirectory)) {
+            throw new FileStorageException("Invalid file storage path");
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            throw new FileStorageException("Could not store profile photo", ex);
+        }
+
+        log.info("Stored profile photo {} as {}", originalFilename, targetLocation);
+        return "/files/profile-photos/" + sanitizedName;
+    }
+
+    public String storeMilestoneSubmission(MultipartFile file) {
+        validateMilestoneSubmission(file);
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename());
+        String sanitizedName = sanitizeMilestoneFilename(originalFilename);
+        Path targetLocation = milestoneUploadDirectory.resolve(sanitizedName).normalize();
+        if (!targetLocation.startsWith(milestoneUploadDirectory)) {
+            throw new FileStorageException("Invalid file storage path");
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            throw new FileStorageException("Could not store milestone submission", ex);
+        }
+
+        log.info("Stored milestone submission {} as {}", originalFilename, targetLocation);
+        return "/files/milestones/" + sanitizedName;
+    }
+
+    public void deleteProfilePhoto(String photoPath) {
+        if (!isManagedProfilePhoto(photoPath)) {
+            return;
+        }
+
+        String fileName = photoPath.substring("/files/profile-photos/".length());
+        Path target = profilePhotoUploadDirectory.resolve(fileName).normalize();
+        if (!target.startsWith(profilePhotoUploadDirectory)) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(target);
+        } catch (IOException ex) {
+            log.warn("Could not delete old profile photo {}", target, ex);
+        }
+    }
+
     public Resource loadAsResource(String storedFileName) {
         try {
-            Path filePath = uploadDirectory.resolve(storedFileName).normalize();
+            Path filePath = proposalUploadDirectory.resolve(storedFileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return resource;
@@ -74,6 +145,21 @@ public class FileStorageService {
             throw new FileStorageException("File not found: " + storedFileName);
         } catch (MalformedURLException ex) {
             throw new FileStorageException("Could not read file: " + storedFileName, ex);
+        }
+    }
+
+    private void validateProfilePhoto(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new FileStorageException("Profile photo is required.");
+        }
+
+        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE_BYTES) {
+            throw new FileStorageException("Profile photo is too large.");
+        }
+
+        String contentType = StringUtils.hasText(file.getContentType()) ? file.getContentType().toLowerCase(Locale.ROOT) : "";
+        if (!contentType.equals("image/jpeg") && !contentType.equals("image/png") && !contentType.equals("image/webp")) {
+            throw new FileStorageException("Profile photo must be JPG, PNG, or WebP.");
         }
     }
 
@@ -97,6 +183,22 @@ public class FileStorageService {
         }
     }
 
+    private void validateMilestoneSubmission(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new FileStorageException("Milestone submission file is required.");
+        }
+        if (file.getSize() > MAX_FILE_SIZE_BYTES) {
+            throw new FileStorageException("Milestone submission must not exceed 10MB.");
+        }
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() == null ? "" : file.getOriginalFilename()).toLowerCase(Locale.ROOT);
+        if (!originalFilename.endsWith(".pdf")
+                && !originalFilename.endsWith(".doc")
+                && !originalFilename.endsWith(".docx")
+                && !originalFilename.endsWith(".zip")) {
+            throw new FileStorageException("Milestone submission must be PDF, DOC, DOCX, or ZIP.");
+        }
+    }
+
     private String sanitizeFilename(String filename) {
         String strippedName = Paths.get(filename).getFileName().toString();
         int dotIndex = strippedName.lastIndexOf('.');
@@ -113,6 +215,37 @@ public class FileStorageService {
 
     private String appendUuidToFilename(String filename) {
         return filename;
+    }
+
+    private String sanitizeProfilePhotoFilename(String filename) {
+        String strippedName = Paths.get(filename).getFileName().toString();
+        String extension = "";
+        int dotIndex = strippedName.lastIndexOf('.');
+        if (dotIndex >= 0) {
+            extension = strippedName.substring(dotIndex).toLowerCase(Locale.ROOT);
+        }
+
+        if (!extension.equals(".jpg") && !extension.equals(".jpeg") && !extension.equals(".png") && !extension.equals(".webp")) {
+            extension = ".jpg";
+        }
+
+        return "profile_" + UUID.randomUUID() + extension;
+    }
+
+    private String sanitizeMilestoneFilename(String filename) {
+        String strippedName = Paths.get(filename).getFileName().toString();
+        int dotIndex = strippedName.lastIndexOf('.');
+        String extension = dotIndex > 0 ? strippedName.substring(dotIndex).toLowerCase(Locale.ROOT) : ".pdf";
+        String baseName = dotIndex > 0 ? strippedName.substring(0, dotIndex) : strippedName;
+        String safeBaseName = baseName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (!StringUtils.hasText(safeBaseName)) {
+            safeBaseName = "milestone_submission";
+        }
+        return safeBaseName + "_" + UUID.randomUUID() + extension;
+    }
+
+    private boolean isManagedProfilePhoto(String photoPath) {
+        return StringUtils.hasText(photoPath) && photoPath.startsWith("/files/profile-photos/");
     }
 }
 

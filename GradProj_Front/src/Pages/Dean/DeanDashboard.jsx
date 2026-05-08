@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDeanDashboard } from '../../api/dashboardService';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 
 const styles = `
 .dean-viewport { padding: 30px; font-family: 'Plus Jakarta Sans', sans-serif; text-align: left; color: #0f172a; }
@@ -15,23 +16,19 @@ const styles = `
 .d-stat-title { color: #64748b; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; }
 .d-stat-value { font-size: 30px; font-weight: 900; margin: 0; }
 .dean-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; }
+.workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 22px; }
 .dean-panel h3 { margin: 0 0 16px; font-size: 19px; font-weight: 900; }
 .row-item { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 15px; padding: 14px; margin-bottom: 10px; cursor: pointer; }
 .row-item strong { display: block; margin-bottom: 5px; }
 .row-item span { color: #64748b; font-size: 13px; font-weight: 700; }
 .state { border: 1px dashed #cbd5e1; background: #f8fafc; color: #64748b; padding: 18px; border-radius: 16px; font-weight: 700; }
 .state.error { border-color: #fecaca; background: #fff1f2; color: #be123c; margin-bottom: 20px; }
-.status-pill { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 900; background: #eef2ff; color: #4f46e5; text-transform: uppercase; }
-@media (max-width: 980px) { .dean-stats-grid { grid-template-columns: repeat(2, 1fr); } .dean-grid, .dean-header-row { grid-template-columns: 1fr; display: grid; gap: 16px; } }
+.mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.mini-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 14px; }
+.mini-card span { display: block; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+.mini-card strong { font-size: 24px; color: #0f172a; }
+@media (max-width: 980px) { .dean-stats-grid { grid-template-columns: repeat(2, 1fr); } .dean-grid, .dean-header-row, .workflow-grid { grid-template-columns: 1fr; display: grid; gap: 16px; } }
 `;
-
-const visibleStatus = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
 
 const DeanDashboard = () => {
   const navigate = useNavigate();
@@ -88,7 +85,7 @@ const DeanDashboard = () => {
               {data.recentProjects?.length ? data.recentProjects.map((project) => (
                 <div className="row-item" key={project.projectId} onClick={() => navigate('/dean/projects')}>
                   <strong>{project.projectTitle}</strong>
-                  <span>Team: {project.teamName || 'Not linked'} | <span className="status-pill">{visibleStatus(project.status).replace(/_/g, ' ')}</span></span>
+                  <span>Team: {project.teamName || 'Not linked'} | <ProjectStatusBadge status={project.status} /></span>
                 </div>
               )) : <div className="state">No projects submitted yet.</div>}
             </section>
@@ -101,6 +98,50 @@ const DeanDashboard = () => {
                   <span>{request.teamName || 'No team'} requested {request.supervisorName || 'Supervisor'} | {request.status}</span>
                 </div>
               )) : <div className="state">No supervisor requests yet.</div>}
+            </section>
+          </div>
+
+          <div className="workflow-grid">
+            <section className="dean-panel">
+              <h3>Task Analytics</h3>
+              <div className="mini-grid">
+                <div className="mini-card"><span>Total Tasks</span><strong>{data.taskSummary?.total ?? 0}</strong></div>
+                <div className="mini-card"><span>Not Started</span><strong>{data.taskSummary?.todo ?? 0}</strong></div>
+                <div className="mini-card"><span>In Progress</span><strong>{data.taskSummary?.inProgress ?? 0}</strong></div>
+                <div className="mini-card"><span>Overdue</span><strong>{data.overdueTasksCount ?? 0}</strong></div>
+              </div>
+            </section>
+
+            <section className="dean-panel">
+              <h3>Milestone Analytics</h3>
+              <div className="mini-grid">
+                <div className="mini-card"><span>Total Milestones</span><strong>{data.milestoneSummary?.total ?? 0}</strong></div>
+                <div className="mini-card"><span>Completed</span><strong>{data.milestoneSummary?.completed ?? 0}</strong></div>
+                <div className="mini-card"><span>Pending</span><strong>{data.milestoneSummary?.pending ?? 0}</strong></div>
+                <div className="mini-card"><span>Projects</span><strong>{data.totalProjects}</strong></div>
+              </div>
+            </section>
+          </div>
+
+          <div className="dean-grid" style={{ marginTop: 22 }}>
+            <section className="dean-panel">
+              <h3>Highest Pending Task Load</h3>
+              {data.highestPendingTaskLoadProjects?.length ? data.highestPendingTaskLoadProjects.map((project) => (
+                <div className="row-item" key={project.projectId} onClick={() => navigate('/dean/projects')}>
+                  <strong>{project.projectTitle}</strong>
+                  <span>Pending Tasks: {project.pendingTasksCount} | Overdue: {project.overdueTasksCount} | Overall: {project.overallCompletionPercentage}%</span>
+                </div>
+              )) : <div className="state">No pending-task data yet.</div>}
+            </section>
+
+            <section className="dean-panel">
+              <h3>Upcoming Milestones</h3>
+              {data.upcomingMilestones?.length ? data.upcomingMilestones.map((milestone) => (
+                <div className="row-item" key={milestone.milestoneId} onClick={() => navigate('/dean/projects')}>
+                  <strong>{milestone.title}</strong>
+                  <span>{milestone.projectTitle || 'Project'} | Due: {milestone.dueDate || 'No date'}</span>
+                </div>
+              )) : <div className="state">No upcoming milestones.</div>}
             </section>
           </div>
         </>

@@ -2,8 +2,7 @@ package com.gradproject.platform.modules.project;
 
 import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.modules.meeting.BulkDownloadService;
-import com.gradproject.platform.modules.meeting.Meeting;
-import com.gradproject.platform.modules.meeting.MeetingRepository;
+import com.gradproject.platform.modules.notification.NotificationService;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.submission.ProposalSubmission;
@@ -43,9 +42,9 @@ class ProjectControllerTest {
     @Mock FileStorageService fileStorageService;
     @Mock BulkDownloadService bulkDownloadService;
     @Mock TeamMemberRepository teamMemberRepository;
-    @Mock MeetingRepository meetingRepository;
     @Mock SupervisorRequestRepository supervisorRequestRepository;
     @Mock ProposalSubmissionRepository proposalSubmissionRepository;
+    @Mock NotificationService notificationService;
 
     ProjectController controller;
     User leader;
@@ -54,8 +53,8 @@ class ProjectControllerTest {
 
     @BeforeEach
     void setUp() {
-        ProjectService projectService = new ProjectService(projectRepository, userRepository, supervisorRequestRepository, teamMemberRepository, fileStorageService, proposalSubmissionRepository);
-        controller = new ProjectController(projectRepository, userRepository, projectService, fileStorageService, bulkDownloadService, teamMemberRepository, meetingRepository, supervisorRequestRepository);
+        ProjectService projectService = new ProjectService(projectRepository, userRepository, supervisorRequestRepository, teamMemberRepository, fileStorageService, proposalSubmissionRepository, notificationService);
+        controller = new ProjectController(projectRepository, userRepository, projectService, fileStorageService, bulkDownloadService, teamMemberRepository, supervisorRequestRepository);
         leader = user(UUID.randomUUID(), "leader@example.com");
         supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
         currentTeam = team(UUID.randomUUID(), leader);
@@ -73,7 +72,6 @@ class ProjectControllerTest {
         when(proposalSubmissionRepository.existsByProjectIdAndVersionNumber(any(), any())).thenReturn(false);
         when(fileStorageService.storeProposal(any())).thenReturn("/files/proposal.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.save(any(SupervisorRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(proposalSubmissionRepository.save(any(ProposalSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.findFirstByTeamIdAndStatusOrderByCreatedAtDesc(currentTeam.getId(), SupervisorRequestStatus.PENDING)).thenReturn(Optional.empty());
@@ -188,7 +186,6 @@ class ProjectControllerTest {
         when(userRepository.findById(supervisor.getId())).thenReturn(Optional.of(supervisor));
         when(fileStorageService.storeProposal(any())).thenReturn("/files/proposal.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.save(any(SupervisorRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.findFirstByTeamIdAndStatusOrderByCreatedAtDesc(currentTeam.getId(), SupervisorRequestStatus.PENDING)).thenReturn(Optional.empty());
         when(supervisorRequestRepository.findFirstByTeamIdOrderByCreatedAtDesc(currentTeam.getId())).thenReturn(Optional.empty());

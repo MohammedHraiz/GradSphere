@@ -249,14 +249,47 @@ const Login = () => {
 
   const { login } = useAuth();
 
-  const loginAsRole = (role) => {
-    // Mock JWT token for development (dev-only bypass for testing)
-    const mockToken = 'dev-jwt-token-' + role + '-' + Date.now();
-    login({ 
-      token: mockToken,
-      user: { userName: 'Developer', role }, 
-      role 
-    });
+  const loginAsRole = async (role) => {
+    const demoCredentials = {
+      admin: { email: 'admin@demo.local', password: 'password' },
+      dean: { email: 'dean@demo.local', password: 'password' },
+      supervisor: { email: 'supervisor@demo.local', password: 'password' },
+      student: { email: 'student.leader@demo.local', password: 'password' },
+    };
+
+    const credentials = demoCredentials[role];
+    if (!credentials) return;
+
+    setLoginError('');
+    setIsLoading(true);
+
+    try {
+      const { data: payload } = await apiClient.post('/v1/auth/login', credentials);
+      const backendRole = (
+        payload?.role ||
+        payload?.user?.role ||
+        (Array.isArray(payload?.roles) ? payload.roles[0] : null) ||
+        'ROLE_STUDENT'
+      );
+
+      const normalizedRole = String(backendRole).replace(/^ROLE_/i, '').toLowerCase();
+      const token = payload?.token || payload?.accessToken || payload?.jwt || null;
+
+      login({
+        token,
+        user: {
+          ...payload,
+          userName: payload?.userName || payload?.name || credentials.email,
+          email: payload?.email || credentials.email,
+          role: normalizedRole,
+        },
+        role: normalizedRole,
+      });
+    } catch (err) {
+      setLoginError(err?.message || 'Quick access login failed.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 💡 السحر الفعلي: تتبع الماوس بناءً على موقع الروبوت نفسه

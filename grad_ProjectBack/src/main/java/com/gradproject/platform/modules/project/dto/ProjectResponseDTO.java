@@ -5,6 +5,7 @@ import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestStatu
 import com.gradproject.platform.modules.user.dto.SupervisorSummaryDTO;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record ProjectResponseDTO(
@@ -19,6 +20,7 @@ public record ProjectResponseDTO(
         String studentEmail,
         UUID teamId,
         String teamName,
+        List<ProjectTeamMemberDTO> teamMembers,
         SupervisorSummaryDTO supervisor,
         String latestFeedback,
         UUID pendingSupervisorRequestId,

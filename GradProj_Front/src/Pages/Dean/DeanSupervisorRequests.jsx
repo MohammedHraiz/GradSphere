@@ -112,7 +112,6 @@ const DeanSupervisorRequests = () => {
       const matchesStatus = statusFilter === 'ALL' || String(request.status).toUpperCase() === statusFilter;
       const matchesSearch = !search || [
         request.projectTitle,
-        request.projectId,
         request.teamName,
         request.supervisorName,
         request.supervisorEmail,
@@ -181,11 +180,11 @@ const DeanSupervisorRequests = () => {
               <tr key={request.id || `${request.projectId}-${request.supervisorName}-${request.createdAt}`}>
                 <td>
                   <div className="dsr-main-text">{request.projectTitle}</div>
-                  <div className="dsr-sub-text">{request.projectId}</div>
+                  <div className="dsr-sub-text">{request.teamName || 'Not linked'}</div>
                 </td>
                 <td>
                   <div>{request.teamName}</div>
-                  {request.teamId ? <div className="dsr-sub-text">{request.teamId}</div> : null}
+                  <div className="dsr-sub-text">{request.projectTitle}</div>
                 </td>
                 <td>
                   <div>{request.supervisorName}</div>

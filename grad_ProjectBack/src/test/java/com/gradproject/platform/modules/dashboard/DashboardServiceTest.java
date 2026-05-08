@@ -4,6 +4,7 @@ import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.modules.invitation.InvitationRepository;
 import com.gradproject.platform.modules.invitation.InvitationStatus;
 import com.gradproject.platform.modules.meeting.MeetingRepository;
+import com.gradproject.platform.modules.milestone.MilestoneRepository;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.ProjectStatus;
@@ -11,6 +12,7 @@ import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestRepository;
 import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestStatus;
+import com.gradproject.platform.modules.task.TaskRepository;
 import com.gradproject.platform.modules.team.Team;
 import com.gradproject.platform.modules.team.TeamRepository;
 import com.gradproject.platform.modules.user.User;
@@ -31,6 +33,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +48,8 @@ class DashboardServiceTest {
     @Mock ProjectRepository projectRepository;
     @Mock SupervisorRequestRepository supervisorRequestRepository;
     @Mock MeetingRepository meetingRepository;
+    @Mock TaskRepository taskRepository;
+    @Mock MilestoneRepository milestoneRepository;
 
     DashboardService service;
     User student;
@@ -52,7 +59,20 @@ class DashboardServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new DashboardService(userRepository, teamRepository, teamMemberRepository, invitationRepository, projectRepository, supervisorRequestRepository, meetingRepository);
+        service = new DashboardService(
+                userRepository,
+                teamRepository,
+                teamMemberRepository,
+                invitationRepository,
+                projectRepository,
+                supervisorRequestRepository,
+                meetingRepository,
+                taskRepository,
+                milestoneRepository
+        );
+        lenient().when(taskRepository.findByStatusInAndDueDateBefore(anyCollection(), any())).thenReturn(List.of());
+        lenient().when(taskRepository.findByProjectIdIn(anyCollection())).thenReturn(List.of());
+        lenient().when(milestoneRepository.findByProjectIdIn(anyCollection())).thenReturn(List.of());
         student = user("student@example.com", UserRole.ROLE_STUDENT);
         supervisor = user("supervisor@example.com", UserRole.ROLE_SUPERVISOR);
         dean = user("dean@example.com", UserRole.ROLE_DEAN_OFFICE);
@@ -71,6 +91,7 @@ class DashboardServiceTest {
         assertThat(dto.hasTeam()).isFalse();
         assertThat(dto.pendingReceivedInvitationsCount()).isEqualTo(2);
         assertThat(dto.proposalSubmitted()).isFalse();
+        assertThat(dto.taskSummary().total()).isZero();
     }
 
     @Test
@@ -95,6 +116,7 @@ class DashboardServiceTest {
         assertThat(dto.projectId()).isEqualTo(project.getId());
         assertThat(dto.pendingSentInvitationsCount()).isEqualTo(4);
         assertThat(dto.proposalCanResubmit()).isTrue();
+        assertThat(dto.taskSummary().total()).isZero();
     }
 
     @Test
@@ -114,6 +136,7 @@ class DashboardServiceTest {
         assertThat(dto.pendingSupervisorRequestsCount()).isEqualTo(2);
         assertThat(dto.assignedProjectsCount()).isEqualTo(1);
         assertThat(dto.underReviewProjectsCount()).isEqualTo(1);
+        assertThat(dto.taskSummary().total()).isZero();
     }
 
     @Test
@@ -135,6 +158,7 @@ class DashboardServiceTest {
         assertThat(dto.totalProjects()).isEqualTo(1);
         assertThat(dto.submittedProjectsCount()).isEqualTo(1);
         assertThat(dto.pendingSupervisorRequestsCount()).isEqualTo(3);
+        assertThat(dto.taskSummary().total()).isZero();
     }
 
     @Test
@@ -160,6 +184,7 @@ class DashboardServiceTest {
         assertThat(dto.totalUsers()).isEqualTo(10);
         assertThat(dto.pendingInvitationsCount()).isEqualTo(5);
         assertThat(dto.archivedProjectsCount()).isEqualTo(1);
+        assertThat(dto.taskSummary().total()).isZero();
     }
 
     @Test

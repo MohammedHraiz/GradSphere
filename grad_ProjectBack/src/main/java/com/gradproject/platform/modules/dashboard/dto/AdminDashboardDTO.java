@@ -18,6 +18,10 @@ public record AdminDashboardDTO(
         Map<String, Long> projectsByStatus,
         Map<String, Long> usersByRole,
         List<DashboardUserItemDTO> recentUsers,
-        List<DashboardProjectItemDTO> recentProjects
+        List<DashboardProjectItemDTO> recentProjects,
+        DashboardTaskSummaryDTO taskSummary,
+        DashboardMilestoneSummaryDTO milestoneSummary,
+        long overdueTasksCount,
+        List<DashboardProjectProgressDTO> highestPendingTaskLoadProjects
 ) {
 }

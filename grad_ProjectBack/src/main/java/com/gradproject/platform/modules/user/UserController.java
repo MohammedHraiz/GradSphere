@@ -3,12 +3,19 @@ package com.gradproject.platform.modules.user;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.user.dto.SupervisorSummaryDTO;
-import com.gradproject.platform.modules.user.dto.UserResponseDTO;
+import com.gradproject.platform.modules.user.dto.UserProfileResponseDTO;
+import com.gradproject.platform.modules.user.dto.UserProfileUpdateRequestDTO;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
@@ -17,32 +24,37 @@ import java.util.List;
 @RequestMapping("/api/v1/users")
 public class UserController {
 
+    private final UserManagementService userManagementService;
     private final UserRepository userRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectRepository projectRepository;
 
-    public UserController(UserRepository userRepository, TeamMemberRepository teamMemberRepository, ProjectRepository projectRepository) {
+    public UserController(UserManagementService userManagementService, UserRepository userRepository, TeamMemberRepository teamMemberRepository, ProjectRepository projectRepository) {
+        this.userManagementService = userManagementService;
         this.userRepository = userRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.projectRepository = projectRepository;
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDTO> getCurrentUser(Principal principal) {
-        User currentUser = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<UserProfileResponseDTO> getCurrentUser(Principal principal) {
+        return ResponseEntity.ok(userManagementService.getCurrentUserProfile(principal.getName()));
+    }
 
-        boolean hasTeam = teamMemberRepository.findByUserId(currentUser.getId()).isPresent();
+    @PatchMapping("/me/profile")
+    public ResponseEntity<UserProfileResponseDTO> updateCurrentUserProfile(
+            Principal principal,
+            @Valid @RequestBody UserProfileUpdateRequestDTO request
+    ) {
+        return ResponseEntity.ok(userManagementService.updateCurrentUserProfile(principal.getName(), request));
+    }
 
-        UserResponseDTO response = new UserResponseDTO(
-                currentUser.getId(),
-                currentUser.getName(),
-                currentUser.getEmail(),
-                currentUser.getRole() != null ? currentUser.getRole().name() : null,
-                hasTeam
-        );
-
-        return ResponseEntity.ok(response);
+    @PostMapping(value = "/me/profile-photo", consumes = "multipart/form-data")
+    public ResponseEntity<UserProfileResponseDTO> uploadCurrentUserProfilePhoto(
+            Principal principal,
+            @RequestParam("photo") MultipartFile photo
+    ) {
+        return ResponseEntity.ok(userManagementService.uploadCurrentUserProfilePhoto(principal.getName(), photo));
     }
 
     @GetMapping("/supervisors")

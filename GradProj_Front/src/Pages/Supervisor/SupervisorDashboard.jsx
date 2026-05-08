@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SupervisorDashboard.css';
 import { getSupervisorDashboard } from '../../api/dashboardService';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 
 const extraStyles = `
 .sup-live-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-top: 28px; }
+.sup-workflow-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 24px; }
 .sup-live-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 22px -24px rgba(15,23,42,.8); }
 .sup-live-card h3 { margin: 0 0 16px; font-size: 19px; font-weight: 900; color: #0f172a; }
 .sup-list { display: grid; gap: 12px; }
@@ -13,17 +15,18 @@ const extraStyles = `
 .sup-list-item span { color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
 .sup-state { border: 1px dashed #cbd5e1; background: #f8fafc; color: #64748b; padding: 18px; border-radius: 16px; font-weight: 700; }
 .sup-state.error { border-color: #fecaca; background: #fff1f2; color: #be123c; }
-.status-pill { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 11px; font-weight: 900; background: #eef2ff; color: #4f46e5; text-transform: uppercase; }
-@media (max-width: 900px) { .sup-live-grid { grid-template-columns: 1fr; } }
+.sup-mini-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sup-mini-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 14px; }
+.sup-mini-card span { display: block; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+.sup-mini-card strong { font-size: 24px; color: #0f172a; }
+.sup-progress { display: grid; gap: 12px; }
+.sup-progress-row { border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc; padding: 14px; }
+.sup-progress-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-weight: 800; }
+.sup-progress-meta { font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 10px; }
+.sup-progress-bar { height: 10px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.sup-progress-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); }
+@media (max-width: 900px) { .sup-live-grid, .sup-workflow-grid { grid-template-columns: 1fr; } }
 `;
-
-const visibleStatus = (status) => {
-  const value = String(status || '').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
 
 const SupervisorDashboard = () => {
   const navigate = useNavigate();
@@ -94,13 +97,87 @@ const SupervisorDashboard = () => {
                   {data.recentAssignedProjects.map((project) => (
                     <div className="sup-list-item" key={project.projectId} onClick={() => navigate('/supervisor/projects')}>
                       <strong>{project.projectTitle}</strong>
-                      <span>Team: {project.teamName || 'Not linked'} | <span className="status-pill">{visibleStatus(project.status).replace(/_/g, ' ')}</span></span>
+                      <span>Team: {project.teamName || 'Not linked'} | <ProjectStatusBadge status={project.status} /></span>
                     </div>
                   ))}
                 </div>
               ) : <div className="sup-state">No assigned projects yet.</div>}
             </section>
           </div>
+
+          <div className="sup-workflow-grid">
+            <section className="sup-live-card">
+              <h3>Task Summary</h3>
+              <div className="sup-mini-grid">
+                <div className="sup-mini-card"><span>Not Started</span><strong>{data.taskSummary?.todo ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>In Progress</span><strong>{data.taskSummary?.inProgress ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>Completed</span><strong>{data.taskSummary?.done ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>Overdue</span><strong>{data.taskSummary?.overdue ?? 0}</strong></div>
+              </div>
+            </section>
+
+            <section className="sup-live-card">
+              <h3>Milestone Summary</h3>
+              <div className="sup-mini-grid">
+                <div className="sup-mini-card"><span>Total</span><strong>{data.milestoneSummary?.total ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>Completed</span><strong>{data.milestoneSummary?.completed ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>Pending</span><strong>{data.milestoneSummary?.pending ?? 0}</strong></div>
+                <div className="sup-mini-card"><span>Projects</span><strong>{data.assignedProjectsCount}</strong></div>
+              </div>
+            </section>
+          </div>
+
+          <div className="sup-live-grid">
+            <section className="sup-live-card">
+              <h3>Overdue Tasks</h3>
+              {data.overdueTasks?.length ? (
+                <div className="sup-list">
+                  {data.overdueTasks.map((task) => (
+                    <div className="sup-list-item" key={task.taskId} onClick={() => navigate('/supervisor/tasks')}>
+                      <strong>{task.title}</strong>
+                      <span>{task.projectTitle || 'Project'} | {task.assignedToName || 'Unassigned'} | Due: {task.dueDate || 'No date'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="sup-state">No overdue tasks right now.</div>}
+            </section>
+
+            <section className="sup-live-card">
+              <h3>Upcoming Milestones</h3>
+              {data.upcomingMilestones?.length ? (
+                <div className="sup-list">
+                  {data.upcomingMilestones.map((milestone) => (
+                    <div className="sup-list-item" key={milestone.milestoneId} onClick={() => navigate('/supervisor/milestones')}>
+                      <strong>{milestone.title}</strong>
+                      <span>{milestone.projectTitle || 'Project'} | Due: {milestone.dueDate || 'No date'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <div className="sup-state">No upcoming milestones.</div>}
+            </section>
+          </div>
+
+          <section className="sup-live-card" style={{ marginTop: 24 }}>
+            <h3>Project Progress</h3>
+            {data.projectProgress?.length ? (
+              <div className="sup-progress">
+                {data.projectProgress.map((projectProgress) => (
+                  <div key={projectProgress.projectId} className="sup-progress-row">
+                    <div className="sup-progress-head">
+                      <span>{projectProgress.projectTitle}</span>
+                      <span>{projectProgress.overallCompletionPercentage}%</span>
+                    </div>
+                    <div className="sup-progress-meta">
+                      Tasks: {projectProgress.taskCompletionPercentage}% | Milestones: {projectProgress.milestoneCompletionPercentage}% | Pending Tasks: {projectProgress.pendingTasksCount}
+                    </div>
+                    <div className="sup-progress-bar">
+                      <div className="sup-progress-fill" style={{ width: `${projectProgress.overallCompletionPercentage}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <div className="sup-state">Progress bars will appear once tasks or milestones exist.</div>}
+          </section>
         </>
       ) : null}
     </div>

@@ -1,6 +1,7 @@
 package com.gradproject.platform.modules.admin;
 
 import com.gradproject.platform.exception.ProjectNotArchivableException;
+import com.gradproject.platform.modules.notification.NotificationService;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.ProjectStatus;
@@ -33,6 +34,7 @@ class ArchiveServiceTest {
     @Mock ProjectRepository projectRepository;
     @Mock UserRepository userRepository;
     @Mock TeamMemberRepository teamMemberRepository;
+    @Mock NotificationService notificationService;
 
     ArchiveService service;
     User admin;
@@ -41,7 +43,7 @@ class ArchiveServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ArchiveService(projectRepository, userRepository, teamMemberRepository);
+        service = new ArchiveService(projectRepository, userRepository, teamMemberRepository, notificationService);
         admin = user(UUID.randomUUID(), "admin@example.com", UserRole.ROLE_ADMIN);
         student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
         project = project(UUID.randomUUID(), student, ProjectStatus.APPROVED);

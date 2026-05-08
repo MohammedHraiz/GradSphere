@@ -4,6 +4,8 @@ import { archiveProject, assignSupervisor, downloadAllMeetings, downloadProposal
 import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, triggerBrowserDownload } from '../../utils/downloadFile';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
+import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 
 const projectsStyles = `
 .dean-proj-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -31,12 +33,6 @@ const projectsStyles = `
 .dean-table tr:last-child td { border-bottom: none; }
 .dp-proj-name { font-size: 15px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
 .dp-proj-id { font-size: 12px; color: #94a3b8; font-weight: 700; overflow-wrap: anywhere; }
-.dp-badge { display: inline-flex; padding: 7px 11px; border-radius: 9999px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; }
-.dp-badge.pending { background: #eef2ff; color: #4f46e5; }
-.dp-badge.review { background: #fef3c7; color: #b45309; }
-.dp-badge.final { background: #d1fae5; color: #047857; }
-.dp-badge.archived { background: #e2e8f0; color: #334155; }
-.dp-badge.rejected { background: #fee2e2; color: #b91c1c; }
 .dp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .dp-action-btn { border: 1px solid #e2e8f0; background: white; color: #0f172a; border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 800; cursor: pointer; }
 .dp-action-btn:hover:not(:disabled) { background: #0f172a; color: white; border-color: #0f172a; }
@@ -57,25 +53,6 @@ const projectsStyles = `
 .dp-history-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; background: #ede9fe; color: #6d28d9; }
 @media (max-width: 980px) { .dp-header-box { align-items: flex-start; flex-direction: column; } .dp-stats-bar { grid-template-columns: repeat(2, 1fr); } .dp-toolbar { flex-direction: column; } }
 `;
-
-const visibleStatus = (status) => {
-  const value = String(status ?? 'SUBMITTED').toUpperCase();
-  if (value === 'PENDING') return 'SUBMITTED';
-  if (value === 'FINAL_APPROVAL_DEAN') return 'APPROVED';
-  if (value === 'REVISION_REQUIRED') return 'NEEDS_CHANGES';
-  return value;
-};
-
-const statusLabel = (status) => visibleStatus(status).replace(/_/g, ' ');
-
-const statusClass = (status) => {
-  const value = String(status ?? '').toUpperCase();
-  if (value === 'ARCHIVED') return 'archived';
-  if (value === 'FINAL_APPROVAL_DEAN' || value === 'APPROVED') return 'final';
-  if (value === 'REJECTED' || value === 'REVISION_REQUIRED') return 'rejected';
-  if (value === 'UNDER_REVIEW') return 'review';
-  return 'pending';
-};
 
 const normalizeProject = (project) => ({
   id: project?.id ?? '',
@@ -153,19 +130,19 @@ const DeanProjectsList = () => {
   const filteredProjects = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
     return projects.filter((project) => {
-      const matchesSearch = !search || [project.title, project.id, project.studentName, project.teamName]
+      const matchesSearch = !search || [project.title, project.studentName, project.teamName, project.supervisor?.name, formatProjectStatus(project.status)]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(search));
-      const matchesStatus = statusFilter === 'All' || visibleStatus(project.status) === statusFilter;
+      const matchesStatus = statusFilter === 'All' || normalizeProjectStatus(project.status) === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [projects, searchTerm, statusFilter]);
 
   const counts = useMemo(() => ({
     all: projects.length,
-    pending: projects.filter((project) => ['PENDING', 'SUBMITTED'].includes(visibleStatus(project.status))).length,
-    approved: projects.filter((project) => visibleStatus(project.status) === 'APPROVED').length,
-    archived: projects.filter((project) => project.status === 'ARCHIVED').length,
+    pending: projects.filter((project) => normalizeProjectStatus(project.status) === 'SUBMITTED').length,
+    approved: projects.filter((project) => normalizeProjectStatus(project.status) === 'APPROVED').length,
+    archived: projects.filter((project) => normalizeProjectStatus(project.status) === 'ARCHIVED').length,
   }), [projects]);
 
   const runAction = async (projectId, action, successMessage, busyLabel = 'Working') => {
@@ -202,7 +179,8 @@ const DeanProjectsList = () => {
   const handleDownloadMeetings = (projectId) => runAction(projectId, async () => {
     const result = await downloadAllMeetings(projectId);
     const blob = extractBlobFromResult(result);
-    const fileName = extractFileNameFromHeaders(result?.headers, `Project_${projectId}_Meetings.zip`);
+    const project = projects.find((item) => item.id === projectId);
+    const fileName = extractFileNameFromHeaders(result?.headers, `${project?.title || 'Project'}_Meetings.zip`);
     triggerBrowserDownload(blob, fileName);
   }, 'Meeting PDF archive downloaded.', 'meetings');
 
@@ -304,7 +282,7 @@ const DeanProjectsList = () => {
 
       <div className="dp-toolbar">
         <div className="dp-search">
-          <input type="text" placeholder="Search projects, students, teams, or IDs..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
+          <input type="text" placeholder="Search projects, students, teams, or supervisors..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
         </div>
         <select className="dp-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="All">All Statuses</option>
@@ -336,13 +314,13 @@ const DeanProjectsList = () => {
               <tr><td colSpan="6" className="dp-empty">No submitted projects found.</td></tr>
             ) : filteredProjects.map((project) => {
               const busy = actionId.startsWith(`${project.id}:`);
-              const isArchived = project.status === 'ARCHIVED';
-              const canArchive = visibleStatus(project.status) === 'APPROVED' && !isArchived;
+              const isArchived = normalizeProjectStatus(project.status) === 'ARCHIVED';
+              const canArchive = normalizeProjectStatus(project.status) === 'APPROVED' && !isArchived;
               return (
                 <tr key={project.id}>
                   <td>
                     <div className="dp-proj-name">{project.title}</div>
-                    <div className="dp-proj-id">{project.id}</div>
+                    <div className="dp-proj-id">{project.teamName || 'Not linked'}</div>
                   </td>
                   <td>
                     <div>{project.studentName}</div>
@@ -350,7 +328,7 @@ const DeanProjectsList = () => {
                   </td>
                   <td>{project.teamName}</td>
                   <td>
-                    <span className={`dp-badge ${statusClass(project.status)}`}>{statusLabel(project.status)}</span>
+                    <ProjectStatusBadge status={project.status} />
                     <div className="dp-proj-id" style={{marginTop: 6}}>
                       Supervisor: {project.supervisor?.name || 'Unassigned'}
                       {project.pendingSupervisorName ? ` | Pending: ${project.pendingSupervisorName}` : ''}
