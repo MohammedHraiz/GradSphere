@@ -58,6 +58,12 @@ public class Meeting extends BaseEntity {
     @Column(name = "next_meeting_date")
     private LocalDateTime nextMeetingDate;
 
+    @Column(name = "overall_rating")
+    private String overallRating;
+
+    @Column(name = "concern_actions", columnDefinition = "TEXT")
+    private String concernActions;
+
     @Builder.Default
     @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(nullable = false)
@@ -89,4 +95,3 @@ public class Meeting extends BaseEntity {
     @Builder.Default
     private List<MeetingAttendance> attendanceRecords = new ArrayList<>();
 }
-

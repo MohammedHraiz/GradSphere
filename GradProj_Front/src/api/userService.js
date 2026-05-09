@@ -37,6 +37,17 @@ export const getMyProfile = async () => {
   return response?.data?.data ?? response?.data ?? null;
 };
 
+export const getPublicUserProfile = async (userId) => {
+  const response = await apiClient.get(`/v1/users/${userId}/public-profile`);
+  return response?.data?.data ?? response?.data ?? null;
+};
+
+export const getSupervisorMyStudents = async () => {
+  const response = await apiClient.get('/v1/supervisor/my-students');
+  const payload = response?.data?.data ?? response?.data ?? [];
+  return Array.isArray(payload) ? payload : [];
+};
+
 export const updateMyProfile = async (payload) => {
   const response = await apiClient.patch('/v1/users/me/profile', payload);
   return response?.data?.data ?? response?.data ?? null;

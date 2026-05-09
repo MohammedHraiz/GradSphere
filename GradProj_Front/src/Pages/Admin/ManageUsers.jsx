@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import FeedbackToast from '../../components/FeedbackToast';
+import SearchBar from '../../components/SearchBar';
 import { createAdminUser, getAdminUsers, updateAdminUser } from '../../api/userService';
 import {
   DEPARTMENT_OPTIONS,
@@ -424,13 +425,13 @@ const ManageUsers = () => {
       <div className="admin-users-toolbar">
         <div className="admin-users-field">
           <label htmlFor="admin-user-search">Search Users</label>
-          <input
+          <SearchBar
             id="admin-user-search"
-            className="admin-users-input"
-            type="search"
             placeholder="Search by name, email, or university ID"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            onClear={() => setSearch('')}
+            variant="dark"
           />
         </div>
 

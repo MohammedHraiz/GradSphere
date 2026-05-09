@@ -1,5 +1,6 @@
 package com.gradproject.platform.modules.meeting;
 
+import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.exception.MeetingNotFoundException;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.team.Team;
@@ -42,7 +43,8 @@ import java.util.UUID;
 public class PdfGeneratorService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    private static final String UNIVERSITY_HEADER = "Al-Balqa Applied University - Prince Abdullah bin Ghazi Faculty of Information Technology.";
+    private static final String UNIVERSITY_HEADER = "Al-Balqa Applied University";
+    private static final String FACULTY_HEADER = "Faculty of Information Technology";
 
     private final MeetingRepository meetingRepository;
     private final UserRepository userRepository;
@@ -55,6 +57,9 @@ public class PdfGeneratorService {
         User currentUser = resolveCurrentUser(authentication);
         if (!canAccessMeeting(meeting, currentUser)) {
             throw new org.springframework.security.access.AccessDeniedException("You are not allowed to download this meeting form");
+        }
+        if (meeting.getStatus() != MeetingStatus.COMPLETED) {
+            throw new BadRequestException("Meeting report is available only after the meeting is completed.");
         }
 
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
@@ -117,8 +122,13 @@ public class PdfGeneratorService {
 
         Paragraph university = new Paragraph(UNIVERSITY_HEADER, headerFont);
         university.setAlignment(Element.ALIGN_CENTER);
-        university.setSpacingAfter(8f);
+        university.setSpacingAfter(4f);
         document.add(university);
+
+        Paragraph faculty = new Paragraph(FACULTY_HEADER, headerFont);
+        faculty.setAlignment(Element.ALIGN_CENTER);
+        faculty.setSpacingAfter(8f);
+        document.add(faculty);
 
         Paragraph title = new Paragraph("Project Meeting Attendance & Progress Form", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
@@ -135,28 +145,23 @@ public class PdfGeneratorService {
         table.setSpacingBefore(8f);
         table.setSpacingAfter(10f);
 
+        addCell(table, "Project Name", safeText(project.getTitle()));
         addCell(table, "Team Name", team != null ? safeText(team.getName()) : "N/A");
-        addCell(table, "Meeting Title", safeText(meeting.getTitle()));
         addCell(table, "Meeting Date", meeting.getMeetingDate() != null ? meeting.getMeetingDate().format(DATE_TIME_FORMATTER) : "N/A");
+        addCell(table, "Meeting Type", meeting.getMeetingType() != null ? meeting.getMeetingType().name().replace('_', ' ') : "N/A");
         addCell(table, "Supervisor", meeting.getSupervisor() != null ? safeText(meeting.getSupervisor().getName()) : "N/A");
-        addCell(table, "Summary", safeText(meeting.getSummary()));
-        addCell(table, "Progress Discussed", safeText(meeting.getProgressDiscussed()));
-        addCell(table, "Tasks Assigned", safeText(meeting.getTasksAssigned()));
-        addCell(table, "Next Steps", safeText(meeting.getNextSteps()));
-        addCell(table, "Next Meeting", meeting.getNextMeetingDate() != null ? meeting.getNextMeetingDate().format(DATE_TIME_FORMATTER) : "N/A");
-        addCell(table, "Project Title", safeText(project.getTitle()));
 
         document.add(table);
     }
 
     private void addSummarySection(Document document, Meeting meeting) throws Exception {
         Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK);
-        Paragraph sectionTitle = new Paragraph("Meeting Notes", sectionFont);
+        Paragraph sectionTitle = new Paragraph("Progress Report", sectionFont);
         sectionTitle.setSpacingBefore(6f);
         sectionTitle.setSpacingAfter(6f);
         document.add(sectionTitle);
 
-        Paragraph summary = new Paragraph("Summary: " + safeText(meeting.getSummary()));
+        Paragraph summary = new Paragraph("Summary of Discussion and Outcomes: " + safeText(meeting.getSummary()));
         summary.setLeading(18f);
         document.add(summary);
 
@@ -164,13 +169,15 @@ public class PdfGeneratorService {
         progress.setLeading(18f);
         document.add(progress);
 
-        Paragraph tasks = new Paragraph("\nTasks Assigned: " + safeText(meeting.getTasksAssigned()));
+        Paragraph tasks = new Paragraph("\nTasks to be completed before the next phase/work session: " + safeText(meeting.getTasksAssigned()));
         tasks.setLeading(18f);
         document.add(tasks);
 
         Paragraph nextSteps = new Paragraph("\nNext Steps: " + safeText(meeting.getNextSteps()));
         nextSteps.setLeading(18f);
         document.add(nextSteps);
+
+        addRatingSection(document, meeting);
     }
 
     private void addAttendanceSection(Document document, Meeting meeting) throws Exception {
@@ -180,15 +187,17 @@ public class PdfGeneratorService {
         sectionTitle.setSpacingAfter(8f);
         document.add(sectionTitle);
 
-        PdfPTable table = new PdfPTable(new float[]{3f, 2f, 3f});
+        PdfPTable table = new PdfPTable(new float[]{3f, 2f, 2.5f, 3f});
         table.setWidthPercentage(100f);
 
         addHeaderCell(table, "Student Name");
-        addHeaderCell(table, "Status");
+        addHeaderCell(table, "Student ID");
+        addHeaderCell(table, "Present/Absent/Excused");
         addHeaderCell(table, "Reason");
 
         if (meeting.getAttendanceRecords() == null || meeting.getAttendanceRecords().isEmpty()) {
             addBodyCell(table, "No attendance recorded.");
+            addBodyCell(table, "N/A");
             addBodyCell(table, "N/A");
             addBodyCell(table, "N/A");
         } else {
@@ -196,6 +205,7 @@ public class PdfGeneratorService {
                     .sorted(Comparator.comparing(record -> record.getStudent() != null ? record.getStudent().getName() : ""))
                     .forEach(record -> {
                         addBodyCell(table, record.getStudent() != null ? safeText(record.getStudent().getName()) : "Unknown student");
+                        addBodyCell(table, record.getStudent() != null ? safeText(record.getStudent().getUniversityId()) : "N/A");
                         addBodyCell(table, record.getStatus() != null ? record.getStatus().name() : "N/A");
                         addBodyCell(table, safeText(record.getAbsenceReason()));
                     });
@@ -204,12 +214,36 @@ public class PdfGeneratorService {
         document.add(table);
     }
 
+    private void addRatingSection(Document document, Meeting meeting) throws Exception {
+        Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK);
+        Paragraph sectionTitle = new Paragraph("\nOverall Rating", sectionFont);
+        sectionTitle.setSpacingBefore(8f);
+        sectionTitle.setSpacingAfter(6f);
+        document.add(sectionTitle);
+
+        String selected = meeting.getOverallRating() != null ? meeting.getOverallRating() : "";
+        String[] ratings = {"EXCELLENT", "SATISFACTORY", "REQUIRES_IMPROVEMENT", "GIVING_CAUSE_FOR_CONCERN"};
+        StringBuilder line = new StringBuilder();
+        for (String rating : ratings) {
+            line.append(selected.equals(rating) ? "[X] " : "[ ] ")
+                    .append(rating.replace('_', ' '))
+                    .append("   ");
+        }
+        document.add(new Paragraph(line.toString()));
+
+        if ("GIVING_CAUSE_FOR_CONCERN".equals(selected) || StringUtils.hasText(meeting.getConcernActions())) {
+            Paragraph actions = new Paragraph("\nRequired actions/recommendations: " + safeText(meeting.getConcernActions()));
+            actions.setLeading(18f);
+            document.add(actions);
+        }
+    }
+
     private void addSignatureSection(Document document) throws Exception {
         PdfPTable signatures = new PdfPTable(2);
         signatures.setWidthPercentage(100f);
         signatures.setSpacingBefore(28f);
 
-        addSignatureCell(signatures, "Supervisor Signature");
+        addSignatureCell(signatures, "Supervisor Name and Signature");
         addSignatureCell(signatures, "Dean Office Signature");
         document.add(signatures);
     }

@@ -104,7 +104,6 @@ public class MeetingService {
         User currentUser = requireCurrentUser();
         Project project = loadProject(projectId);
         ensureCanCreateMeeting(project, currentUser);
-        validateNextMeetingDate(request.meetingDate(), request.nextMeetingDate());
 
         Meeting meeting = Meeting.builder()
                 .project(project)
@@ -118,7 +117,7 @@ public class MeetingService {
                 .progressDiscussed(trimToNull(request.progressDiscussed()))
                 .tasksAssigned(trimToNull(request.tasksAssigned()))
                 .nextSteps(trimToNull(request.nextSteps()))
-                .nextMeetingDate(request.nextMeetingDate())
+                .nextMeetingDate(null)
                 .build();
 
         Meeting savedMeeting = meetingRepository.save(meeting);
@@ -138,7 +137,6 @@ public class MeetingService {
         User currentUser = requireCurrentUser();
         Meeting meeting = loadMeeting(meetingId);
         ensureCanEditMeeting(meeting, currentUser);
-        validateNextMeetingDate(request.meetingDate(), request.nextMeetingDate());
 
         meeting.setTitle(request.title().trim());
         meeting.setMeetingDate(request.meetingDate());
@@ -148,7 +146,14 @@ public class MeetingService {
         meeting.setProgressDiscussed(trimToNull(request.progressDiscussed()));
         meeting.setTasksAssigned(trimToNull(request.tasksAssigned()));
         meeting.setNextSteps(trimToNull(request.nextSteps()));
-        meeting.setNextMeetingDate(request.nextMeetingDate());
+        meeting.setNextMeetingDate(null);
+        meeting.setOverallRating(trimToNull(request.overallRating()));
+        meeting.setConcernActions(trimToNull(request.concernActions()));
+        if (request.attendance() != null && !request.attendance().isEmpty()) {
+            Map<UUID, User> teamStudents = loadProjectStudentsById(meeting.getProject());
+            validateAttendance(meeting.getProject(), request.attendance(), teamStudents);
+            replaceAttendance(meeting, request.attendance(), teamStudents);
+        }
 
         return toDto(meetingRepository.save(meeting), currentUser);
     }
@@ -195,6 +200,10 @@ public class MeetingService {
     }
 
     public MeetingResponseDTO approveMeetingRequest(UUID meetingId) {
+        return approveMeetingRequest(meetingId, null);
+    }
+
+    public MeetingResponseDTO approveMeetingRequest(UUID meetingId, MeetingDraftDTO request) {
         User currentUser = requireCurrentUser();
         Meeting meeting = loadMeeting(meetingId);
         ensureCanEditMeeting(meeting, currentUser);
@@ -203,6 +212,13 @@ public class MeetingService {
             throw new BadRequestException("Only REQUESTED meetings can be approved.");
         }
 
+        if (request != null) {
+            meeting.setTitle(request.title().trim());
+            meeting.setMeetingDate(request.meetingDate());
+            meeting.setMeetingType(request.meetingType() != null ? MeetingType.valueOf(request.meetingType()) : null);
+            meeting.setLocationOrLink(trimToNull(request.locationOrLink()));
+            meeting.setRequestMessage(trimToNull(request.requestMessage()));
+        }
         meeting.setStatus(MeetingStatus.SCHEDULED);
         meeting.setSupervisor(currentUser);
 
@@ -222,6 +238,10 @@ public class MeetingService {
     }
 
     public MeetingResponseDTO rejectMeetingRequest(UUID meetingId) {
+        return rejectMeetingRequest(meetingId, null);
+    }
+
+    public MeetingResponseDTO rejectMeetingRequest(UUID meetingId, String rejectionReason) {
         User currentUser = requireCurrentUser();
         Meeting meeting = loadMeeting(meetingId);
         ensureCanEditMeeting(meeting, currentUser);
@@ -238,7 +258,8 @@ public class MeetingService {
             notificationService.createNotification(
                     meeting.getRequestedBy(),
                     "Meeting request rejected",
-                    "Your meeting request for project \"" + meeting.getProject().getTitle() + "\" has been rejected.",
+                    "Your meeting request for project \"" + meeting.getProject().getTitle() + "\" has been rejected."
+                            + (StringUtils.hasText(rejectionReason) ? " Reason: " + rejectionReason.trim() : ""),
                     NotificationType.MEETING_CREATED,
                     buildMeetingsLink(meeting.getProject().getId())
             );
@@ -256,7 +277,6 @@ public class MeetingService {
             throw new BadRequestException("Only SCHEDULED meetings can be completed.");
         }
 
-        validateNextMeetingDate(request.meetingDate(), request.nextMeetingDate());
         Map<UUID, User> teamStudents = loadProjectStudentsById(meeting.getProject());
         validateAttendance(meeting.getProject(), request.attendance(), teamStudents);
 
@@ -268,7 +288,9 @@ public class MeetingService {
         meeting.setProgressDiscussed(trimToNull(request.progressDiscussed()));
         meeting.setTasksAssigned(trimToNull(request.tasksAssigned()));
         meeting.setNextSteps(trimToNull(request.nextSteps()));
-        meeting.setNextMeetingDate(request.nextMeetingDate());
+        meeting.setNextMeetingDate(null);
+        meeting.setOverallRating(trimToNull(request.overallRating()));
+        meeting.setConcernActions(trimToNull(request.concernActions()));
         meeting.setStatus(MeetingStatus.COMPLETED);
         replaceAttendance(meeting, request.attendance(), teamStudents);
 
@@ -345,6 +367,8 @@ public class MeetingService {
                 meeting.getTasksAssigned(),
                 meeting.getNextSteps(),
                 meeting.getNextMeetingDate(),
+                meeting.getOverallRating(),
+                meeting.getConcernActions(),
                 meeting.getAttendanceRecords() == null ? List.of() : meeting.getAttendanceRecords().stream()
                         .sorted(Comparator.comparing(record -> record.getStudent() != null ? record.getStudent().getName() : ""))
                         .map(this::toAttendanceDto)
@@ -556,12 +580,6 @@ public class MeetingService {
         }
         return userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new AccessDeniedException("Current user not found."));
-    }
-
-    private void validateNextMeetingDate(java.time.LocalDateTime meetingDate, java.time.LocalDateTime nextMeetingDate) {
-        if (meetingDate != null && nextMeetingDate != null && nextMeetingDate.isBefore(meetingDate)) {
-            throw new BadRequestException("Next meeting date must be after the current meeting date.");
-        }
     }
 
     private String trimToNull(String value) {

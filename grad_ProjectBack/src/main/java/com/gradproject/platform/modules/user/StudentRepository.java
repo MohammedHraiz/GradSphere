@@ -11,7 +11,7 @@ import java.util.UUID;
 @Repository
 public interface StudentRepository extends JpaRepository<User, UUID> {
 
-    @Query("SELECT new com.gradproject.platform.modules.user.StudentDTO(u.id, u.name, u.firstName, u.lastName, u.email, u.universityId) "
+    @Query("SELECT new com.gradproject.platform.modules.user.StudentDTO(u.id, u.name, u.firstName, u.lastName, u.email, u.universityId, u.department, u.profilePhotoUrl) "
             + "FROM User u WHERE u.role = :role "
             + "AND (LOWER(COALESCE(u.name, '')) LIKE LOWER(CONCAT('%', :q, '%')) "
             + "OR LOWER(COALESCE(u.firstName, '')) LIKE LOWER(CONCAT('%', :q, '%')) "

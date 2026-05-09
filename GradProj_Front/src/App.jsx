@@ -559,6 +559,9 @@ function App() {
                     <Route path="dashboard" element={<AdminDashboard />} />
                     <Route path="projects" element={<DeanProjectsList />} />
                     <Route path="supervisor-requests" element={<DeanSupervisorRequests />} />
+                    <Route path="supervisors" element={<SupervisorsList />} />
+                    <Route path="teams" element={<DeanTeamsList />} />
+                    <Route path="students" element={<DeanStudentsList />} />
                     <Route path="users" element={<ManageUsers />} />
                     <Route path="import" element={<ImportProjects />} />
                     <Route path="forms" element={<AdminForms />} />

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getMyProject } from '../../api/projectService';
 import { getProjectMilestones, submitMilestone } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
+import { getMilestoneStatusIcon } from '../../utils/statusIcons';
 
 const styles = `
 .milestones-wrapper { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; animation: fadeIn 0.4s ease-out; text-align: left; }
@@ -37,6 +38,10 @@ const styles = `
 .m-action-row button { border: none; background: transparent; color: #4f46e5; font-weight: 800; cursor: pointer; }
 .state { padding: 22px; border: 1px dashed #cbd5e1; border-radius: 18px; background: #f8fafc; color: #64748b; font-weight: 700; }
 .state.error { border-color: #fecaca; background: #fff1f2; color: #be123c; }
+.empty-state-card { display: grid; gap: 10px; max-width: 660px; margin-top: 24px; padding: 28px; border-radius: 22px; border: 1px solid #e2e8f0; background: linear-gradient(180deg, #ffffff, #f8fafc); box-shadow: 0 22px 42px -34px rgba(15,23,42,0.34); color: #475569; }
+.empty-state-icon { width: 44px; height: 44px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: #eef2ff; font-size: 22px; }
+.empty-state-card h3 { margin: 0; color: #0f172a; font-size: 20px; font-weight: 900; }
+.empty-state-card p { margin: 0; line-height: 1.6; font-weight: 600; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.2s; padding: 20px; }
 .modal-content { background: white; width: 100%; max-width: 760px; max-height: 90vh; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; text-align: left; display: flex; flex-direction: column; overflow: hidden; }
 .modal-header { padding: 25px 30px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -91,7 +96,12 @@ const Milestones = () => {
       const workflowMilestones = await getProjectMilestones(myProject.id);
       setMilestones(workflowMilestones);
     } catch (err) {
-      setError(err?.message || 'Unable to load milestones.');
+      if (err?.status === 404 || err?.response?.status === 404) {
+        setProject(null);
+        setMilestones([]);
+        return;
+      }
+      setError(err?.response?.data?.message || err?.message || 'Unable to load milestones.');
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +172,13 @@ const Milestones = () => {
 
       {isLoading ? <div className="state" style={{ marginTop: 24 }}>Loading project milestones...</div> : null}
       {error ? <div className="state error" style={{ marginTop: 24 }}>{error}</div> : null}
-      {!isLoading && !error && !project ? <div className="state" style={{ marginTop: 24 }}>Your team does not have a project yet, so there are no live milestones to display.</div> : null}
+      {!isLoading && !error && !project ? (
+        <div className="empty-state-card">
+          <span className="empty-state-icon">🚩</span>
+          <h3>No project milestones available yet.</h3>
+          <p>Milestones will appear after your team submits a project proposal.</p>
+        </div>
+      ) : null}
 
       {!isLoading && !error && project ? (
         <div className="timeline-container">
@@ -170,14 +186,14 @@ const Milestones = () => {
             const state = milestoneState(milestone);
             return (
               <div key={milestone.id} className={`timeline-item ${state}`}>
-                <div className="timeline-dot">{state === 'completed' ? '✓' : state === 'submitted' ? '•' : '○'}</div>
+                <div className="timeline-dot">{getMilestoneStatusIcon(milestone.status)}</div>
                 <div className="milestone-card" onClick={() => openViewModal(milestone)}>
                   <div className="m-card-header">
                     <div>
                       <h2 className="m-card-title">{milestone.title}</h2>
                       <span className="m-card-date">Deadline: {milestone.deadlineDate || 'No deadline set'}</span>
                     </div>
-                    <div className={`status-badge ${state}`}>{labelize(milestone.status)}</div>
+                    <div className={`status-badge ${state}`}>{getMilestoneStatusIcon(milestone.status)} {labelize(milestone.status)}</div>
                   </div>
                   <p className="m-card-desc">{milestone.description || 'No milestone description was added yet.'}</p>
                   <div className="m-action-row">

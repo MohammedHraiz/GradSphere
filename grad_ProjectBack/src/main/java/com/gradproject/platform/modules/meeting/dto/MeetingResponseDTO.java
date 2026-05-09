@@ -24,6 +24,8 @@ public record MeetingResponseDTO(
         String tasksAssigned,
         String nextSteps,
         LocalDateTime nextMeetingDate,
+        String overallRating,
+        String concernActions,
         List<MeetingAttendanceResponseDTO> attendance,
         Instant createdAt,
         Instant updatedAt,

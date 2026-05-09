@@ -191,16 +191,42 @@ class MeetingServiceTest {
     @Test
     void editMeetingUpdatesAttendance() {
         Meeting existingMeeting = meeting(project, supervisor);
-        existingMeeting.setAttendanceRecords(new java.util.ArrayList<>());
+        existingMeeting.setStatus(MeetingStatus.COMPLETED);
 
         authenticate(supervisor);
         when(userRepository.findById(supervisor.getId())).thenReturn(Optional.of(supervisor));
         when(meetingRepository.findDetailedById(existingMeeting.getId())).thenReturn(Optional.of(existingMeeting));
+        when(teamMemberRepository.findAllByTeamId(team.getId())).thenReturn(List.of(member(team, teammate, "MEMBER")));
         when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = service.updateMeeting(existingMeeting.getId(), draftRequest());
+        var response = service.updateMeeting(existingMeeting.getId(), updateWithAttendance());
 
-        assertThat(response.attendance()).isEmpty();
+        assertThat(response.attendance()).extracting(item -> item.status())
+                .containsExactlyInAnyOrder(MeetingAttendanceStatus.ABSENT, MeetingAttendanceStatus.EXCUSED);
+        assertThat(response.attendance()).anySatisfy(item -> {
+            assertThat(item.studentId()).isEqualTo(student.getId());
+            assertThat(item.absenceReason()).isEqualTo("Illness");
+        });
+    }
+
+    @Test
+    void completeMeetingSavesMixedAttendanceAndReturnsIt() {
+        Meeting scheduledMeeting = meeting(project, supervisor);
+        scheduledMeeting.setStatus(MeetingStatus.SCHEDULED);
+        scheduledMeeting.setAttendanceRecords(new java.util.ArrayList<>());
+
+        authenticate(supervisor);
+        when(userRepository.findById(supervisor.getId())).thenReturn(Optional.of(supervisor));
+        when(meetingRepository.findDetailedById(scheduledMeeting.getId())).thenReturn(Optional.of(scheduledMeeting));
+        when(teamMemberRepository.findAllByTeamId(team.getId())).thenReturn(List.of(member(team, teammate, "MEMBER")));
+        when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.completeMeeting(scheduledMeeting.getId(), completionRequest(student, teammate));
+
+        assertThat(response.status()).isEqualTo(MeetingStatus.COMPLETED.name());
+        assertThat(response.attendance()).hasSize(2);
+        assertThat(response.attendance()).extracting(item -> item.status())
+                .containsExactlyInAnyOrder(MeetingAttendanceStatus.PRESENT, MeetingAttendanceStatus.ABSENT);
     }
 
     @Test
@@ -364,6 +390,27 @@ class MeetingServiceTest {
                 null,
                 null,
                 List.of()
+        );
+    }
+
+    private MeetingDraftDTO updateWithAttendance() {
+        return new MeetingDraftDTO(
+                "Weekly sync",
+                LocalDateTime.now().plusDays(1),
+                "Summary",
+                "Progress",
+                "Tasks",
+                "Next steps",
+                null,
+                null,
+                null,
+                null,
+                "GIVING_CAUSE_FOR_CONCERN",
+                "Follow the recovery plan",
+                List.of(
+                        new MeetingAttendanceRequestDTO(student.getId(), MeetingAttendanceStatus.ABSENT, "Illness"),
+                        new MeetingAttendanceRequestDTO(teammate.getId(), MeetingAttendanceStatus.EXCUSED, "Approved excuse")
+                )
         );
     }
 

@@ -13,6 +13,7 @@ import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.team.Team;
 import com.gradproject.platform.modules.team.TeamRepository;
+import com.gradproject.platform.modules.team.TeamRules;
 import com.gradproject.platform.modules.user.User;
 import com.gradproject.platform.modules.user.UserRepository;
 import com.gradproject.platform.modules.user.UserRole;
@@ -96,6 +97,10 @@ public class InvitationService {
             return InviteEligibility.ineligible("Receiver not found", null, senderTeam);
         }
 
+        if (isTeamFull(senderTeam)) {
+            return InviteEligibility.ineligible(TeamRules.TEAM_FULL_MESSAGE, null, senderTeam);
+        }
+
         if (currentUser.getId().equals(receiverId)) {
             return InviteEligibility.ineligible("You cannot invite yourself.", currentUser, senderTeam);
         }
@@ -133,8 +138,17 @@ public class InvitationService {
             throw new InvitationConflictException("User already belongs to a team");
         }
 
+        Team invitationTeam = invitation.getTeam();
+        if (invitationTeam == null || invitationTeam.getId() == null) {
+            throw new InvitationConflictException("Invitation team is no longer available.");
+        }
+
+        if (isTeamFull(invitationTeam)) {
+            throw new InvitationConflictException(TeamRules.TEAM_FULL_MESSAGE);
+        }
+
         TeamMember teamMember = TeamMember.builder()
-                .team(invitation.getTeam())
+                .team(invitationTeam)
                 .user(currentUser)
                 .memberRole("MEMBER")
                 .membershipStatus("ACTIVE")
@@ -153,7 +167,7 @@ public class InvitationService {
                     "/my-team"
             );
         }
-        return new InvitationActionResponseDTO("ACCEPTED", "Invitation accepted", invitation.getId(), invitation.getTeam().getId());
+        return new InvitationActionResponseDTO("ACCEPTED", "Invitation accepted", invitation.getId(), invitationTeam.getId());
     }
 
     @Transactional
@@ -269,6 +283,12 @@ public class InvitationService {
         boolean isMember = teamMemberRepository.existsByUserId(userId);
         boolean isLeader = teamRepository.findByLeaderId(userId) != null;
         return isMember || isLeader;
+    }
+
+    private boolean isTeamFull(Team team) {
+        return team != null
+                && team.getId() != null
+                && teamMemberRepository.countByTeamId(team.getId()) >= TeamRules.MAX_MEMBERS;
     }
 
     private Team getLeaderTeamOrThrow(User currentUser, String leaderMessage) {

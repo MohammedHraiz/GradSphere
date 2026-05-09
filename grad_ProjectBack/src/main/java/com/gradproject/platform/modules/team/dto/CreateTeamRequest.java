@@ -1,9 +1,9 @@
 package com.gradproject.platform.modules.team.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.gradproject.platform.modules.team.TeamRules;
 import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateTeamRequest(
@@ -11,8 +11,7 @@ public record CreateTeamRequest(
         @Size(min = 3, max = 100)
         String name,
 
-        @NotNull(message = "Max size is required")
-        @Min(value = 2, message = "Team must have at least 2 members")
-        @Max(value = 10, message = "Team cannot exceed 10 members")
+        @JsonAlias({"maxMembers", "teamSize", "maximumSize"})
+        @Max(value = TeamRules.MAX_MEMBERS, message = "Team maximum size is 5 members.")
         Integer maxSize
 ) {}

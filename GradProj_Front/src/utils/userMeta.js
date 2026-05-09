@@ -19,7 +19,15 @@ export const roleNeedsDepartment = (role) => role === 'ROLE_STUDENT' || role ===
 
 export const formatRoleLabel = (role) => ROLE_LABELS[role] ?? (String(role || '').replace(/^ROLE_/i, '').replace(/_/g, ' ') || 'Unknown');
 
-export const formatDepartmentLabel = (department) => DEPARTMENT_LABELS[department] ?? department ?? 'Not assigned';
+export const formatDepartmentLabel = (department, fallback = 'Not assigned') => {
+  const value = String(department || '').trim();
+  if (!value) return fallback;
+  return DEPARTMENT_LABELS[value] ?? value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+export const getUserDepartment = (user) => user?.department ?? '';
+
+export const formatMajorLabel = (user, fallback = 'Major not assigned') => formatDepartmentLabel(getUserDepartment(user), fallback);
 
 export const resolveProfilePhotoUrl = (photoUrl) => {
   if (!photoUrl) return '';

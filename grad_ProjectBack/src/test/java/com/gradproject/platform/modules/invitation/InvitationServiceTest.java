@@ -7,6 +7,7 @@ import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.team.Team;
 import com.gradproject.platform.modules.team.TeamRepository;
+import com.gradproject.platform.modules.team.TeamRules;
 import com.gradproject.platform.modules.user.User;
 import com.gradproject.platform.modules.user.UserRepository;
 import com.gradproject.platform.modules.user.UserRole;
@@ -92,6 +93,31 @@ class InvitationServiceTest {
                 .hasMessage("Student is already in a team.");
 
         verify(invitationRepository, never()).save(any());
+    }
+
+    @Test
+    void cannotInviteWhenTeamAlreadyHasFiveMembers() {
+        when(teamMemberRepository.countByTeamId(senderTeam.getId())).thenReturn(5L);
+
+        assertThatThrownBy(() -> invitationService.sendInvitation(receiver.getId()))
+                .isInstanceOf(InvitationConflictException.class)
+                .hasMessage(TeamRules.TEAM_FULL_MESSAGE);
+
+        verify(userRepository, never()).findById(receiver.getId());
+        verify(invitationRepository, never()).save(any());
+    }
+
+    @Test
+    void canInviteWhenTeamHasFewerThanFiveMembers() {
+        when(teamMemberRepository.countByTeamId(senderTeam.getId())).thenReturn(4L);
+        when(userRepository.findById(receiver.getId())).thenReturn(Optional.of(receiver));
+        when(teamRepository.findByLeaderId(receiver.getId())).thenReturn(null);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Invitation invitation = invitationService.sendInvitation(receiver.getId());
+
+        assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.PENDING);
+        assertThat(invitation.getTeam()).isEqualTo(senderTeam);
     }
 
     @Test
@@ -229,6 +255,7 @@ class InvitationServiceTest {
         when(invitationRepository.findById(invitation.getId())).thenReturn(Optional.of(invitation));
         when(teamMemberRepository.existsByUserId(receiver.getId())).thenReturn(false);
         when(teamRepository.findByLeaderId(receiver.getId())).thenReturn(null);
+        when(teamMemberRepository.countByTeamId(senderTeam.getId())).thenReturn(4L);
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -237,6 +264,24 @@ class InvitationServiceTest {
         invitationService.acceptInvitation(invitation.getId());
 
         verify(notificationService).createNotification(eq(sender), any(), any(), eq(NotificationType.INVITATION_ACCEPTED), eq("/my-team"));
+    }
+
+    @Test
+    void acceptingInvitationIsBlockedWhenTeamBecameFull() {
+        Invitation invitation = invitation(InvitationStatus.PENDING, sender, receiver, senderTeam);
+        when(invitationRepository.findById(invitation.getId())).thenReturn(Optional.of(invitation));
+        when(teamMemberRepository.existsByUserId(receiver.getId())).thenReturn(false);
+        when(teamRepository.findByLeaderId(receiver.getId())).thenReturn(null);
+        when(teamMemberRepository.countByTeamId(senderTeam.getId())).thenReturn(5L);
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(receiver, null, receiver.getAuthorities()));
+
+        assertThatThrownBy(() -> invitationService.acceptInvitation(invitation.getId()))
+                .isInstanceOf(InvitationConflictException.class)
+                .hasMessage(TeamRules.TEAM_FULL_MESSAGE);
+
+        verify(teamMemberRepository, never()).save(any(TeamMember.class));
     }
 
     @Test

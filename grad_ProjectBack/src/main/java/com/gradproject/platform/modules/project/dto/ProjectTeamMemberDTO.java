@@ -7,6 +7,8 @@ public record ProjectTeamMemberDTO(
         String name,
         String email,
         String universityId,
+        String department,
+        String profilePhotoUrl,
         String role
 ) {
 }

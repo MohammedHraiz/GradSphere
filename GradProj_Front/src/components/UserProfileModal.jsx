@@ -37,6 +37,8 @@ const UserProfileModal = ({ open, onClose }) => {
   const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
   const [selectedPhotoPreview, setSelectedPhotoPreview] = useState('');
   const [selectedPhotoName, setSelectedPhotoName] = useState('');
+  const isEditingRef = useRef(false);
+  const isDraftDirtyRef = useRef(false);
 
   const role = savedProfile?.role ?? currentUser?.role ?? null;
   const roleTheme = useMemo(() => getRoleTheme(role), [role]);
@@ -62,6 +64,11 @@ const UserProfileModal = ({ open, onClose }) => {
   };
 
   useEffect(() => {
+    isEditingRef.current = isEditing;
+    isDraftDirtyRef.current = isDraftDirty;
+  }, [isEditing, isDraftDirty]);
+
+  useEffect(() => {
     if (!open) {
       setIsEditing(false);
       setError('');
@@ -85,7 +92,7 @@ const UserProfileModal = ({ open, onClose }) => {
           : await getMyProfile();
         if (cancelled || !latest) return;
         setSavedProfile(latest);
-        if (!isEditing && !isDraftDirty) {
+        if (!isEditingRef.current && !isDraftDirtyRef.current) {
           syncDraftWithProfile(latest);
         }
       } catch (err) {
@@ -164,7 +171,7 @@ const UserProfileModal = ({ open, onClose }) => {
     }
 
     if (file.size > MAX_PROFILE_IMAGE_SIZE) {
-      setToast({ message: 'Profile photo is too large.', type: 'error' });
+      setToast({ message: 'Profile photo must be 2MB or smaller.', type: 'error' });
       event.target.value = '';
       return;
     }

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getAssignedProjects } from '../../api/projectService';
 import { createProjectTask, deleteTask, getProjectTasks, updateTask } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
+import SearchBar from '../../components/SearchBar';
 
 const styles = `
 .task-manager-container { display: flex; flex-direction: column; height: 100%; animation: fadeIn 0.4s ease-out; padding: 30px; text-align: left; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -12,7 +13,7 @@ const styles = `
 .btn-primary-saas { background: #4F46E5; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
 .btn-primary-saas:disabled { opacity: .6; cursor: not-allowed; }
 .filter-bar { display: grid; grid-template-columns: 1.2fr repeat(3, minmax(180px, 1fr)); gap: 15px; background: white; padding: 15px; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-.search-box, .filter-bar select { border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; }
+.filter-bar select { border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; }
 .kanban-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .kanban-column { background-color: #F1F5F9; padding: 18px; border-radius: 18px; border: 1px solid #E2E8F0; min-height: 380px; }
 .column-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #CBD5E1; }
@@ -234,7 +235,7 @@ const TaskManager = () => {
         </div>
 
         <div className="filter-bar">
-          <input className="search-box" placeholder="Search tasks, descriptions, or students..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} />
+          <SearchBar className="search-box" placeholder="Search tasks, descriptions, or students..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onClear={() => setSearchQuery('')} />
           <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
             <option value="">Select project</option>
             {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}

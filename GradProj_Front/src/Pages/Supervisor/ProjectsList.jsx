@@ -11,6 +11,7 @@ import {
 } from '../../api/projectService';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
+import ClickableUser from '../../components/ClickableUser';
 import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, triggerBrowserDownload } from '../../utils/downloadFile';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
@@ -28,6 +29,12 @@ const styles = `
 .sup-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; background: #f8fafc; }
 .sup-card-title { margin: 0; font-size: 16px; font-weight: 900; color: #0f172a; }
 .sup-meta { margin: 6px 0 0; color: #64748b; font-size: 13px; line-height: 1.6; }
+.sup-user-link { display: inline-flex; align-items: center; gap: 10px; border: none; background: transparent; padding: 0; font: inherit; text-align: left; cursor: pointer; }
+.sup-user-avatar { width: 34px; height: 34px; border-radius: 12px; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; overflow: hidden; }
+.sup-user-name { font-size: 13px; font-weight: 900; color: #0f172a; }
+.sup-user-subtitle { font-size: 11px; color: #64748b; font-weight: 700; overflow-wrap: anywhere; }
+.sup-team-members { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.sup-member-chip { display: inline-flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; border: 1px solid #e2e8f0; background: white; box-shadow: 0 10px 16px -20px rgba(15,23,42,.8); }
 .sup-message { margin: 12px 0 0; border-left: 3px solid #2563eb; padding-left: 12px; color: #334155; font-size: 13px; line-height: 1.6; }
 .sup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .sup-btn { border: 1px solid #cbd5e1; background: white; color: #0f172a; border-radius: 10px; padding: 9px 12px; font-size: 12px; font-weight: 900; cursor: pointer; }
@@ -242,6 +249,27 @@ const ProjectsList = () => {
                       <span>Team: {project.teamName || 'Not linked'}</span>
                       <ProjectStatusBadge status={project.status} />
                     </div>
+                    {Array.isArray(project.teamMembers) && project.teamMembers.length > 0 ? (
+                      <div className="sup-team-members">
+                        {project.teamMembers.map((member, index) => (
+                          <ClickableUser
+                            key={member?.id ?? member?.userId ?? `${project.id}-member-${index}`}
+                            user={{
+                              ...member,
+                              id: member?.id ?? member?.userId ?? null,
+                              role: member?.role ?? 'ROLE_STUDENT',
+                              universityId: member?.universityId ?? member?.universityID ?? '',
+                              specialty: member?.major ?? '',
+                            }}
+                            className="sup-user-link sup-member-chip"
+                            avatarClassName="sup-user-avatar"
+                            nameClassName="sup-user-name"
+                            subtitle={member?.email || member?.memberRole || 'View student profile'}
+                            subtitleClassName="sup-user-subtitle"
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                     <div className="sup-meta" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <span>Proposal Version: {project.proposalVersion || 1}</span>
                       {isResubmitted ? <span className="sup-badge">Resubmitted</span> : null}

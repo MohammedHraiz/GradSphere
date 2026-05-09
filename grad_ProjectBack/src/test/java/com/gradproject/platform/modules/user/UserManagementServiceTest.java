@@ -348,6 +348,45 @@ class UserManagementServiceTest {
     }
 
     @Test
+    void authenticatedUserCanFetchSafePublicProfile() {
+        student.setDepartment(UserDepartment.SOFTWARE_ENGINEERING);
+        student.setPhoneNumber("0791234567");
+        student.setSpecialty("Frontend Developer");
+        when(userRepository.findByEmailIgnoreCase(student.getEmail())).thenReturn(Optional.of(student));
+        when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+        authenticate(student);
+
+        var response = service.getPublicUserProfile(student.getId());
+
+        assertThat(response.id()).isEqualTo(student.getId());
+        assertThat(response.email()).isEqualTo(student.getEmail());
+        assertThat(response.department()).isEqualTo("SOFTWARE_ENGINEERING");
+        assertThat(response.specialty()).isEqualTo("Frontend Developer");
+    }
+
+    @Test
+    void supervisorPublicProfileIncludesOfficeHours() {
+        supervisor.setDepartment(UserDepartment.COMPUTER_SCIENCE);
+        supervisor.setOfficeHours("Mon 9-11");
+        when(userRepository.findByEmailIgnoreCase(student.getEmail())).thenReturn(Optional.of(student));
+        when(userRepository.findById(supervisor.getId())).thenReturn(Optional.of(supervisor));
+        authenticate(student);
+
+        var response = service.getPublicUserProfile(supervisor.getId());
+
+        assertThat(response.role()).isEqualTo("ROLE_SUPERVISOR");
+        assertThat(response.officeHours()).isEqualTo("Mon 9-11");
+    }
+
+    @Test
+    void unauthenticatedUserCannotFetchPublicProfile() {
+        SecurityContextHolder.clearContext();
+
+        assertThatThrownBy(() -> service.getPublicUserProfile(student.getId()))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void supervisorCanEditOfficeHours() {
         when(userRepository.findByEmailIgnoreCase(supervisor.getEmail())).thenReturn(Optional.of(supervisor));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));

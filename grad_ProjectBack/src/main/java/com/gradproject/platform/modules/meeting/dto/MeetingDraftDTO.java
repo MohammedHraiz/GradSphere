@@ -1,10 +1,12 @@
 package com.gradproject.platform.modules.meeting.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record MeetingDraftDTO(
         @NotBlank(message = "Meeting title is required.")
@@ -32,6 +34,28 @@ public record MeetingDraftDTO(
 
         String locationOrLink,
 
-        String requestMessage
+        String requestMessage,
+
+        String overallRating,
+
+        @Size(max = 5000, message = "Concern actions must be 5000 characters or less.")
+        String concernActions,
+
+        List<@Valid MeetingAttendanceRequestDTO> attendance
 ) {
+        public MeetingDraftDTO(
+                String title,
+                LocalDateTime meetingDate,
+                String summary,
+                String progressDiscussed,
+                String tasksAssigned,
+                String nextSteps,
+                LocalDateTime nextMeetingDate,
+                String meetingType,
+                String locationOrLink,
+                String requestMessage
+        ) {
+                this(title, meetingDate, summary, progressDiscussed, tasksAssigned, nextSteps, nextMeetingDate,
+                        meetingType, locationOrLink, requestMessage, null, null, null);
+        }
 }

@@ -69,8 +69,8 @@ const Overview = () => {
       <style>{styles}</style>
       <div className="hero-banner">
         <div>
-          <h1 className="welcome-title">Welcome back, {data?.userName || 'Student'}</h1>
-          <p className="welcome-subtitle">Your graduation project dashboard is now powered by live team, proposal, invitation, and feedback data.</p>
+          <h1 className="welcome-title">Welcome back,Graduate</h1>
+          <p className="welcome-subtitle">Your project is on track, keep up the good work to finish on time.</p>
         </div>
         <div className="date-badge">{currentDate}</div>
       </div>

@@ -5,6 +5,7 @@ import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.storage.FileStorageService;
 import com.gradproject.platform.modules.user.dto.AdminUserCreateRequestDTO;
 import com.gradproject.platform.modules.user.dto.AdminUserUpdateRequestDTO;
+import com.gradproject.platform.modules.user.dto.PublicUserProfileDTO;
 import com.gradproject.platform.modules.user.dto.UserProfileResponseDTO;
 import com.gradproject.platform.modules.user.dto.UserProfileUpdateRequestDTO;
 import org.springframework.security.access.AccessDeniedException;
@@ -35,6 +36,22 @@ public class UserManagementService {
     public UserProfileResponseDTO getCurrentUserProfile(String email) {
         User user = getUserByEmail(email);
         return toProfileDto(user, hasTeam(user));
+    }
+
+    public PublicUserProfileDTO getPublicUserProfile(UUID userId) {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new AccessDeniedException("Authenticated user not found.");
+        }
+
+        User requester = getCurrentAuthenticatedUser();
+        if (requester == null || requester.getId() == null) {
+            throw new AccessDeniedException("Authenticated user not found.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+        return toPublicProfileDto(user);
     }
 
     public UserProfileResponseDTO updateCurrentUserProfile(String email, UserProfileUpdateRequestDTO request) {
@@ -158,6 +175,22 @@ public class UserManagementService {
                 user.getProfilePhotoUrl(),
                 user.getCreatedAt(),
                 hasTeam
+        );
+    }
+
+    private PublicUserProfileDTO toPublicProfileDto(User user) {
+        return new PublicUserProfileDTO(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole() != null ? user.getRole().name() : null,
+                user.getDepartment() != null ? user.getDepartment().name() : null,
+                user.getUniversityId(),
+                user.getProfilePhotoUrl(),
+                user.getPhoneNumber(),
+                user.getSpecialty(),
+                user.getOfficeHours(),
+                user.getCreatedAt()
         );
     }
 

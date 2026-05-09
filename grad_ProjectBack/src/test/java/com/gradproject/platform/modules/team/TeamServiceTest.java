@@ -6,6 +6,9 @@ import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectStatus;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.task.TaskRepository;
+import com.gradproject.platform.modules.task.TaskStatus;
+import com.gradproject.platform.modules.team.dto.CreateTeamRequest;
 import com.gradproject.platform.modules.user.User;
 import com.gradproject.platform.modules.user.UserRepository;
 import com.gradproject.platform.modules.user.UserRole;
@@ -23,6 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,6 +46,9 @@ class TeamServiceTest {
     @Mock
     private ProjectRepository projectRepository;
 
+    @Mock
+    private TaskRepository taskRepository;
+
     private TeamService teamService;
     private User leader;
     private User member;
@@ -50,11 +57,83 @@ class TeamServiceTest {
 
     @BeforeEach
     void setUp() {
-        teamService = new TeamService(userRepository, teamRepository, teamMemberRepository, projectRepository);
+        teamService = new TeamService(userRepository, teamRepository, teamMemberRepository, projectRepository, taskRepository);
         leader = user(UUID.randomUUID(), "leader@example.com");
         member = user(UUID.randomUUID(), "member@example.com");
         team = team(UUID.randomUUID(), leader);
         memberMembership = membership(team, member, "MEMBER");
+    }
+
+    @Test
+    void createTeamDefaultsMaxMembersToFive() {
+        UUID newTeamId = UUID.randomUUID();
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.existsByUserId(leader.getId())).thenReturn(false);
+        when(teamRepository.save(any(Team.class))).thenAnswer(invocation -> {
+            Team saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", newTeamId);
+            return saved;
+        });
+        when(teamMemberRepository.countByTeamId(newTeamId)).thenReturn(1L);
+        when(teamMemberRepository.findAllByTeamId(newTeamId)).thenReturn(List.of(membership(team(newTeamId, leader), leader, "LEADER")));
+        when(projectRepository.findByTeamId(newTeamId)).thenReturn(Optional.empty());
+
+        var response = teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", null));
+
+        assertThat(response.maxMembers()).isEqualTo(5);
+        assertThat(response.membersCount()).isEqualTo(1);
+        assertThat(response.totalTasks()).isZero();
+        assertThat(response.completionRate()).isZero();
+    }
+
+    @Test
+    void createTeamRejectsMaxMembersAboveFive() {
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.existsByUserId(leader.getId())).thenReturn(false);
+
+        assertThatThrownBy(() -> teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", 6)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Team maximum size is 5 members.");
+
+        verify(teamRepository, never()).save(any());
+    }
+
+    @Test
+    void teamWithNoProjectReturnsZeroTaskStats() {
+        TeamMember leaderMembership = membership(team, leader, "LEADER");
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(1L);
+        when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.empty());
+        when(teamMemberRepository.findAllByTeamId(team.getId())).thenReturn(List.of(leaderMembership));
+
+        var response = teamService.getMyTeam(leader.getEmail()).orElseThrow();
+
+        assertThat(response.totalTasks()).isZero();
+        assertThat(response.completedTasks()).isZero();
+        assertThat(response.completionRate()).isZero();
+    }
+
+    @Test
+    void teamWithTasksReturnsCorrectTaskStats() {
+        TeamMember leaderMembership = membership(team, leader, "LEADER");
+        Project project = new Project();
+        project.setId(UUID.randomUUID());
+        project.setTeam(team);
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(3L);
+        when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.of(project));
+        when(taskRepository.countByProjectId(project.getId())).thenReturn(8L);
+        when(taskRepository.countByProjectIdAndStatus(project.getId(), TaskStatus.COMPLETED)).thenReturn(5L);
+        when(teamMemberRepository.findAllByTeamId(team.getId())).thenReturn(List.of(leaderMembership, memberMembership));
+
+        var response = teamService.getMyTeam(leader.getEmail()).orElseThrow();
+
+        assertThat(response.totalTasks()).isEqualTo(8);
+        assertThat(response.completedTasks()).isEqualTo(5);
+        assertThat(response.completionRate()).isEqualTo(62);
+        verify(taskRepository).countByProjectIdAndStatus(project.getId(), TaskStatus.COMPLETED);
     }
 
     @Test

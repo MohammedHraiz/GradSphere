@@ -18,6 +18,7 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
+import { getAttendanceIcon, getMeetingStatusIcon, getMeetingTypeIcon } from '../../utils/statusIcons';
 import './MeetingsPage.css';
 
 const ATTENDANCE_OPTIONS = ['PRESENT', 'ABSENT', 'EXCUSED'];
@@ -38,9 +39,16 @@ const MEETING_TYPE = {
 };
 const MEETING_TYPE_OPTIONS = [
   { value: 'REVIEW', label: 'Review', helper: 'Deep feedback and progress evaluation.' },
-  { value: 'CHECK_IN', label: 'Check-In', helper: 'Regular sync for updates and blockers.' },
+  { value: 'CHECK_IN', label: 'Check-in', helper: 'Regular sync for updates and blockers.' },
   { value: 'MILESTONE', label: 'Milestone', helper: 'Focused review around a major delivery.' },
  
+];
+
+const PROGRESS_RATING_OPTIONS = [
+  { value: 'EXCELLENT', label: 'Excellent' },
+  { value: 'SATISFACTORY', label: 'Satisfactory' },
+  { value: 'REQUIRES_IMPROVEMENT', label: 'Requires Improvement' },
+  { value: 'GIVING_CAUSE_FOR_CONCERN', label: 'Giving Cause for Concern' },
 ];
 
 const emptyForm = {
@@ -53,7 +61,8 @@ const emptyForm = {
   progressDiscussed: '',
   tasksAssigned: '',
   nextSteps: '',
-  nextMeetingDate: '',
+  overallRating: 'SATISFACTORY',
+  concernActions: '',
   attendance: [],
 };
 
@@ -106,6 +115,8 @@ const normalizeMeeting = (meeting) => ({
   requestedByName: meeting?.requestedByName ?? '',
   requestMessage: meeting?.requestMessage ?? '',
   locationOrLink: meeting?.locationOrLink ?? '',
+  overallRating: meeting?.overallRating ?? '',
+  concernActions: meeting?.concernActions ?? '',
   attendance: Array.isArray(meeting?.attendance) ? meeting.attendance : [],
 });
 
@@ -215,8 +226,15 @@ const normalizeDraftPayload = (form) => ({
   progressDiscussed: form.progressDiscussed.trim() || null,
   tasksAssigned: form.tasksAssigned.trim() || null,
   nextSteps: form.nextSteps.trim() || null,
-  nextMeetingDate: form.nextMeetingDate || null,
+  overallRating: form.overallRating || null,
+  concernActions: form.concernActions?.trim() || null,
 });
+
+const buildAttendancePayload = (form) => (form.attendance || []).map((item) => ({
+  studentId: item.studentId,
+  status: item.status,
+  absenceReason: item.status === 'PRESENT' ? '' : item.absenceReason?.trim() || '',
+}));
 
 const normalizeRequestPayload = (form) => ({
   title: form.title.trim(),
@@ -228,11 +246,7 @@ const normalizeRequestPayload = (form) => ({
 
 const normalizeCompletionPayload = (form) => ({
   ...normalizeDraftPayload(form),
-  attendance: (form.attendance || []).map((item) => ({
-    studentId: item.studentId,
-    status: item.status,
-    absenceReason: item.status === 'PRESENT' ? '' : item.absenceReason?.trim() || '',
-  })),
+  attendance: buildAttendancePayload(form),
 });
 
 const MeetingTypeSelector = ({ value, onChange }) => (
@@ -244,6 +258,7 @@ const MeetingTypeSelector = ({ value, onChange }) => (
         className={`meetings-type-card ${value === option.value ? 'active' : ''}`}
         onClick={() => onChange(option.value)}
       >
+        <span className="meetings-type-icon" aria-hidden="true">{getMeetingTypeIcon(option.value)}</span>
         <strong>{option.label}</strong>
         <span>{option.helper}</span>
       </button>
@@ -310,6 +325,7 @@ const MeetingsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
   const [meetingSearch, setMeetingSearch] = useState('');
+  const [meetingSort, setMeetingSort] = useState('NEWEST');
   const [formErrors, setFormErrors] = useState({});
   const [activeTab, setActiveTab] = useState(() => {
     if (isStudent) return 'SCHEDULED';
@@ -490,9 +506,9 @@ const MeetingsPage = () => {
     [...meetings].sort((left, right) => {
       const leftTime = new Date(left?.meetingDate || 0).getTime();
       const rightTime = new Date(right?.meetingDate || 0).getTime();
-      return rightTime - leftTime;
+      return meetingSort === 'OLDEST' ? leftTime - rightTime : rightTime - leftTime;
     })
-  ), [meetings]);
+  ), [meetings, meetingSort]);
 
   const filteredMeetings = useMemo(() => {
     let base = sortedMeetings;
@@ -500,7 +516,7 @@ const MeetingsPage = () => {
     if (isStudent && activeTab !== 'ALL') {
        if (activeTab === 'SCHEDULED') base = sortedMeetings.filter(m => m.status === 'SCHEDULED');
        else if (activeTab === 'REQUESTED') base = sortedMeetings.filter(m => m.status === 'REQUESTED');
-       else if (activeTab === 'PAST') base = sortedMeetings.filter(m => ['COMPLETED', 'CANCELED', 'REJECTED'].includes(m.status));
+       else if (activeTab === 'PAST') base = sortedMeetings.filter(m => m.status === 'COMPLETED');
     } else if (canManage && activeTab !== 'ALL') {
        if (activeTab === 'SCHEDULED') base = sortedMeetings.filter(m => m.status === 'SCHEDULED');
        else if (activeTab === 'REQUESTED') base = sortedMeetings.filter(m => m.status === 'REQUESTED');
@@ -598,7 +614,8 @@ const MeetingsPage = () => {
       progressDiscussed: meeting.progressDiscussed || '',
       tasksAssigned: meeting.tasksAssigned || '',
       nextSteps: meeting.nextSteps || '',
-      nextMeetingDate: toInputDateTime(meeting.nextMeetingDate),
+      overallRating: meeting.overallRating || 'SATISFACTORY',
+      concernActions: meeting.concernActions || '',
       attendance: buildAttendanceView(meeting.attendance, buildAttendanceRoster(selectedProject, meeting.attendance)).map((item) => ({
         studentId: item.studentId,
         status: item.status || 'PRESENT',
@@ -649,7 +666,10 @@ const MeetingsPage = () => {
     try {
       let response;
       if (actionType === 'APPROVE') response = await approveMeeting(meeting.id);
-      else if (actionType === 'REJECT') response = await rejectMeeting(meeting.id);
+      else if (actionType === 'REJECT') {
+        const reason = window.prompt('Optional rejection reason for the student/team:') || '';
+        response = await rejectMeeting(meeting.id, reason.trim());
+      }
       else if (actionType === 'CANCEL') response = await cancelMeeting(meeting.id);
       
       setMeetings((current) => current.map((m) => (m.id === meeting.id ? normalizeMeeting(extractResponsePayload(response)) : m)));
@@ -667,23 +687,35 @@ const MeetingsPage = () => {
   );
 
   const draftAttendanceSummary = useMemo(() => getAttendanceSummary(formState.attendance), [formState.attendance]);
+  const showProgressReportFields = Boolean(editingMeeting && ['SCHEDULED', 'COMPLETED'].includes(editingMeeting.status));
 
-  const handleSubmit = async (event, isCompleting = false) => {
+  const handleSubmit = async (event, mode = 'save') => {
     event.preventDefault();
     if (!selectedProject?.id) return;
+    const isCompleting = mode === 'complete';
+    const isApproving = mode === 'approve';
+    const isUpdatingCompletedReport = editingMeeting?.status === 'COMPLETED';
 
-    const nextErrors = validateForm(formState, selectedProject, { requireAttendance: isCompleting });
+    const nextErrors = validateForm(formState, selectedProject, { requireAttendance: isCompleting || isUpdatingCompletedReport });
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
     setSubmitting(true);
     try {
-      const payload = isCompleting ? normalizeCompletionPayload(formState) : normalizeDraftPayload(formState);
+      const payload = isCompleting
+        ? normalizeCompletionPayload(formState)
+        : {
+            ...normalizeDraftPayload(formState),
+            ...(isUpdatingCompletedReport ? { attendance: buildAttendancePayload(formState) } : {}),
+          };
       if (editingMeeting?.id) {
         let response;
         if (isCompleting) {
            response = await completeMeeting(editingMeeting.id, payload);
            setToast({ message: 'Meeting completed successfully.' });
+        } else if (isApproving) {
+           response = await approveMeeting(editingMeeting.id, normalizeRequestPayload(formState));
+           setToast({ message: 'Meeting approved and scheduled successfully.' });
         } else {
            response = await updateProjectMeeting(editingMeeting.id, payload);
            setToast({ message: 'Meeting updated successfully.' });
@@ -717,6 +749,11 @@ const MeetingsPage = () => {
   };
 
   const handleDownload = async (meeting) => {
+    if (meeting?.status !== 'COMPLETED') {
+      setToast({ message: 'PDF is available after the meeting report is completed.', type: 'error' });
+      return;
+    }
+
     try {
       const response = await downloadSingleMeetingForm(meeting.id);
       openBlob(response.data, `${meeting.title || 'meeting'}.pdf`);
@@ -741,7 +778,7 @@ const MeetingsPage = () => {
               onClick={openCreateModal}
               disabled={!canCreateMeeting}
             >
-              Create Meeting
+              Schedule Meeting
             </button>
           </div>
         ) : canRequestMeeting ? (
@@ -751,7 +788,7 @@ const MeetingsPage = () => {
               className="meetings-btn"
               onClick={openRequestModal}
             >
-              Request New Meeting
+              📅 Request Meeting
             </button>
           </div>
         ) : null}
@@ -864,7 +901,7 @@ const MeetingsPage = () => {
 
               {selectedProjectArchived ? (
                 <div className="meetings-readonly-note">
-                  Archived projects are read-only. You can still review records, attendance, and download PDFs.
+                  Archived projects are read-only. You can still review records, attendance, and completed PDFs.
                 </div>
               ) : null}
             </div>
@@ -906,7 +943,7 @@ const MeetingsPage = () => {
               <div className="meetings-tabs">
                 <button className={`meetings-tab ${activeTab === 'SCHEDULED' ? 'active' : ''}`} onClick={() => setActiveTab('SCHEDULED')}>Upcoming Scheduled</button>
                 <button className={`meetings-tab ${activeTab === 'REQUESTED' ? 'active' : ''}`} onClick={() => setActiveTab('REQUESTED')}>Pending Requests</button>
-                <button className={`meetings-tab ${activeTab === 'PAST' ? 'active' : ''}`} onClick={() => setActiveTab('PAST')}>Past Records</button>
+                <button className={`meetings-tab ${activeTab === 'PAST' ? 'active' : ''}`} onClick={() => setActiveTab('PAST')}>Completed Records</button>
                 <button className={`meetings-tab ${activeTab === 'ALL' ? 'active' : ''}`} onClick={() => setActiveTab('ALL')}>All</button>
               </div>
             ) : canManage ? (
@@ -930,6 +967,10 @@ const MeetingsPage = () => {
                   value={meetingSearch}
                   onChange={(event) => setMeetingSearch(event.target.value)}
                 />
+                <select className="meetings-input meetings-sort-select" value={meetingSort} onChange={(event) => setMeetingSort(event.target.value)}>
+                  <option value="NEWEST">Newest first</option>
+                  <option value="OLDEST">Oldest first</option>
+                </select>
               </div>
             ) : null}
           </div>
@@ -941,14 +982,17 @@ const MeetingsPage = () => {
             </div>
           ) : filteredMeetings.length === 0 ? (
             <div className="meetings-state">
-              <h3>No matching meetings</h3>
-              <p>Try a broader search to see more meeting records.</p>
+              <h3>{activeTab === 'COMPLETED' || activeTab === 'PAST' ? 'No meeting records yet.' : 'No matching meetings'}</h3>
+              <p>{meetingSearch ? 'Try a broader search to see more meeting records.' : 'Completed meeting records will appear here after a progress report is saved.'}</p>
             </div>
           ) : (
             <div className="meetings-grid">
               {filteredMeetings.map((meeting) => {
                 const attendanceSummary = getAttendanceSummary(meeting.attendance);
-                const attendanceRows = buildAttendanceView(meeting.attendance, buildAttendanceRoster(selectedProject, meeting.attendance));
+                const attendanceRows = meeting.attendance?.length
+                  ? buildAttendanceView(meeting.attendance, buildAttendanceRoster(selectedProject, meeting.attendance))
+                  : [];
+                const isCompletedMeeting = meeting.status === 'COMPLETED';
 
                 return (
                   <article key={meeting.id} className="meetings-card meeting-item">
@@ -956,7 +1000,7 @@ const MeetingsPage = () => {
                       <div>
                         <div className="meetings-inline-badge-group">
                            <h3 className="meeting-item-title">{meeting.title}</h3>
-                           <span className={`meeting-attendance-badge ${String(meeting.status).toLowerCase()}`}>{meeting.status}</span>
+                           <span className={`meeting-attendance-badge ${String(meeting.status).toLowerCase()}`}>{getMeetingStatusIcon(meeting.status)} {meeting.status}</span>
                         </div>
                         <p className="meeting-item-date">{formatDateTime(meeting.meetingDate)}</p>
                       </div>
@@ -971,7 +1015,7 @@ const MeetingsPage = () => {
                           </div>
                           <div className="meeting-meta-block">
                              <h4>Meeting Type</h4>
-                             <p>{meeting.meetingType || 'Unknown'}</p>
+                             <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
                           </div>
                           <div className="meeting-meta-block full">
                              <h4>Message</h4>
@@ -984,15 +1028,9 @@ const MeetingsPage = () => {
                              </div>
                           ) : null}
                        </div>
-                    ) : (
+                    ) : isCompletedMeeting ? (
                       <>
                         <div className="meeting-highlights">
-                          {meeting.nextMeetingDate ? (
-                            <div className="meeting-highlight">
-                              <span>Next meeting</span>
-                              <strong>{formatDateTime(meeting.nextMeetingDate)}</strong>
-                            </div>
-                          ) : null}
                           <div className="meeting-highlight">
                             <span>Present</span>
                             <strong>{attendanceSummary.PRESENT}</strong>
@@ -1010,7 +1048,7 @@ const MeetingsPage = () => {
                         <div className="meeting-meta">
                           <div className="meeting-meta-block">
                             <h4>Meeting Type</h4>
-                            <p>{meeting.meetingType || 'Unknown'}</p>
+                            <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
                           </div>
                           {meeting.locationOrLink ? (
                             <div className="meeting-meta-block">
@@ -1034,6 +1072,16 @@ const MeetingsPage = () => {
                             <h4>Next Steps</h4>
                             <p>{truncateText(meeting.nextSteps, 'No next steps recorded.')}</p>
                           </div>
+                          <div className="meeting-meta-block">
+                            <h4>Progress Rating</h4>
+                            <p>{meeting.overallRating ? meeting.overallRating.replaceAll('_', ' ') : 'Not rated yet.'}</p>
+                          </div>
+                          {meeting.concernActions ? (
+                            <div className="meeting-meta-block full">
+                              <h4>Required Actions</h4>
+                              <p>{truncateText(meeting.concernActions, 'No required actions recorded.')}</p>
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="meeting-attendance-card">
@@ -1049,7 +1097,7 @@ const MeetingsPage = () => {
                                   <p>{item.studentUniversityId || item.studentEmail || 'Student details unavailable'}</p>
                                 </div>
                                 <div className="meeting-attendance-status">
-                                  <span className={`meeting-attendance-badge ${String(item.status || 'PRESENT').toLowerCase()}`}>{item.status}</span>
+                                  <span className={`meeting-attendance-badge ${String(item.status || 'PRESENT').toLowerCase()}`}>{getAttendanceIcon(item.status)} {item.status}</span>
                                   {item.absenceReason ? <small>{item.absenceReason}</small> : null}
                                 </div>
                               </div>
@@ -1059,10 +1107,27 @@ const MeetingsPage = () => {
                           </div>
                         </div>
                       </>
+                    ) : (
+                      <div className="meeting-meta">
+                        <div className="meeting-meta-block">
+                          <h4>Meeting Type</h4>
+                          <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
+                        </div>
+                        {meeting.locationOrLink ? (
+                          <div className="meeting-meta-block">
+                            <h4>Location / Link</h4>
+                            <p>{meeting.locationOrLink}</p>
+                          </div>
+                        ) : null}
+                        <div className="meeting-meta-block full">
+                          <h4>Agenda / Notes</h4>
+                          <p>{truncateText(meeting.summary, 'No agenda notes provided yet.')}</p>
+                        </div>
+                      </div>
                     )}
 
                     <div className="meeting-item-footer">
-                      {meeting.status === 'COMPLETED' || meeting.status === 'SCHEDULED' ? (
+                      {isCompletedMeeting ? (
                         <button type="button" className="meetings-btn-ghost" onClick={() => handleDownload(meeting)}>
                           Download PDF
                         </button>
@@ -1089,7 +1154,7 @@ const MeetingsPage = () => {
 
                       {canManage && meeting.canEdit && !selectedProjectArchived && meeting.status !== 'REJECTED' && meeting.status !== 'CANCELED' ? (
                         <button type="button" className="meetings-btn-ghost" onClick={() => openEditModal(meeting)}>
-                          Edit / Progress
+                          {meeting.status === 'SCHEDULED' ? 'Complete / Progress' : 'View Full Report'}
                         </button>
                       ) : null}
                       {canManage && meeting.canDelete && !selectedProjectArchived ? (
@@ -1163,17 +1228,6 @@ const MeetingsPage = () => {
                       {formErrors.meetingDate ? <p id="meeting-date-error" className="meetings-field-error">{formErrors.meetingDate}</p> : null}
                     </div>
 
-                    <div className="meetings-field">
-                      <label htmlFor="meeting-next-date">Next Meeting Date</label>
-                      <input
-                        id="meeting-next-date"
-                        type="datetime-local"
-                        className="meetings-input"
-                        value={formState.nextMeetingDate}
-                        onChange={(event) => handleFieldChange('nextMeetingDate', event.target.value)}
-                      />
-                    </div>
-
                     <div className="meetings-field full">
                       <label>Meeting Type</label>
                       <MeetingTypeSelector value={formState.meetingType} onChange={(nextType) => handleFieldChange('meetingType', nextType)} />
@@ -1194,56 +1248,90 @@ const MeetingsPage = () => {
 
                 <section className="meetings-form-section">
                   <div className="meetings-form-section-head">
-                    <h3>Meeting Notes</h3>
-                    <p>Summarize the discussion in a way students and supervisors can revisit quickly.</p>
+                    <h3>{showProgressReportFields ? 'Progress Report' : 'Agenda / Notes'}</h3>
+                    <p>{showProgressReportFields ? 'Record the discussion, outcomes, and required work from this completed session.' : 'Add the agenda or preparation notes students should see before the meeting.'}</p>
                   </div>
                   <div className="meetings-form-grid">
                     <div className="meetings-field full">
-                      <label htmlFor="meeting-summary">Summary</label>
+                      <label htmlFor="meeting-summary">{showProgressReportFields ? 'Summary of Discussion and Outcomes' : 'Meeting Agenda / Notes'}</label>
                       <textarea
                         id="meeting-summary"
                         className="meetings-textarea meetings-textarea-medium"
                         value={formState.summary}
                         onChange={(event) => handleFieldChange('summary', event.target.value)}
-                        placeholder="Outline the purpose of the meeting and the main outcome."
+                        placeholder={showProgressReportFields ? 'Outline the main discussion and outcomes.' : 'Outline the planned agenda for the scheduled meeting.'}
                       />
                     </div>
 
-                    <div className="meetings-field full">
-                      <label htmlFor="meeting-progress">Progress Discussed</label>
-                      <textarea
-                        id="meeting-progress"
-                        className="meetings-textarea"
-                        value={formState.progressDiscussed}
-                        onChange={(event) => handleFieldChange('progressDiscussed', event.target.value)}
-                        placeholder="Capture milestone updates, blockers, or completed work."
-                      />
-                    </div>
+                    {showProgressReportFields ? (
+                      <>
+                        <div className="meetings-field full">
+                          <label htmlFor="meeting-progress">Progress Discussed</label>
+                          <textarea
+                            id="meeting-progress"
+                            className="meetings-textarea"
+                            value={formState.progressDiscussed}
+                            onChange={(event) => handleFieldChange('progressDiscussed', event.target.value)}
+                            placeholder="Capture milestone updates, blockers, or completed work."
+                          />
+                        </div>
 
-                    <div className="meetings-field full">
-                      <label htmlFor="meeting-tasks">Tasks Assigned</label>
-                      <textarea
-                        id="meeting-tasks"
-                        className="meetings-textarea"
-                        value={formState.tasksAssigned}
-                        onChange={(event) => handleFieldChange('tasksAssigned', event.target.value)}
-                        placeholder="List action items, owners, and expected follow-ups."
-                      />
-                    </div>
+                        <div className="meetings-field full">
+                          <label htmlFor="meeting-tasks">Tasks to be completed before the next phase/work session</label>
+                          <textarea
+                            id="meeting-tasks"
+                            className="meetings-textarea"
+                            value={formState.tasksAssigned}
+                            onChange={(event) => handleFieldChange('tasksAssigned', event.target.value)}
+                            placeholder="List action items, owners, and expected follow-ups."
+                          />
+                        </div>
 
-                    <div className="meetings-field full">
-                      <label htmlFor="meeting-next-steps">Next Steps</label>
-                      <textarea
-                        id="meeting-next-steps"
-                        className="meetings-textarea"
-                        value={formState.nextSteps}
-                        onChange={(event) => handleFieldChange('nextSteps', event.target.value)}
-                        placeholder="Describe what should happen before the next meeting."
-                      />
-                    </div>
+                        <div className="meetings-field full">
+                          <label htmlFor="meeting-next-steps">Next Steps</label>
+                          <textarea
+                            id="meeting-next-steps"
+                            className="meetings-textarea"
+                            value={formState.nextSteps}
+                            onChange={(event) => handleFieldChange('nextSteps', event.target.value)}
+                            placeholder="Describe what should happen before the next phase."
+                          />
+                        </div>
+
+                        <div className="meetings-field full">
+                          <label>Overall Rating</label>
+                          <div className="meetings-rating-grid">
+                            {PROGRESS_RATING_OPTIONS.map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                className={`meetings-rating-card ${formState.overallRating === option.value ? 'active' : ''}`}
+                                onClick={() => handleFieldChange('overallRating', option.value)}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {formState.overallRating === 'GIVING_CAUSE_FOR_CONCERN' ? (
+                          <div className="meetings-field full">
+                            <label htmlFor="meeting-concern-actions">Required actions to reach satisfactory progress</label>
+                            <textarea
+                              id="meeting-concern-actions"
+                              className="meetings-textarea"
+                              value={formState.concernActions}
+                              onChange={(event) => handleFieldChange('concernActions', event.target.value)}
+                              placeholder="State the required actions or recommendations clearly."
+                            />
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
                   </div>
                 </section>
 
+                {showProgressReportFields ? (
                 <section className="meetings-form-section">
                   <div className="meetings-form-section-head">
                     <h3>Attendance</h3>
@@ -1261,7 +1349,11 @@ const MeetingsPage = () => {
                     </div>
                     <div className="meetings-attendance-summary-item">
                       <span>Marked Absent</span>
-                      <strong>{draftAttendanceSummary.ABSENT + draftAttendanceSummary.EXCUSED}</strong>
+                      <strong>{draftAttendanceSummary.ABSENT}</strong>
+                    </div>
+                    <div className="meetings-attendance-summary-item">
+                      <span>Marked Excused</span>
+                      <strong>{draftAttendanceSummary.EXCUSED}</strong>
                     </div>
                   </div>
                   <div className="meetings-attendance-editor">
@@ -1308,6 +1400,7 @@ const MeetingsPage = () => {
                     })}
                   </div>
                 </section>
+                ) : null}
               </div>
 
               <div className="meetings-modal-footer">
@@ -1315,12 +1408,17 @@ const MeetingsPage = () => {
                   Cancel
                 </button>
                 {editingMeeting?.status === 'SCHEDULED' && canManage ? (
-                  <button type="button" className="meetings-btn" onClick={(e) => handleSubmit(e, true)} disabled={submitting}>
+                  <button type="button" className="meetings-btn" onClick={(e) => handleSubmit(e, 'complete')} disabled={submitting}>
                     {submitting ? 'Saving...' : 'Complete Meeting'}
                   </button>
                 ) : null}
+                {editingMeeting?.status === 'REQUESTED' && canManage ? (
+                  <button type="button" className="meetings-btn" onClick={(e) => handleSubmit(e, 'approve')} disabled={submitting}>
+                    {submitting ? 'Scheduling...' : 'Approve & Schedule'}
+                  </button>
+                ) : null}
                 <button type="submit" className="meetings-btn" disabled={submitting}>
-                  {submitting ? (editingMeeting ? 'Saving...' : 'Creating...') : editingMeeting ? 'Save Changes' : 'Create Meeting'}
+                  {submitting ? (editingMeeting ? 'Saving...' : 'Scheduling...') : editingMeeting ? 'Save Report' : 'Confirm Schedule'}
                 </button>
               </div>
             </form>
@@ -1365,7 +1463,7 @@ const MeetingsPage = () => {
                   </div>
                   <div className="meetings-form-grid">
                     <div className="meetings-field full">
-                      <label htmlFor="request-meeting-title">Meeting Title <span className="meetings-required">*</span></label>
+                      <label htmlFor="request-meeting-title">Discussion Topic <span className="meetings-required">*</span></label>
                       <input
                         id="request-meeting-title"
                         type="text"
@@ -1379,7 +1477,7 @@ const MeetingsPage = () => {
                     </div>
 
                     <div className="meetings-field">
-                      <label htmlFor="request-meeting-date">Requested Date & Time <span className="meetings-required">*</span></label>
+                      <label htmlFor="request-meeting-date">Preferred Date & Time <span className="meetings-required">*</span></label>
                       <input
                         id="request-meeting-date"
                         type="datetime-local"
@@ -1391,7 +1489,7 @@ const MeetingsPage = () => {
                       {formErrors.meetingDate ? <p className="meetings-field-error">{formErrors.meetingDate}</p> : null}
                     </div>
 
-                    <div className="meetings-field">
+                    <div className="meetings-field full">
                       <label>Meeting Type <span className="meetings-required">*</span></label>
                       <MeetingTypeSelector value={formState.meetingType} onChange={(nextType) => handleFieldChange('meetingType', nextType)} />
                     </div>
@@ -1410,7 +1508,7 @@ const MeetingsPage = () => {
                     </div>
 
                     <div className="meetings-field full">
-                      <label htmlFor="request-message">Request Message / Purpose</label>
+                      <label htmlFor="request-message">Additional Notes</label>
                       <textarea
                         id="request-message"
                         name="requestMessage"

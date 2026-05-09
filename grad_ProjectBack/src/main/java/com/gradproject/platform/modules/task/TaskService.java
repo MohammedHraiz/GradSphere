@@ -40,10 +40,7 @@ public class TaskService {
     public List<TaskResponseDTO> getProjectTasks(UUID projectId) {
         refreshOverdueTasks();
         Project project = accessService.requireProjectViewAccess(projectId);
-        User currentUser = accessService.requireCurrentUser();
         return taskRepository.findByProjectIdOrderByDueDateAscCreatedAtDesc(project.getId()).stream()
-                .filter(task -> currentUser.getRole() != UserRole.ROLE_STUDENT
-                        || (task.getAssignedTo() != null && currentUser.getId().equals(task.getAssignedTo().getId())))
                 .map(this::toResponse)
                 .toList();
     }

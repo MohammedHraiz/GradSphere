@@ -441,6 +441,8 @@ public class ProjectService {
                     leader.getName(),
                     leader.getEmail(),
                     leader.getUniversityId(),
+                    leader.getDepartment() != null ? leader.getDepartment().name() : null,
+                    leader.getProfilePhotoUrl(),
                     "LEADER"
             ));
         }
@@ -455,6 +457,8 @@ public class ProjectService {
                     user.getName(),
                     user.getEmail(),
                     user.getUniversityId(),
+                    user.getDepartment() != null ? user.getDepartment().name() : null,
+                    user.getProfilePhotoUrl(),
                     member.getMemberRole()
             ));
         });

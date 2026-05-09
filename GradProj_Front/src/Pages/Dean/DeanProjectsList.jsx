@@ -5,6 +5,8 @@ import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, tr
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import ClickableUser from '../../components/ClickableUser';
+import SearchBar from '../../components/SearchBar';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 
 const projectsStyles = `
@@ -22,9 +24,7 @@ const projectsStyles = `
 .dp-stat-info h4 { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: .05em; }
 .dp-stat-info p { margin: 5px 0 0; font-size: 30px; font-weight: 900; color: #0f172a; line-height: 1; }
 .dp-toolbar { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 22px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-.dp-search { flex-grow: 1; position: relative; display: flex; align-items: center; }
-.dp-search input { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: 0.2s; box-sizing: border-box; font-family: inherit; }
-.dp-search input:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+.dp-search { flex-grow: 1; }
 .dp-filter { padding: 10px 15px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-weight: 700; color: #475569; background: #f8fafc; outline: none; cursor: pointer; min-width: 180px; font-family: inherit; }
 .dp-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); overflow: hidden; }
 .dean-table { width: 100%; border-collapse: collapse; }
@@ -33,6 +33,10 @@ const projectsStyles = `
 .dean-table tr:last-child td { border-bottom: none; }
 .dp-proj-name { font-size: 15px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
 .dp-proj-id { font-size: 12px; color: #94a3b8; font-weight: 700; overflow-wrap: anywhere; }
+.dp-user-link { display: inline-flex; align-items: center; gap: 10px; width: 100%; border: none; background: transparent; padding: 0; font: inherit; cursor: pointer; text-align: left; }
+.dp-user-avatar { width: 38px; height: 38px; border-radius: 12px; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; overflow: hidden; }
+.dp-user-name { font-size: 14px; font-weight: 900; color: #0f172a; }
+.dp-user-subtitle { font-size: 12px; color: #64748b; font-weight: 700; overflow-wrap: anywhere; }
 .dp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .dp-action-btn { border: 1px solid #e2e8f0; background: white; color: #0f172a; border-radius: 10px; padding: 8px 10px; font-size: 12px; font-weight: 800; cursor: pointer; }
 .dp-action-btn:hover:not(:disabled) { background: #0f172a; color: white; border-color: #0f172a; }
@@ -59,6 +63,7 @@ const normalizeProject = (project) => ({
   title: project?.title ?? 'Untitled Project',
   description: project?.description ?? '',
   status: project?.status ?? 'PENDING',
+  studentId: project?.studentId ?? '',
   studentName: project?.studentName ?? 'Unknown Student',
   studentEmail: project?.studentEmail ?? '',
   teamName: project?.teamName ?? 'Not linked',
@@ -281,9 +286,7 @@ const DeanProjectsList = () => {
       </div>
 
       <div className="dp-toolbar">
-        <div className="dp-search">
-          <input type="text" placeholder="Search projects, students, teams, or supervisors..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
-        </div>
+        <SearchBar className="dp-search" placeholder="Search projects, students, teams, or supervisors..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
         <select className="dp-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="All">All Statuses</option>
           <option value="SUBMITTED">Submitted</option>
@@ -323,14 +326,38 @@ const DeanProjectsList = () => {
                     <div className="dp-proj-id">{project.teamName || 'Not linked'}</div>
                   </td>
                   <td>
-                    <div>{project.studentName}</div>
-                    <div className="dp-proj-id">{project.studentEmail}</div>
+                    <ClickableUser
+                      user={{
+                        id: project.studentId,
+                        name: project.studentName,
+                        email: project.studentEmail,
+                        role: 'ROLE_STUDENT',
+                      }}
+                      className="dp-user-link"
+                      avatarClassName="dp-user-avatar"
+                      nameClassName="dp-user-name"
+                      subtitle={project.studentEmail || 'View student profile'}
+                      subtitleClassName="dp-user-subtitle"
+                    />
                   </td>
                   <td>{project.teamName}</td>
                   <td>
                     <ProjectStatusBadge status={project.status} />
                     <div className="dp-proj-id" style={{marginTop: 6}}>
-                      Supervisor: {project.supervisor?.name || 'Unassigned'}
+                      Supervisor:{' '}
+                      {project.supervisor ? (
+                        <ClickableUser
+                          user={{ ...project.supervisor, role: 'ROLE_SUPERVISOR' }}
+                          className="dp-user-link"
+                          style={{ display: 'inline-flex', width: 'auto', verticalAlign: 'middle' }}
+                          avatarClassName="dp-user-avatar"
+                          nameClassName="dp-user-name"
+                          subtitle={project.supervisor?.email || 'View supervisor profile'}
+                          subtitleClassName="dp-user-subtitle"
+                        />
+                      ) : (
+                        'Unassigned'
+                      )}
                       {project.pendingSupervisorName ? ` | Pending: ${project.pendingSupervisorName}` : ''}
                     </div>
                     <div className="dp-proj-id" style={{marginTop: 6}}>Proposal Version: {project.proposalVersion || 1}</div>

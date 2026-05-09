@@ -1,5 +1,6 @@
 package com.gradproject.platform.modules.meeting;
 
+import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectStatus;
 import com.gradproject.platform.modules.project.member.TeamMember;
@@ -48,6 +49,21 @@ class PdfGeneratorServiceTest {
     }
 
     @Test
+    void completedMeetingPdfDownloadIsAuthorizedForSupervisor() {
+        User supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
+        User student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
+        Project project = project(UUID.randomUUID(), student, supervisor);
+        Meeting meeting = meeting(project, supervisor);
+        PdfGeneratorService service = new PdfGeneratorService(meetingRepository, userRepository, teamMemberRepository);
+
+        when(meetingRepository.findDetailedById(meeting.getId())).thenReturn(Optional.of(meeting));
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(supervisor, null, supervisor.getAuthorities());
+
+        assertThat(service.generateMeetingForm(meeting.getId(), auth)).isNotNull();
+    }
+
+    @Test
     void meetingPdfAccessIsDeniedForUnrelatedStudent() {
         User supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
         User student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
@@ -66,6 +82,42 @@ class PdfGeneratorServiceTest {
                 .hasMessage("You are not allowed to download this meeting form");
     }
 
+    @Test
+    void scheduledMeetingPdfDownloadIsRejected() {
+        User supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
+        User student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
+        Project project = project(UUID.randomUUID(), student, supervisor);
+        Meeting meeting = meeting(project, supervisor);
+        meeting.setStatus(MeetingStatus.SCHEDULED);
+        PdfGeneratorService service = new PdfGeneratorService(meetingRepository, userRepository, teamMemberRepository);
+
+        when(meetingRepository.findDetailedById(meeting.getId())).thenReturn(Optional.of(meeting));
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(student, null, student.getAuthorities());
+
+        assertThatThrownBy(() -> service.generateMeetingForm(meeting.getId(), auth))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Meeting report is available only after the meeting is completed.");
+    }
+
+    @Test
+    void requestedMeetingPdfDownloadIsRejected() {
+        User supervisor = user(UUID.randomUUID(), "supervisor@example.com", UserRole.ROLE_SUPERVISOR);
+        User student = user(UUID.randomUUID(), "student@example.com", UserRole.ROLE_STUDENT);
+        Project project = project(UUID.randomUUID(), student, supervisor);
+        Meeting meeting = meeting(project, supervisor);
+        meeting.setStatus(MeetingStatus.REQUESTED);
+        PdfGeneratorService service = new PdfGeneratorService(meetingRepository, userRepository, teamMemberRepository);
+
+        when(meetingRepository.findDetailedById(meeting.getId())).thenReturn(Optional.of(meeting));
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(student, null, student.getAuthorities());
+
+        assertThatThrownBy(() -> service.generateMeetingForm(meeting.getId(), auth))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Meeting report is available only after the meeting is completed.");
+    }
+
     private static Meeting meeting(Project project, User supervisor) {
         Meeting meeting = Meeting.builder()
                 .project(project)
@@ -76,6 +128,7 @@ class PdfGeneratorServiceTest {
                 .progressDiscussed("Progress")
                 .tasksAssigned("Tasks")
                 .nextSteps("Next")
+                .status(MeetingStatus.COMPLETED)
                 .attendanceRecords(new java.util.ArrayList<>(java.util.List.of(
                         MeetingAttendance.builder().student(project.getStudent()).status(MeetingAttendanceStatus.PRESENT).build()
                 )))

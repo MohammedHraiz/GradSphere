@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SearchBar from '../../components/SearchBar';
 
 /**
  * 💡 Project Approvals (Admin Forms) - System Admin
@@ -44,10 +45,7 @@ const formsStyles = `
 
   /* --- Toolbar --- */
   .ad-toolbar { display: flex; gap: 15px; background: #0f172a; padding: 15px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 25px; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3); }
-  .ad-search { flex-grow: 1; position: relative; display: flex; align-items: center; }
-  .ad-search-icon { position: absolute; left: 15px; color: #64748b; }
-  .ad-search input { width: 100%; padding: 12px 12px 12px 45px; border: 1px solid #334155; background: #1e293b; color: white; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: 0.2s; box-sizing: border-box; font-family: inherit;}
-  .ad-search input:focus { border-color: #06b6d4; box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15); }
+  .ad-search { flex-grow: 1; }
   
   /* --- Table --- */
   .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
@@ -225,11 +223,14 @@ const AdminForms = () => {
 
       {/* Toolbar */}
       <div className="ad-toolbar">
-        <div className="ad-search">
-          <span className="ad-search-icon">🔍</span>
-          <input type="text" placeholder="Search by Project Title or ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          {searchTerm && <button onClick={()=>setSearchTerm('')} style={{position:'absolute', right:'15px', background:'none', border:'none', color:'#fb7185', fontWeight:800, cursor:'pointer'}}>✕</button>}
-        </div>
+        <SearchBar
+          className="ad-search"
+          variant="dark"
+          value={searchTerm}
+          onChange={setSearchTerm}
+          onClear={() => setSearchTerm('')}
+          placeholder="Search by Project Title or ID..."
+        />
       </div>
 
       {/* Table */}

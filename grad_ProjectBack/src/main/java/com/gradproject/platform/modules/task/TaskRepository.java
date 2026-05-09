@@ -18,4 +18,12 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
     @EntityGraph(attributePaths = {"project", "project.team", "assignedTo", "createdByUser"})
     List<Task> findByStatusInAndDueDateBefore(Collection<TaskStatus> statuses, LocalDate dueDate);
+
+    long countByProjectIdAndAssignedToId(UUID projectId, UUID assignedToId);
+
+    long countByProjectIdAndAssignedToIdAndStatus(UUID projectId, UUID assignedToId, TaskStatus status);
+
+    long countByProjectId(UUID projectId);
+
+    long countByProjectIdAndStatus(UUID projectId, TaskStatus status);
 }

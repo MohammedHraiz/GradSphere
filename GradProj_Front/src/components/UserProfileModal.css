@@ -6,34 +6,34 @@
   align-items: center;
   justify-content: center;
   padding: 18px;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(5px);
 }
 
 .profile-sheet {
-  width: min(820px, 100%);
-  max-height: 88vh;
+  width: min(860px, 100%);
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 24px;
-  background: #f8fafc;
+  border-radius: 22px;
+  background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow: 0 26px 70px -36px rgba(15, 23, 42, 0.72);
+  box-shadow: 0 28px 76px -36px rgba(15, 23, 42, 0.68);
   color: #0f172a;
   text-align: left;
 }
 
 .profile-sheet-header {
   position: relative;
-  padding: 22px 24px;
+  padding: 18px 22px;
   color: white;
 }
 
 .profile-sheet-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   width: 36px;
   height: 36px;
   border: none;
@@ -43,6 +43,12 @@
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.profile-sheet-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
 }
 
 .profile-sheet-headline {
@@ -54,10 +60,10 @@
 
 .profile-avatar-shell {
   flex: 0 0 auto;
-  width: 84px;
-  height: 84px;
+  width: 72px;
+  height: 72px;
   padding: 4px;
-  border-radius: 24px;
+  border-radius: 21px;
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -65,13 +71,13 @@
 .profile-photo-preview-inner {
   width: 100%;
   height: 100%;
-  border-radius: 20px;
+  border-radius: 17px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
 }
 
@@ -97,7 +103,7 @@
 
 .profile-sheet-title {
   margin: 0;
-  font-size: clamp(24px, 3vw, 30px);
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 900;
   letter-spacing: -0.03em;
 }
@@ -132,7 +138,7 @@
 }
 
 .profile-sheet-body {
-  padding: 22px 24px 24px;
+  padding: 20px 22px 22px;
 }
 
 .profile-stack {
@@ -143,9 +149,9 @@
 .profile-panel {
   background: white;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 12px 32px -28px rgba(15, 23, 42, 0.42);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 12px 30px -28px rgba(15, 23, 42, 0.32);
 }
 
 .profile-section-heading {
@@ -170,7 +176,7 @@
 }
 
 .profile-details-grid {
-  margin-top: 18px;
+  margin-top: 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -179,7 +185,7 @@
 .profile-detail-card,
 .profile-helper-card,
 .profile-photo-card {
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid rgba(226, 232, 240, 0.94);
 }
 
@@ -232,10 +238,10 @@
 }
 
 .profile-photo-preview-ring {
-  width: 88px;
-  height: 88px;
+  width: 78px;
+  height: 78px;
   padding: 4px;
-  border-radius: 24px;
+  border-radius: 21px;
   flex: 0 0 auto;
 }
 
@@ -261,6 +267,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.profile-toolbar {
+  position: sticky;
+  bottom: -18px;
+  justify-content: flex-end;
+  margin: 2px -18px -18px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
 }
 
 .profile-photo-name {
@@ -304,6 +321,7 @@
   padding: 12px 14px;
   font: inherit;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  min-height: 44px;
 }
 
 .profile-input:focus,

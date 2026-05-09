@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getAllSupervisorRequests } from '../../api/projectService';
+import SearchBar from '../../components/SearchBar';
 
 const supervisorRequestStyles = `
 .dsr-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -17,8 +18,8 @@ const supervisorRequestStyles = `
 .dsr-alert.success { border: 1px solid #bbf7d0; background: #f0fdf4; color: #047857; }
 .dsr-toolbar { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 22px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
 .dsr-search { flex: 1; }
-.dsr-search input, .dsr-filter { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; box-sizing: border-box; font-family: inherit; background: white; }
-.dsr-search input:focus, .dsr-filter:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
+.dsr-filter { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; box-sizing: border-box; font-family: inherit; background: white; }
+.dsr-filter:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.1); }
 .dsr-filter { width: 190px; color: #475569; background: #f8fafc; cursor: pointer; }
 .dsr-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); overflow-x: auto; }
 .dsr-table { width: 100%; min-width: 1120px; border-collapse: collapse; }
@@ -142,14 +143,7 @@ const DeanSupervisorRequests = () => {
       {alert ? <div className={`dsr-alert ${alert.type}`}>{alert.message}</div> : null}
 
       <div className="dsr-toolbar">
-        <div className="dsr-search">
-          <input
-            type="text"
-            placeholder="Search by project, team, supervisor, requester, or message..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-        </div>
+        <SearchBar className="dsr-search" placeholder="Search by project, team, supervisor, requester, or message..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
         <select className="dsr-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>{status === 'ALL' ? 'All Statuses' : formatStatus(status)}</option>

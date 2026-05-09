@@ -17,6 +17,8 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
 	List<Meeting> findAllByProjectIdOrderByMeetingDateDesc(UUID projectId);
 	@EntityGraph(attributePaths = {"project", "supervisor", "requestedBy", "attendanceRecords", "attendanceRecords.student"})
 	List<Meeting> findAllByRequestedByIdOrderByMeetingDateDesc(UUID requestedById);
+	long countByProjectIdAndStatus(UUID projectId, MeetingStatus status);
+	Optional<Meeting> findFirstByProjectIdAndStatusOrderByMeetingDateDesc(UUID projectId, MeetingStatus status);
 	long countByProjectIdAndMeetingDateAfter(UUID projectId, LocalDateTime dateTime);
 	long countByProjectIdAndMeetingDateBefore(UUID projectId, LocalDateTime dateTime);
 }

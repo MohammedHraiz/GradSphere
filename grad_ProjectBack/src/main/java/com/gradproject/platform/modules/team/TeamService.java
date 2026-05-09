@@ -1,20 +1,26 @@
 package com.gradproject.platform.modules.team;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectStatus;
+import com.gradproject.platform.modules.team.dto.CreateTeamRequest;
 import com.gradproject.platform.modules.team.dto.MemberResponseDTO;
 import com.gradproject.platform.modules.team.dto.TeamResponseDTO;
 import com.gradproject.platform.modules.team.dto.TeamUpdateDTO;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.task.TaskRepository;
+import com.gradproject.platform.modules.task.TaskStatus;
 import com.gradproject.platform.modules.user.User;
 import com.gradproject.platform.modules.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,12 +32,50 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectRepository projectRepository;
+    private final TaskRepository taskRepository;
 
-    public TeamService(UserRepository userRepository, TeamRepository teamRepository, TeamMemberRepository teamMemberRepository, ProjectRepository projectRepository) {
+    public TeamService(UserRepository userRepository, TeamRepository teamRepository, TeamMemberRepository teamMemberRepository, ProjectRepository projectRepository, TaskRepository taskRepository) {
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.projectRepository = projectRepository;
+        this.taskRepository = taskRepository;
+    }
+
+    @Transactional
+    public TeamResponseDTO createTeam(String email, CreateTeamRequest request) {
+        User leader = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+
+        if (teamMemberRepository.existsByUserId(leader.getId())) {
+            throw new BadRequestException("You already belong to a team");
+        }
+
+        String teamName = request == null || request.name() == null ? "" : request.name().trim();
+        if (!StringUtils.hasText(teamName)) {
+            throw new BadRequestException("Team name is required");
+        }
+        if (teamName.length() < 3) {
+            throw new BadRequestException("Team name must be at least 3 characters.");
+        }
+
+        Team team = new Team();
+        team.setName(teamName);
+        team.setMaxSize(TeamRules.normalizeRequestedMaxSize(request != null ? request.maxSize() : null));
+        team.setLeader(leader);
+
+        Team savedTeam = teamRepository.save(team);
+
+        TeamMember leaderMember = TeamMember.builder()
+                .team(savedTeam)
+                .user(leader)
+                .memberRole("LEADER")
+                .membershipStatus("ACTIVE")
+                .joinedAt(Instant.now())
+                .build();
+        teamMemberRepository.save(leaderMember);
+
+        return buildTeamResponse(savedTeam);
     }
 
     @Transactional(readOnly = true)
@@ -41,15 +85,7 @@ public class TeamService {
             return Optional.empty();
         }
 
-        long membersCount = teamMemberRepository.countByTeamId(currentMembership.getTeam().getId());
-
-        return Optional.of(new TeamResponseDTO(
-                currentMembership.getTeam().getId(),
-                currentMembership.getTeam().getName(),
-                currentMembership.getTeam().getEstablishedOn(),
-                membersCount,
-                getTeamMembers(currentMembership.getTeam().getId())
-        ));
+        return Optional.of(buildTeamResponse(currentMembership.getTeam()));
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +110,7 @@ public class TeamService {
         }
 
         Team team = currentMembership.getTeam();
-        String newName = request.name() == null ? "" : request.name().trim();
+        String newName = request == null || request.name() == null ? "" : request.name().trim();
         if (newName.isEmpty()) {
             throw new BadRequestException("Team name is required");
         }
@@ -90,15 +126,7 @@ public class TeamService {
         team.setName(newName);
 
         Team savedTeam = teamRepository.save(team);
-        long membersCount = teamMemberRepository.countByTeamId(savedTeam.getId());
-
-        return new TeamResponseDTO(
-                savedTeam.getId(),
-                savedTeam.getName(),
-                savedTeam.getEstablishedOn(),
-                membersCount,
-                getTeamMembers(savedTeam.getId())
-        );
+        return buildTeamResponse(savedTeam);
     }
 
     @Transactional
@@ -187,10 +215,47 @@ public class TeamService {
                 .map(teamMember -> new MemberResponseDTO(
                         teamMember.getUser().getId(),
                         teamMember.getUser().getName(),
+                        teamMember.getUser().getEmail(),
                         teamMember.getUser().getUniversityId(),
+                        teamMember.getUser().getDepartment() != null ? teamMember.getUser().getDepartment().name() : null,
+                        teamMember.getUser().getProfilePhotoUrl(),
                         teamMember.getMemberRole()
                 ))
                 .toList();
+    }
+
+    private TeamResponseDTO buildTeamResponse(Team team) {
+        long membersCount = teamMemberRepository.countByTeamId(team.getId());
+        TeamTaskStats taskStats = calculateTaskStats(team.getId());
+
+        return new TeamResponseDTO(
+                team.getId(),
+                team.getName(),
+                team.getEstablishedOn(),
+                membersCount,
+                TeamRules.MAX_MEMBERS,
+                taskStats.totalTasks(),
+                taskStats.completedTasks(),
+                taskStats.completionRate(),
+                getTeamMembers(team.getId())
+        );
+    }
+
+    private TeamTaskStats calculateTaskStats(UUID teamId) {
+        Optional<Project> project = projectRepository.findByTeamId(teamId);
+        if (project.isEmpty() || project.get().getId() == null) {
+            return new TeamTaskStats(0L, 0L, 0);
+        }
+
+        UUID projectId = project.get().getId();
+        long totalTasks = taskRepository.countByProjectId(projectId);
+        long completedTasks = taskRepository.countByProjectIdAndStatus(projectId, TaskStatus.COMPLETED);
+        int completionRate = totalTasks == 0 ? 0 : (int) ((completedTasks * 100) / totalTasks);
+
+        return new TeamTaskStats(totalTasks, completedTasks, completionRate);
+    }
+
+    private record TeamTaskStats(long totalTasks, long completedTasks, int completionRate) {
     }
 }
 

@@ -38,6 +38,27 @@ public record MeetingCompletionDTO(
         String requestMessage,
 
         @NotEmpty(message = "Attendance status is required.")
-        List<@Valid MeetingAttendanceRequestDTO> attendance
+        List<@Valid MeetingAttendanceRequestDTO> attendance,
+
+        String overallRating,
+
+        @Size(max = 5000, message = "Concern actions must be 5000 characters or less.")
+        String concernActions
 ) {
+        public MeetingCompletionDTO(
+                String title,
+                LocalDateTime meetingDate,
+                String summary,
+                String progressDiscussed,
+                String tasksAssigned,
+                String nextSteps,
+                LocalDateTime nextMeetingDate,
+                String meetingType,
+                String locationOrLink,
+                String requestMessage,
+                List<@Valid MeetingAttendanceRequestDTO> attendance
+        ) {
+                this(title, meetingDate, summary, progressDiscussed, tasksAssigned, nextSteps, nextMeetingDate,
+                        meetingType, locationOrLink, requestMessage, attendance, null, null);
+        }
 }

@@ -2,6 +2,7 @@ package com.gradproject.platform.modules.user;
 
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
 import com.gradproject.platform.modules.project.ProjectRepository;
+import com.gradproject.platform.modules.user.dto.PublicUserProfileDTO;
 import com.gradproject.platform.modules.user.dto.SupervisorSummaryDTO;
 import com.gradproject.platform.modules.user.dto.UserProfileResponseDTO;
 import com.gradproject.platform.modules.user.dto.UserProfileUpdateRequestDTO;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +41,12 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserProfileResponseDTO> getCurrentUser(Principal principal) {
         return ResponseEntity.ok(userManagementService.getCurrentUserProfile(principal.getName()));
+    }
+
+    @GetMapping("/{userId}/public-profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PublicUserProfileDTO> getPublicProfile(@PathVariable java.util.UUID userId) {
+        return ResponseEntity.ok(userManagementService.getPublicUserProfile(userId));
     }
 
     @PatchMapping("/me/profile")

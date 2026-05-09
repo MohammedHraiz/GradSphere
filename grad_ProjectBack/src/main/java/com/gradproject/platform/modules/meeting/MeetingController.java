@@ -7,6 +7,7 @@ import com.gradproject.platform.modules.meeting.dto.MeetingResponseDTO;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -72,14 +73,14 @@ public class MeetingController {
 
     @PreAuthorize("hasRole('SUPERVISOR')")
     @PatchMapping("/meetings/{meetingId}/approve")
-    public ResponseEntity<MeetingResponseDTO> approveMeeting(@PathVariable UUID meetingId) {
-        return ResponseEntity.ok(meetingService.approveMeetingRequest(meetingId));
+    public ResponseEntity<MeetingResponseDTO> approveMeeting(@PathVariable UUID meetingId, @Valid @RequestBody(required = false) MeetingDraftDTO request) {
+        return ResponseEntity.ok(meetingService.approveMeetingRequest(meetingId, request));
     }
 
     @PreAuthorize("hasRole('SUPERVISOR')")
     @PatchMapping("/meetings/{meetingId}/reject")
-    public ResponseEntity<MeetingResponseDTO> rejectMeeting(@PathVariable UUID meetingId) {
-        return ResponseEntity.ok(meetingService.rejectMeetingRequest(meetingId));
+    public ResponseEntity<MeetingResponseDTO> rejectMeeting(@PathVariable UUID meetingId, @RequestBody(required = false) Map<String, String> request) {
+        return ResponseEntity.ok(meetingService.rejectMeetingRequest(meetingId, request != null ? request.get("reason") : null));
     }
 
     @PreAuthorize("hasRole('SUPERVISOR')")

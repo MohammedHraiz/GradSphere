@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { apiClient } from '../../api/apiClient';
@@ -7,7 +7,10 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import InviteModal from '../../components/InviteModal';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import ClickableUser from '../../components/ClickableUser';
+import { openTeamsChat } from '../../utils/teamsLink';
 import { normalizeProjectStatus } from '../../utils/projectStatus';
+import { formatMajorLabel, getUserDepartment } from '../../utils/userMeta';
 
 const styles = `
 .team-page-container {
@@ -33,6 +36,10 @@ const styles = `
   display: flex; align-items: center; gap: 8px;
 }
 .btn-invite-new:hover { background: #4338ca; transform: translateY(-2px); }
+.btn-invite-new:disabled { cursor: not-allowed; opacity: 0.58; transform: none; box-shadow: none; }
+.btn-invite-new:disabled:hover { background: #4f46e5; transform: none; }
+.team-header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.team-full-helper { color: #7f1d1d; background: #fef2f2; border: 1px solid #fecaca; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 800; }
 
 .team-overview-grid { display: grid; grid-template-columns: 2.2fr 1fr; gap: 25px; margin-bottom: 40px; }
 
@@ -50,6 +57,7 @@ const styles = `
   display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 8px 16px; border-radius: 14px;
   border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; color: #4f46e5;
 }
+.supervisor-pill-button { width: 100%; border: none; text-align: left; font: inherit; }
 .supervisor-pill:hover { border-color: #4f46e5; background: #eef2ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(79, 70, 229, 0.08); }
 .sup-avatar-small { width: 28px; height: 28px; border-radius: 50%; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; }
 
@@ -58,7 +66,10 @@ const styles = `
 .stat-item-mini { display: flex; flex-direction: column; gap: 5px; }
 .stat-item-mini span { font-size: 12px; color: #64748b; font-weight: 800; text-transform: uppercase; }
 .stat-item-mini strong { font-size: 32px; font-weight: 900; color: #4f46e5; }
+.stat-item-mini small { color: #64748b; font-size: 12px; font-weight: 700; line-height: 1.45; }
 .stat-divider { height: 1px; background: #e2e8f0; }
+.team-progress-track { width: 100%; height: 9px; border-radius: 999px; overflow: hidden; background: #e2e8f0; margin: 4px 0 2px; }
+.team-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4f46e5, #10b981); transition: width 0.25s ease; }
 
 .members-section-title { font-size: 20px; font-weight: 900; margin: 0 0 20px 0; }
 .members-layout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
@@ -95,10 +106,12 @@ const styles = `
 .roster-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px 18px; border-radius: 20px; border: 1px solid #e2e8f0; background: linear-gradient(180deg, #ffffff, #f8fafc); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04); transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
 .roster-card:hover { transform: translateY(-2px); border-color: #c7d2fe; box-shadow: 0 16px 30px -20px rgba(79, 70, 229, 0.18); }
 .roster-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.roster-profile-button { width: 100%; border: none; background: transparent; padding: 0; cursor: pointer; }
 .roster-avatar { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; font-weight: 900; font-size: 16px; flex: 0 0 auto; box-shadow: 0 10px 18px rgba(79, 70, 229, 0.18); }
 .roster-info { min-width: 0; }
 .roster-name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .roster-name { margin: 0; font-size: 16px; font-weight: 900; color: #0f172a; }
+.roster-subline { margin-top: 5px; color: #64748b; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
 .roster-leader-tag { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 9999px; background: #ede9fe; color: #6d28d9; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
 .roster-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 10px; color: #64748b; font-size: 13px; line-height: 1.5; }
 .roster-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9999px; background: #f8fafc; border: 1px solid #e2e8f0; }
@@ -119,7 +132,7 @@ const styles = `
   .roster-right { justify-content: flex-start; }
 }
 
-.modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; padding: 20px; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10040; animation: fadeIn 0.2s; padding: 20px; }
 .modal-box-saas { width: 100%; max-width: 760px; overflow: hidden; box-shadow: 0 32px 60px -16px rgba(2, 6, 23, 0.85); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(148, 163, 184, 0.15); }
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -158,66 +171,36 @@ const styles = `
 .invite-empty-copy { margin: 0; font-size: 13px; color: #94a3b8; }
 .toast-error { background: rgba(239,68,68,0.08); color: #fecaca; border: 1px solid rgba(239,68,68,0.12); }
 
-.pc-header-bg { height: 100px; background: linear-gradient(135deg, #4f46e5, #7c3aed); position: relative; }
-.pc-avatar-main { position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; border-radius: 20px; border: 4px solid white; box-shadow: 0 10px 15px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 900; }
-.pc-body { padding: 50px 30px 30px 30px; text-align: center;}
-.pc-name { font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0; }
-.pc-role-tag { font-size: 13px; color: #4f46e5; font-weight: 800; background: #eef2ff; padding: 4px 12px; border-radius: 8px; display: inline-block; margin-bottom: 25px; }
-.pc-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-.pc-stat-item { background: #f8fafc; padding: 15px; border-radius: 16px; border: 1px solid #f1f5f9; text-align: left; }
-.pc-stat-item label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 4px; }
-.pc-stat-item span { font-size: 13px; font-weight: 800; color: #1e293b; }
-
-.btn-pc-main {
-  width: 100%;
-  padding: 16px;
-  border-radius: 14px;
-  border: none;
-  background: #0f172a;
-  color: white;
-  font-weight: 800;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: block;
-  text-align: center;
-  margin-top: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: inherit;
-}
-.btn-pc-main:hover {
-  background: #4f46e5;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.2);
-}
-
-.create-team-panel { width: 100%; max-width: 620px; overflow: hidden; border-radius: 28px; border: 1px solid rgba(226, 232, 240, 0.14); box-shadow: 0 34px 80px -28px rgba(2, 6, 23, 0.9); background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.94)); }
-.create-team-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px 24px 18px; border-bottom: 1px solid rgba(148, 163, 184, 0.12); }
+.create-team-panel { width: 100%; max-width: 560px; overflow: hidden; border-radius: 22px; border: 1px solid rgba(226, 232, 240, 0.95); box-shadow: 0 28px 70px -34px rgba(15, 23, 42, 0.72); background: #ffffff; }
+.create-team-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 24px 18px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #4f46e5, #2563eb); }
 .create-team-copy { display: grid; gap: 6px; }
-.create-team-kicker { margin: 0; color: #94a3b8; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+.create-team-kicker { margin: 0; color: rgba(255,255,255,0.76); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
 .create-team-title { margin: 0; color: #f8fafc; font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
-.create-team-subtitle { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.55; max-width: 420px; }
+.create-team-subtitle { margin: 0; color: rgba(255,255,255,0.82); font-size: 13px; line-height: 1.55; max-width: 420px; }
 .create-team-body { padding: 24px; display: grid; gap: 18px; }
-.create-team-note { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.55; }
+.create-team-info-card { display: grid; gap: 8px; padding: 14px 16px; border-radius: 16px; background: #eef2ff; border: 1px solid #c7d2fe; color: #3730a3; }
+.create-team-info-card p { margin: 0; font-size: 13px; font-weight: 750; line-height: 1.55; }
+.create-team-note { margin: 0; color: #64748b; font-size: 12px; line-height: 1.55; }
 .create-team-form { display: grid; gap: 18px; }
 .create-team-field { display: grid; gap: 8px; }
-.create-team-field label { display: inline-flex; align-items: center; gap: 8px; color: #cbd5e1; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
-.create-team-input, .create-team-number { width: 100%; border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 16px; background: rgba(15, 23, 42, 0.92); color: #f8fafc; padding: 14px 16px; font: inherit; font-size: 14px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
-.create-team-input::placeholder, .create-team-number::placeholder { color: #64748b; }
-.create-team-input:focus, .create-team-number:focus { border-color: rgba(99, 102, 241, 0.9); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18); }
+.create-team-field label { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
+.create-team-input, .create-team-number { width: 100%; border: 1px solid #cbd5e1; border-radius: 14px; background: #ffffff; color: #0f172a; padding: 14px 16px; font: inherit; font-size: 14px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
+.create-team-input::placeholder, .create-team-number::placeholder { color: #94a3b8; }
+.create-team-input:focus, .create-team-number:focus { border-color: rgba(79, 70, 229, 0.9); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.13); }
 .create-team-input:disabled, .create-team-number:disabled { opacity: 0.7; cursor: not-allowed; }
-.create-team-help { margin: 0; color: #94a3b8; font-size: 12px; line-height: 1.55; }
-.create-team-error { margin: 0; color: #fca5a5; font-size: 12px; font-weight: 800; line-height: 1.5; }
+.create-team-help { margin: 0; color: #64748b; font-size: 12px; line-height: 1.55; }
+.create-team-error { margin: 0; color: #dc2626; font-size: 12px; font-weight: 800; line-height: 1.5; }
 .create-team-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding-top: 4px; }
-.create-team-btn { min-width: 120px; border-radius: 14px; border: 1px solid rgba(148, 163, 184, 0.16); background: rgba(30, 41, 59, 0.92); color: #e2e8f0; padding: 12px 16px; font: inherit; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease; }
-.create-team-btn:hover:not(:disabled) { transform: translateY(-1px); background: rgba(51, 65, 85, 0.98); box-shadow: 0 16px 24px -20px rgba(15, 23, 42, 0.9); }
+.create-team-btn { min-width: 120px; border-radius: 12px; border: 1px solid #dbe2ea; background: #ffffff; color: #0f172a; padding: 12px 16px; font: inherit; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform 0.18s ease, background 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease; }
+.create-team-btn:hover:not(:disabled) { transform: translateY(-1px); background: #f8fafc; box-shadow: 0 16px 24px -20px rgba(15, 23, 42, 0.24); }
 .create-team-btn:disabled { cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; }
 .create-team-btn.primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border-color: transparent; box-shadow: 0 16px 26px -20px rgba(79, 70, 229, 0.9); }
 .create-team-btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, #4338ca, #6d28d9); }
-.create-team-btn.secondary { background: rgba(15, 23, 42, 0.65); color: #cbd5e1; }
+.create-team-btn.secondary { background: #f8fafc; color: #334155; }
 `;
 
 const MEMBER_COLORS = ['#4F46E5', '#9333EA', '#F59E0B', '#10B981', '#0EA5E9', '#EF4444'];
+const TEAM_MAX_MEMBERS = 5;
 
 const getInitials = (value = '') => {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -233,12 +216,27 @@ const getInitials = (value = '') => {
   return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase();
 };
 
+const getFriendlyError = (error, fallback = 'Something went wrong. Please try again.') => {
+  const message = error?.response?.data?.message || error?.message || fallback;
+  if (/^Request failed/i.test(message) || /^AxiosError/i.test(message)) {
+    return fallback;
+  }
+  return message;
+};
+
+const getStudentRole = (member) => {
+  const role = String(member?.userRole ?? member?.role ?? '').trim();
+  return role.startsWith('ROLE_') ? role : 'ROLE_STUDENT';
+};
+
 const normalizeStudentCandidate = (student, index) => ({
   id: student?.id ?? student?.studentId ?? student?.uuid ?? `${student?.name ?? 'student'}-${index}`,
   name: student?.name ?? student?.fullName ?? 'Unnamed Student',
   universityID: student?.universityID ?? student?.universityId ?? student?.studentNumber ?? '',
   email: student?.email ?? '',
-  major: student?.major ?? student?.specialization ?? student?.department ?? '',
+  department: getUserDepartment(student),
+  major: formatMajorLabel(student),
+  profilePhotoUrl: student?.profilePhotoUrl ?? student?.photoUrl ?? '',
 });
 
 const normalizeTeamData = (payload) => {
@@ -271,9 +269,12 @@ const normalizeTeamData = (payload) => {
     teamName: rawTeam.teamName ?? rawTeam.name ?? 'My Team',
     createdOn: rawTeam.createdOn ?? rawTeam.createdAt ?? rawTeam.createdDate ?? '',
     teamLeader: rawTeam.teamLeader ?? rawTeam.leaderName ?? rawTeam.leader ?? '',
-    maxSize: rawTeam.maxSize ?? rawTeam.teamSize ?? rawTeam.maximumSize ?? null,
-    totalTasks: rawTeam.totalTasks ?? rawTeam.taskCount ?? rawTeam.tasks?.total ?? null,
-    completionRate: rawTeam.completionRate ?? rawTeam.progressRate ?? rawTeam.progress ?? null,
+    maxMembers: TEAM_MAX_MEMBERS,
+    maxSize: TEAM_MAX_MEMBERS,
+    membersCount: rawTeam.membersCount ?? rawTeam.memberCount ?? membersSource.length,
+    totalTasks: Number(rawTeam.totalTasks ?? rawTeam.taskCount ?? rawTeam.tasks?.total ?? 0),
+    completedTasks: Number(rawTeam.completedTasks ?? rawTeam.tasks?.completed ?? 0),
+    completionRate: Number(rawTeam.completionRate ?? rawTeam.progressRate ?? rawTeam.progress ?? 0),
     supervisor: supervisor
       ? {
           ...supervisor,
@@ -286,20 +287,23 @@ const normalizeTeamData = (payload) => {
       id: member?.userId ?? member?.id ?? member?.studentId ?? member?.universityID ?? member?.universityId ?? `${member?.name ?? 'member'}-${index}`,
       userId: member?.userId ?? member?.id ?? member?.studentId ?? member?.universityID ?? member?.universityId ?? '',
       name: member?.name ?? member?.fullName ?? 'Unnamed Member',
-      role: member?.role ?? member?.position ?? 'Team Member',
+      email: member?.email ?? '',
+      role: getStudentRole(member),
       memberRole: String(member?.memberRole ?? member?.role ?? 'MEMBER').toUpperCase(),
       status: member?.status ?? 'Active',
       avatar: member?.avatar ?? getInitials(member?.name ?? member?.fullName ?? 'Member'),
       color: member?.color ?? MEMBER_COLORS[index % MEMBER_COLORS.length],
       universityID: member?.universityID ?? member?.universityId ?? member?.studentId ?? '',
       tasks: member?.tasks ?? member?.taskSummary ?? '—',
-      major: member?.major ?? member?.specialization ?? 'Unknown Major',
+      department: getUserDepartment(member),
+      major: formatMajorLabel(member),
+      profilePhotoUrl: member?.profilePhotoUrl ?? member?.photoUrl ?? '',
     })),
     availableStudents: availableStudentsSource.map(normalizeStudentCandidate),
   };
 };
 
-const TeamManagement = ({ onMessageClick }) => {
+const TeamManagement = () => {
   const navigate = useNavigate();
   const { user, refreshUserProfile } = useAuth();
   const userHasTeam = !!user?.hasTeam;
@@ -316,7 +320,7 @@ const TeamManagement = ({ onMessageClick }) => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-  const [teamForm, setTeamForm] = useState({ name: '', maxSize: '' });
+  const [teamForm, setTeamForm] = useState({ name: '' });
   const [teamErrors, setTeamErrors] = useState({});
   const [rosterMembers, setRosterMembers] = useState([]);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -330,12 +334,6 @@ const TeamManagement = ({ onMessageClick }) => {
   const [projectInfo, setProjectInfo] = useState(null);
   const [projectLoading, setProjectLoading] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
-
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [showSupervisorModal, setShowSupervisorModal] = useState(false);
-
-  const teamSizeMin = 2;
-  const teamSizeMax = 10;
 
   const showToast = useCallback((message, type = 'success', duration = 3000) => {
     setToastType(type);
@@ -403,12 +401,16 @@ const TeamManagement = ({ onMessageClick }) => {
             id: m?.userId ?? m?.id ?? m?.studentId ?? m?.universityID ?? m?.uuid ?? `${m?.name ?? 'member'}-${i}`,
             userId: m?.userId ?? m?.id ?? m?.studentId ?? m?.universityID ?? m?.uuid ?? '',
             name: m?.name ?? m?.fullName ?? 'Unnamed Member',
+            email: m?.email ?? '',
+            role: getStudentRole(m),
             universityID: m?.universityID ?? m?.universityId ?? m?.studentId ?? '',
             memberRole: String(m?.memberRole ?? m?.role ?? 'MEMBER').toUpperCase(),
             avatar: m?.avatar ?? getInitials(m?.name ?? m?.fullName ?? 'Member'),
             color: m?.color ?? MEMBER_COLORS[i % MEMBER_COLORS.length],
             status: m?.status ?? 'Active',
-            major: m?.major ?? 'Unknown Major',
+            department: getUserDepartment(m),
+            major: formatMajorLabel(m),
+            profilePhotoUrl: m?.profilePhotoUrl ?? m?.photoUrl ?? '',
           }))
         : [];
       setRosterMembers(normalized);
@@ -476,6 +478,7 @@ const TeamManagement = ({ onMessageClick }) => {
   const hasTeam = teamData !== null;
   const teamMembers = teamData?.members ?? [];
   const roster = rosterMembers.length ? rosterMembers : teamMembers;
+  const teamLeaderProfile = roster.find((member) => String(member?.memberRole ?? '').toLowerCase() === 'leader') ?? null;
   const supervisor = projectInfo?.supervisor
     ? {
         ...projectInfo.supervisor,
@@ -487,8 +490,15 @@ const TeamManagement = ({ onMessageClick }) => {
     : projectInfo
       ? supervisor?.name ?? 'Not assigned yet'
       : 'No project submitted yet';
-  const teamMaxSize = teamData?.maxSize ?? teamData?.teamSize ?? null;
-  const membersCount = teamData?.membersCount ?? roster?.length ?? 0;
+  const teamMaxSize = TEAM_MAX_MEMBERS;
+  const membersCount = Array.isArray(roster) && roster.length > 0
+    ? roster.length
+    : (Array.isArray(teamData?.members) ? teamData.members.length : Number(teamData?.membersCount ?? 0));
+  const slotsRemaining = Math.max(teamMaxSize - membersCount, 0);
+  const isTeamFull = membersCount >= teamMaxSize;
+  const totalTasks = Number.isFinite(Number(teamData?.totalTasks)) ? Number(teamData?.totalTasks) : 0;
+  const completedTasks = Number.isFinite(Number(teamData?.completedTasks)) ? Number(teamData?.completedTasks) : 0;
+  const completionRate = Math.max(0, Math.min(100, Number.isFinite(Number(teamData?.completionRate)) ? Math.round(Number(teamData?.completionRate)) : 0));
   const isLeader = roster.find(m => String(m.userId).toLowerCase() === String(currentUserId).toLowerCase())?.memberRole === 'LEADER';
   const leaderCanDisband = isLeader && membersCount <= 1;
   const leaderCannotLeave = isLeader && membersCount > 1;
@@ -530,20 +540,23 @@ const TeamManagement = ({ onMessageClick }) => {
     }
   }, [hasTeam, isLeader, fetchPendingInvitations]);
 
+  const handleInviteSent = useCallback(async () => {
+    await fetchPendingInvitations();
+    await fetchMyTeam();
+    if (teamId) {
+      await fetchRosterMembers(teamId);
+    }
+  }, [fetchMyTeam, fetchPendingInvitations, fetchRosterMembers, teamId]);
+
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     const trimmedName = String(teamForm.name || '').trim();
-    const maxSizeValue = Number(teamForm.maxSize);
     const nextErrors = {};
 
     if (!trimmedName) {
-      nextErrors.name = 'Team / Project Name is required.';
-    }
-
-    if (teamForm.maxSize === '' || teamForm.maxSize === null || Number.isNaN(maxSizeValue)) {
-      nextErrors.maxSize = 'Maximum Team Size is required.';
-    } else if (maxSizeValue < teamSizeMin || maxSizeValue > teamSizeMax) {
-      nextErrors.maxSize = `Team size must be between ${teamSizeMin} and ${teamSizeMax} members.`;
+      nextErrors.name = 'Team name is required.';
+    } else if (trimmedName.length < 3) {
+      nextErrors.name = 'Team name must be at least 3 characters.';
     }
 
     if (Object.keys(nextErrors).length) {
@@ -556,7 +569,6 @@ const TeamManagement = ({ onMessageClick }) => {
     try {
       const response = await apiClient.post('/v1/student/teams', {
         name: trimmedName,
-        maxSize: maxSizeValue,
       });
 
       if (refreshUserProfile) {
@@ -567,22 +579,20 @@ const TeamManagement = ({ onMessageClick }) => {
       if (createdTeam) {
         setTeamData(createdTeam);
         setStudentsDatabase(createdTeam.availableStudents ?? []);
-      } else {
-        await fetchMyTeam();
       }
+      await fetchMyTeam();
 
       setError('');
       setIsCreateTeamOpen(false);
       navigate('/my-team', { replace: true });
-      setTeamForm({ name: '', maxSize: '' });
+      setTeamForm({ name: '' });
       showToast('Team created successfully.');
     } catch (requestError) {
-      const message = requestError?.response?.data?.message || requestError?.message || 'Could not create team. Please try again.';
+      const message = getFriendlyError(requestError, 'Could not create team. Please try again.');
       const fieldErrors = requestError?.fieldErrors || requestError?.validationErrors || {};
       setError(message);
       setTeamErrors({
         name: fieldErrors.name || fieldErrors.teamName || '',
-        maxSize: fieldErrors.maxSize || fieldErrors.teamSize || '',
       });
       showToast(message, 'error', 4000);
     } finally {
@@ -655,12 +665,16 @@ const TeamManagement = ({ onMessageClick }) => {
     id: m?.userId ?? m?.id ?? m?.studentId ?? m?.universityID ?? m?.uuid ?? `${m?.name ?? 'member'}-${i}`,
     userId: m?.userId ?? m?.id ?? m?.studentId ?? m?.universityID ?? m?.uuid ?? '',
     name: m?.name ?? m?.fullName ?? 'Unnamed Member',
+    email: m?.email ?? '',
+    role: getStudentRole(m),
     universityID: m?.universityID ?? m?.universityId ?? m?.studentId ?? '',
     memberRole: String(m?.memberRole ?? m?.role ?? 'MEMBER').toUpperCase(),
     avatar: m?.avatar ?? getInitials(m?.name ?? m?.fullName ?? 'Member'),
     color: m?.color ?? MEMBER_COLORS[i % MEMBER_COLORS.length],
     status: m?.status ?? 'Active',
-    major: m?.major ?? 'Unknown Major',
+    department: getUserDepartment(m),
+    major: formatMajorLabel(m),
+    profilePhotoUrl: m?.profilePhotoUrl ?? m?.photoUrl ?? '',
   }));
 
   const handleRemoveMember = async (member) => {
@@ -727,10 +741,6 @@ const TeamManagement = ({ onMessageClick }) => {
     } finally {
       setIsSavingTeamName(false);
     }
-  };
-
-  const openMessageThread = (memberName) => {
-    onMessageClick?.(memberName);
   };
 
   if (isLoading && !teamData) {
@@ -845,10 +855,21 @@ const TeamManagement = ({ onMessageClick }) => {
 
             <div className="team-meta-row">
               <span className="label">Project Supervisor:</span>
-              <div className="supervisor-pill" onClick={() => supervisor && setShowSupervisorModal(true)}>
-                <div className="sup-avatar-small">{supervisor?.avatar ?? getInitials(supervisor?.name ?? 'Supervisor')}</div>
-                <span className="value">{supervisorLabel}</span>
-              </div>
+              {supervisor ? (
+                <ClickableUser
+                  user={{ ...supervisor, role: 'ROLE_SUPERVISOR' }}
+                  className="supervisor-pill supervisor-pill-button"
+                  avatarClassName="sup-avatar-small"
+                  nameClassName="value"
+                  subtitle={supervisor?.email || supervisor?.specialty || 'View supervisor profile'}
+                  subtitleClassName="roster-subline"
+                />
+              ) : (
+                <div className="supervisor-pill">
+                  <div className="sup-avatar-small">{getInitials('Supervisor')}</div>
+                  <span className="value">{supervisorLabel}</span>
+                </div>
+              )}
             </div>
 
             {projectExists && (
@@ -871,7 +892,24 @@ const TeamManagement = ({ onMessageClick }) => {
 
             <div className="team-meta-row">
               <span className="label">Team Leader:</span>
-              <span className="value">{teamData?.teamLeader ?? 'Not assigned yet'}</span>
+              {teamLeaderProfile ? (
+                <ClickableUser
+                  user={{
+                    ...teamLeaderProfile,
+                    id: teamLeaderProfile?.userId ?? teamLeaderProfile?.id ?? null,
+                    role: teamLeaderProfile?.role ?? 'ROLE_STUDENT',
+                    universityId: teamLeaderProfile?.universityID ?? teamLeaderProfile?.universityId ?? '',
+                    department: teamLeaderProfile?.department ?? '',
+                  }}
+                  className="supervisor-pill supervisor-pill-button"
+                  avatarClassName="sup-avatar-small"
+                  nameClassName="value"
+                  subtitle={formatMajorLabel(teamLeaderProfile)}
+                  subtitleClassName="roster-subline"
+                />
+              ) : (
+                <span className="value">{teamData?.teamLeader ?? 'Not assigned yet'}</span>
+              )}
             </div>
             <div className="team-meta-row">
               <span className="label">Established On:</span>
@@ -879,19 +917,23 @@ const TeamManagement = ({ onMessageClick }) => {
             </div>
             <div className="team-meta-row">
               <span className="label">Members Count:</span>
-              <span className="value">{membersCount} / {teamMaxSize ?? '—'}</span>
+              <span className="value">{membersCount} / {teamMaxSize}</span>
             </div>
           </div>
 
           <div className="team-stats-card" onClick={() => navigate('/student/tasks')} title="View All Project Tasks">
             <div className="stat-item-mini">
               <span>Total Tasks</span>
-              <strong>{teamData?.totalTasks ?? '—'}</strong>
+              <strong>{totalTasks}</strong>
             </div>
             <div className="stat-divider"></div>
             <div className="stat-item-mini">
               <span>Completion Rate</span>
-              <strong>{teamData?.completionRate ?? '—'}</strong>
+              <strong>{completionRate}%</strong>
+              <div className="team-progress-track" aria-hidden="true">
+                <div className="team-progress-fill" style={{ width: `${completionRate}%` }} />
+              </div>
+              <small>{totalTasks > 0 ? `${completedTasks} of ${totalTasks} tasks completed` : 'Tasks will appear after your project workflow starts.'}</small>
             </div>
           </div>
         </div>
@@ -959,28 +1001,30 @@ const TeamManagement = ({ onMessageClick }) => {
 
                 return (
                   <div className="roster-card" key={memberId || member.name}>
-                    <div className="roster-left">
-                      <div className="roster-avatar" style={{ background: member.color ? `linear-gradient(135deg, ${member.color}, #4f46e5)` : undefined }}>
-                        {member.avatar}
-                      </div>
-                      <div className="roster-info">
-                        <div className="roster-name-row">
-                          <h3 className="roster-name">{member.name ?? 'Unnamed Member'}</h3>
-                          {isCurrentUser ? <span className="roster-leader-tag">You</span> : null}
-                          {isMemberLeader ? <span className="roster-leader-tag">Leader</span> : null}
-                        </div>
-                        <div className="roster-meta">
-                          <span className="roster-pill">University ID: {member?.universityID ?? member?.universityId ?? '—'}</span>
-                          <span className="roster-pill">Major: {member?.major ?? 'Unknown Major'}</span>
-                          <span className="roster-pill">Status: {String(member?.status ?? '').toLowerCase() === 'active' ? 'Active' : 'Pending'}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <ClickableUser
+                      user={{
+                        ...member,
+                        id: memberUserId,
+                        role: member?.role ?? 'ROLE_STUDENT',
+                        universityId: member?.universityID ?? member?.universityId ?? '',
+                        department: member?.department ?? '',
+                      }}
+                      className="roster-left roster-profile-button"
+                      avatarClassName="roster-avatar"
+                      nameClassName="roster-name"
+                      subtitle={formatMajorLabel(member)}
+                      subtitleClassName="roster-subline"
+                    />
 
                     <div className="roster-right">
-                      <button className="btn-send-message" onClick={(event) => { event.stopPropagation(); openMessageThread(member.name); }}>
-                        Send Message
-                      </button>
+                      {!isCurrentUser && member?.email ? (
+                        <button
+                          className="btn-send-message"
+                          onClick={(event) => { event.stopPropagation(); openTeamsChat(member.email); }}
+                        >
+                          Contact on Teams
+                        </button>
+                      ) : null}
                       {canRemoveMember && (
                         <button
                           type="button"
@@ -991,6 +1035,13 @@ const TeamManagement = ({ onMessageClick }) => {
                           {removingMemberId === memberUserId ? 'Removing...' : 'Remove'}
                         </button>
                       )}
+                    </div>
+                    <div className="roster-meta" style={{ gridColumn: '1 / -1', marginTop: 0 }}>
+                      {isCurrentUser ? <span className="roster-leader-tag">You</span> : null}
+                      {isMemberLeader ? <span className="roster-leader-tag">Leader</span> : null}
+                      <span className="roster-pill">University ID: {member?.universityID ?? member?.universityId ?? '—'}</span>
+                      <span className="roster-pill">Major: {formatMajorLabel(member)}</span>
+                      <span className="roster-pill">Status: {String(member?.status ?? '').toLowerCase() === 'active' ? 'Active' : 'Pending'}</span>
                     </div>
                   </div>
                 );
@@ -1024,62 +1075,30 @@ const TeamManagement = ({ onMessageClick }) => {
           <h1 className="main-page-title">Team Management</h1>
         </div>
         {hasTeam && isLeader && (
-          <button className="btn-invite-new" onClick={() => setIsInviteOpen(true)}>
-            + Invite Member
-          </button>
+          <div className="team-header-actions">
+            <button
+              className="btn-invite-new"
+              onClick={() => setIsInviteOpen(true)}
+              disabled={isTeamFull}
+              title={isTeamFull ? 'Your team is full.' : `${slotsRemaining} slots remaining`}
+            >
+              + Invite Member
+            </button>
+            {isTeamFull ? <span className="team-full-helper">Your team is full.</span> : null}
+          </div>
         )}
       </div>
 
       {renderContent()}
 
-      {selectedMember && (
-        <div className="modal-backdrop" onClick={() => setSelectedMember(null)}>
-          <div className="modal-box-saas" onClick={e => e.stopPropagation()}>
-            <div className="pc-header-bg" style={{background: `linear-gradient(135deg, ${selectedMember.color}, #1e293b)`}}>
-               <button className="btn-close-circle" style={{position:'absolute', top:'15px', right:'15px'}} onClick={() => setSelectedMember(null)}>✕</button>
-               <div className="pc-avatar-main" style={{background: selectedMember.color}}>{selectedMember.avatar}</div>
-            </div>
-            <div className="pc-body">
-               <h2 className="pc-name">{selectedMember?.name ?? 'Team Member'}</h2>
-               <span className="pc-role-tag">{selectedMember?.role ?? 'Team Member'}</span>
-               <div className="pc-stats-grid">
-                 <div className="pc-stat-item"><label>University ID</label><span>{selectedMember?.universityID ?? '—'}</span></div>
-                 <div className="pc-stat-item"><label>Tasks Contribution</label><span>{selectedMember?.tasks ?? '—'}</span></div>
-                 <div className="pc-stat-item"><label>Current Status</label><span>{selectedMember?.status ?? '—'}</span></div>
-                 <div className="pc-stat-item"><label>Academic Major</label><span>{selectedMember?.major ?? '—'}</span></div>
-               </div>
-               <button className="btn-pc-main" onClick={() => { setSelectedMember(null); openMessageThread(selectedMember?.name ?? 'Team Member'); }}>
-                  Contact Member
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showSupervisorModal && supervisor && (
-        <div className="modal-backdrop" onClick={() => setShowSupervisorModal(false)}>
-          <div className="modal-box-saas" onClick={e => e.stopPropagation()}>
-            <div className="pc-header-bg" style={{background: `linear-gradient(135deg, #0f172a, #334155)`}}>
-               <button className="btn-close-circle" style={{position:'absolute', top:'15px', right:'15px'}} onClick={() => setShowSupervisorModal(false)}>✕</button>
-               <div className="pc-avatar-main" style={{background: '#0f172a'}}>{supervisor?.avatar ?? getInitials(supervisor?.name ?? 'Supervisor')}</div>
-            </div>
-            <div className="pc-body">
-               <h2 className="pc-name">{supervisor?.name ?? 'Supervisor'}</h2>
-               <span className="pc-role-tag" style={{background: '#f1f5f9', color: '#0f172a'}}>Academic Supervisor</span>
-               <div className="pc-stats-grid">
-                 <div className="pc-stat-item" style={{gridColumn: '1/-1'}}><label>Email</label><span>{supervisor?.email ?? '—'}</span></div>
-                 <div className="pc-stat-item"><label>Department</label><span>{supervisor?.department ?? '—'}</span></div>
-                 <div className="pc-stat-item"><label>Office Hours</label><span>Mon/Wed 10:00 AM</span></div>
-               </div>
-               <button className="btn-pc-main" style={{background: '#0f172a'}} onClick={() => { setShowSupervisorModal(false); openMessageThread(supervisor?.name ?? 'Supervisor'); }}>
-                  Contact Supervisor
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <InviteModal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} onInviteSent={fetchPendingInvitations} />
+      <InviteModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        onInviteSent={handleInviteSent}
+        currentMembers={membersCount}
+        maxMembers={teamMaxSize}
+        isTeamFull={isTeamFull}
+      />
 
       {isCreateTeamOpen && (
         <div className="modal-backdrop" onClick={() => !isCreatingTeam && setIsCreateTeamOpen(false)}>
@@ -1088,17 +1107,20 @@ const TeamManagement = ({ onMessageClick }) => {
               <div className="create-team-copy">
                 <p className="create-team-kicker">Student Portal / Collaboration</p>
                 <h2 id="create-team-title" className="create-team-title">Create New Team</h2>
-                <p id="create-team-desc" className="create-team-subtitle">Choose a project/team name and set your team size.</p>
+                <p id="create-team-desc" className="create-team-subtitle">Choose a clear team name for your graduation project workspace.</p>
               </div>
               <button type="button" className="btn-close-circle" onClick={() => setIsCreateTeamOpen(false)} aria-label="Close create team dialog" disabled={isCreatingTeam}>✕</button>
             </div>
 
             <div className="create-team-body">
-              <p className="create-team-note">Team / Project Name is used as your project title when you submit the proposal.</p>
+              <div className="create-team-info-card">
+                <p>Your team name will be used as your project name after proposal submission.</p>
+                <p>Maximum team size: {TEAM_MAX_MEMBERS} members.</p>
+              </div>
 
               <form className="create-team-form" onSubmit={handleCreateTeam}>
                 <div className="create-team-field">
-                  <label htmlFor="team-name">Team / Project Name</label>
+                  <label htmlFor="team-name">Team Name</label>
                   <input
                     id="team-name"
                     className="create-team-input"
@@ -1110,30 +1132,12 @@ const TeamManagement = ({ onMessageClick }) => {
                     aria-invalid={Boolean(teamErrors.name)}
                     autoComplete="off"
                   />
-                  {teamErrors.name ? <p className="create-team-error">{teamErrors.name}</p> : <p className="create-team-help">This name will be used as your project name when you submit the proposal.</p>}
-                </div>
-
-                <div className="create-team-field">
-                  <label htmlFor="team-max-size">Maximum Team Size</label>
-                  <input
-                    id="team-max-size"
-                    className="create-team-number"
-                    type="number"
-                    min={teamSizeMin}
-                    max={teamSizeMax}
-                    placeholder="e.g., 5"
-                    value={teamForm.maxSize}
-                    onChange={(e) => { setTeamForm({ ...teamForm, maxSize: e.target.value }); if (teamErrors.maxSize) setTeamErrors((current) => ({ ...current, maxSize: '' })); }}
-                    disabled={isCreatingTeam}
-                    aria-invalid={Boolean(teamErrors.maxSize)}
-                    inputMode="numeric"
-                  />
-                  {teamErrors.maxSize ? <p className="create-team-error">{teamErrors.maxSize}</p> : <p className="create-team-help">Recommended: 4-5 members per team. Allowed range: {teamSizeMin}-{teamSizeMax}.</p>}
+                  {teamErrors.name ? <p className="create-team-error">{teamErrors.name}</p> : <p className="create-team-help">Teams can have up to {TEAM_MAX_MEMBERS} members.</p>}
                 </div>
 
                 <div className="create-team-actions">
                   <button type="button" className="create-team-btn secondary" onClick={() => setIsCreateTeamOpen(false)} disabled={isCreatingTeam}>Cancel</button>
-                  <button type="submit" className="create-team-btn primary" disabled={isCreatingTeam || !teamForm.name.trim() || !teamForm.maxSize}>
+                  <button type="submit" className="create-team-btn primary" disabled={isCreatingTeam || teamForm.name.trim().length < 3}>
                     {isCreatingTeam ? 'Creating...' : 'Create Team'}
                   </button>
                 </div>

@@ -18,7 +18,7 @@ public class Team extends BaseEntity {
     private String name;
 
     @Column(name = "max_size", nullable = false)
-    private Integer maxSize;
+    private Integer maxSize = TeamRules.MAX_MEMBERS;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id", nullable = false)
@@ -39,7 +39,7 @@ public class Team extends BaseEntity {
     public void setName(String name) { this.name = name; }
 
     public Integer getMaxSize() { return maxSize; }
-    public void setMaxSize(Integer maxSize) { this.maxSize = maxSize; }
+    public void setMaxSize(Integer maxSize) { this.maxSize = TeamRules.normalizeRequestedMaxSize(maxSize); }
 
     // We keep this for JPA internal use
     public User getLeader() { return leader; }

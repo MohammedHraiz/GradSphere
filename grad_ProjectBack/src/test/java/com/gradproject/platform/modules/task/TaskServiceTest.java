@@ -13,12 +13,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -79,6 +85,49 @@ class TaskServiceTest {
         assertThat(response.status()).isEqualTo(TaskStatus.IN_PROGRESS);
     }
 
+    @Test
+    void studentSeesTasksAssignedToTeammateInSameTeam() {
+        Project project = project();
+        User student = user("student@example.com", UserRole.ROLE_STUDENT);
+        User teammate = user("teammate@example.com", UserRole.ROLE_STUDENT);
+        Task ownTask = task(project, student, "Own task");
+        Task teammateTask = task(project, teammate, "Teammate task");
+
+        when(accessService.requireProjectViewAccess(project.getId())).thenReturn(project);
+        when(taskRepository.findByProjectIdOrderByDueDateAscCreatedAtDesc(project.getId())).thenReturn(List.of(ownTask, teammateTask));
+
+        var response = taskService.getProjectTasks(project.getId());
+
+        assertThat(response).hasSize(2);
+        assertThat(response).extracting("assignedToId").contains(student.getId(), teammate.getId());
+    }
+
+    @Test
+    void studentCannotUpdateTeammateTaskStatus() {
+        Project project = project();
+        User student = user("student@example.com", UserRole.ROLE_STUDENT);
+        User teammate = user("teammate@example.com", UserRole.ROLE_STUDENT);
+        Task task = task(project, teammate, "Teammate task");
+
+        when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+        when(accessService.requireCurrentUser()).thenReturn(student);
+
+        assertThatThrownBy(() -> taskService.updateTaskStatus(task.getId(), new TaskStatusUpdateRequestDTO(TaskStatus.IN_PROGRESS)))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("Only the assigned student can update this task status.");
+    }
+
+    @Test
+    void unrelatedStudentCannotSeeAnotherTeamsTasks() {
+        UUID projectId = UUID.randomUUID();
+        when(accessService.requireProjectViewAccess(projectId))
+                .thenThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to access this project workflow."));
+
+        assertThatThrownBy(() -> taskService.getProjectTasks(projectId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("You are not allowed to access this project workflow.");
+    }
+
     private static Project project() {
         Project project = new Project();
         project.setId(UUID.randomUUID());
@@ -88,6 +137,16 @@ class TaskServiceTest {
         team.setName("Team A");
         project.setTeam(team);
         return project;
+    }
+
+    private static Task task(Project project, User assignee, String title) {
+        Task task = new Task();
+        ReflectionTestUtils.setField(task, "id", UUID.randomUUID());
+        task.setProject(project);
+        task.setTitle(title);
+        task.setAssignedTo(assignee);
+        task.setStatus(TaskStatus.NOT_STARTED);
+        return task;
     }
 
     private static User user(String email, UserRole role) {
