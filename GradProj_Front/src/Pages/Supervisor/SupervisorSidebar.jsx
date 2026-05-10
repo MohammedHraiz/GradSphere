@@ -13,9 +13,8 @@ const sidebarStyles = `
   .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: white; transform: translateX(5px); }
   .nav-item.active { background: rgba(79, 70, 229, 0.1); color: #818cf8; box-shadow: inset 3px 0 0 0 #818cf8; }
   .nav-icon { font-size: 18px; width: 24px; text-align: center; }
-  .sidebar-footer { padding-top: 20px; border-top: 1px solid #1e293b; margin-top: auto; }
-  .btn-support { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #334155; color: #cbd5e1; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 13px;}
-  .btn-support:hover { background: rgba(255,255,255,0.1); color: white; border-color: #475569;}
+  .sidebar-footer { padding-top: 20px; border-top: 1px solid #1e293b; margin-top: auto; font-size: 12px; font-weight: 600; color: #64748b; text-align: center; }
+  .sidebar-footer p { margin: 0; }
 `;
 
 const SupervisorSidebar = () => {
@@ -33,10 +32,9 @@ const SupervisorSidebar = () => {
         <NavLink to="/supervisor/tasks" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">✅</span><span className="nav-label">Task Manager</span></NavLink>
         <NavLink to="/supervisor/milestones" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">🚩</span><span className="nav-label">Milestones</span></NavLink>
         <NavLink to="/supervisor/meetings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">📅</span><span className="nav-label">Meetings</span></NavLink>
-        <NavLink to="/supervisor/chat" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">💬</span><span className="nav-label">Messages</span></NavLink>
       </nav>
       <div className="sidebar-footer">
-        <button className="btn-support">Get Support</button>
+        <p>BAU IT Faculty</p>
       </div>
     </aside>
   );

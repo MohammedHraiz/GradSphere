@@ -15,10 +15,8 @@ const adminSidebarStyles = `
   .admin-nav-item:hover { background: rgba(255, 255, 255, 0.05); color: white; transform: translateX(5px); }
   .admin-nav-item.active { background: rgba(6, 182, 212, 0.1); color: #22d3ee; box-shadow: inset 2px 0 0 0 #06b6d4; }
   .admin-nav-icon { font-size: 18px; display: flex; align-items: center; justify-content: center; width: 24px; }
-  .admin-sidebar-footer { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; align-items: center; gap: 10px; }
-  .server-status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: pulse 2s infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
-  .server-status-text { font-size: 11px; font-weight: 700; color: #64748b; }
+  .admin-sidebar-footer { padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 12px; font-weight: 600; color: #64748b; text-align: center; }
+  .admin-sidebar-footer p { margin: 0; }
 `;
 
 const AdminSidebar = () => {
@@ -81,8 +79,7 @@ const AdminSidebar = () => {
       </nav>
 
       <div className="admin-sidebar-footer">
-        <div className="server-status-dot" />
-        <div className="server-status-text">System Status: Optimal</div>
+        <p>BAU IT Faculty</p>
       </div>
     </aside>
   );
