@@ -22,7 +22,6 @@ import Milestones from './Pages/Student/Milestones';
 import Tasks from './Pages/Student/Tasks';
 import TeamManagement from './Pages/Student/TeamManagement';
 import InvitationsInbox from './Pages/Student/InvitationsInbox';
-import ChatComponent from './Pages/Student/ChatComponent';
 import ProjectProposal from './Pages/Student/ProjectProposal';
 
 // --- Imports: Dean ---
@@ -54,7 +53,7 @@ import UserProfileModal from './components/UserProfileModal';
 // ==========================================
 // 💡 Premium Top Header Component (Chameleon + Modals)
 // ==========================================
-const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme, globalLang, setGlobalLang }) => {
+const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang, setGlobalLang }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, role: authRole } = useAuth();
@@ -94,12 +93,6 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
     if (userRole === 'supervisor') return '#3b82f6';
     return '#4f46e5';
   };
-
-  const mockMessages = [
-    { id: 1, sender: 'Dr. Ahmad Ali', msg: 'Please review the latest milestone update.', time: '10m ago', color: '#3b82f6' },
-    { id: 2, sender: 'Team Alpha', msg: 'The backend API is now ready for testing.', time: '1h ago', color: '#10b981' },
-    { id: 3, sender: 'System Admin', msg: 'Scheduled maintenance tonight at 12 AM.', time: '5h ago', color: '#06b6d4' }
-  ];
 
   const mockNotifs = [
     { id: 1, title: 'Project Approved', desc: 'Your final project phase was approved.', time: 'Just now', icon: '✅', bg: '#d1fae5', c: '#059669' },
@@ -172,11 +165,6 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
     }
   };
 
-  const handleChatRedirect = () => {
-    setActiveDropdown(null);
-    if (onOpenChat) onOpenChat();
-  };
-
   const handleSaveSettings = () => {
     setIsSavingSettings(true);
     setTimeout(() => {
@@ -229,41 +217,6 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
       <style>{headerModalsStyles}</style>
       <header className="top-header" ref={headerRef} style={{position: 'relative', zIndex: 99, backgroundColor: headerBg, borderBottom: headerBorder, transition: 'background 0.3s'}}>
         <div className="header-right-actions">
-          
-          {/* 💬 Messages Dropdown */}
-          <div style={{position: 'relative'}}>
-            <button className="header-icon-btn" style={{color: iconColor}} onClick={() => setActiveDropdown(activeDropdown === 'msgs' ? null : 'msgs')}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <span className="icon-badge blue">3</span>
-            </button>
-            
-            {activeDropdown === 'msgs' && (
-              <div style={{position: 'absolute', top: '50px', right: '-60px', width: '320px', background: isDark ? '#0f172a' : 'white', borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)', border: headerBorder, overflow: 'hidden', textAlign: 'left', animation: 'fadeIn 0.2s ease'}}>
-                <div style={{padding: '15px 20px', background: isDark ? '#1e293b' : '#f8fafc', borderBottom: headerBorder, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                  <h4 style={{margin: 0, fontSize: '14px', fontWeight: 800, color: textColor}}>Messages</h4>
-                  <span style={{fontSize: '11px', color: isDark ? '#22d3ee' : '#4f46e5', fontWeight: 700, cursor: 'pointer'}}>Mark all read</span>
-                </div>
-                <div style={{maxHeight: '300px', overflowY: 'auto'}}>
-                  {mockMessages.map(m => (
-                    <div key={m.id} style={{padding: '15px 20px', borderBottom: headerBorder, display: 'flex', gap: '12px', cursor: 'pointer', transition: '0.2s'}} onClick={handleChatRedirect} onMouseOver={(e) => e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                      <div style={{width: '36px', height: '36px', borderRadius: '50%', background: m.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px', flexShrink: 0}}>
-                        {m.sender.charAt(0)}
-                      </div>
-                      <div>
-                        <h5 style={{margin: '0 0 3px 0', fontSize: '13px', fontWeight: 800, color: textColor}}>{m.sender}</h5>
-                        <p style={{margin: '0 0 5px 0', fontSize: '12px', color: '#64748b'}}>{m.msg}</p>
-                        <span style={{fontSize: '10px', color: '#94a3b8', fontWeight: 600}}>{m.time}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{padding: '12px', textAlign: 'center', background: isDark ? '#1e293b' : '#f8fafc', borderTop: headerBorder, fontSize: '12px', fontWeight: 800, color: isDark ? '#22d3ee' : '#4f46e5', cursor: 'pointer'}} onClick={handleChatRedirect}>
-                  View All Messages →
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* 🔔 Notifications Dropdown */}
           <div style={{position: 'relative'}}>
             <button className="header-icon-btn" style={{color: iconColor}} onClick={() => setActiveDropdown(activeDropdown === 'notifs' ? null : 'notifs')}>
@@ -325,11 +278,6 @@ const TopHeader = ({ userRole, onLogout, onOpenChat, globalTheme, setGlobalTheme
                 <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: textColor, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => {e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc';}} onMouseOut={(e) => {e.currentTarget.style.background = 'none';}} onClick={() => {setActiveDropdown(null); setShowProfileModal(true);}}>
                   <span style={{fontSize:'16px'}}>👤</span> My Profile
                 </button>
-                
-                <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 700, color: textColor, borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => {e.currentTarget.style.background = isDark ? '#1e293b' : '#f8fafc';}} onMouseOut={(e) => {e.currentTarget.style.background = 'none';}} onClick={() => {setActiveDropdown(null); setShowSettingsModal(true);}}>
-                  <span style={{fontSize:'16px'}}>⚙️</span> Quick Settings
-                </button>
-                
                 <div style={{height: '1px', background: isDark ? '#1e293b' : '#f1f5f9', margin: '5px 0'}}></div>
                 
                 <button style={{width: '100%', padding: '10px 12px', background: 'none', border: 'none', textAlign: 'left', fontSize: '13px', fontWeight: 800, color: '#ef4444', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px'}} onMouseOver={(e) => e.currentTarget.style.background = isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'} onMouseOut={(e) => e.currentTarget.style.background = 'none'} onClick={() => {setActiveDropdown(null); onLogout();}}>
@@ -428,7 +376,6 @@ function App() {
   const navigate = useNavigate();
   const { user: currentUser, role: userRole, logout: authLogout } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [chatTarget, setChatTarget] = useState(null);
 
   // 💡 Global Settings State
   const [globalTheme, setGlobalTheme] = useState('light'); // 'light' or 'dark'
@@ -450,12 +397,6 @@ function App() {
     navigate('/login');
   };
 
-  const handleOpenChat = (userName) => {
-    setChatTarget(userName);
-    if (normalizedUserRole === 'supervisor') navigate('/supervisor/chat');
-    else if (normalizedUserRole === 'student') navigate('/student/chat');
-  };
-
   // 💡 Dynamic Background based on Global Theme and Role
   const isDark = globalTheme === 'dark' || normalizedUserRole === 'admin' || String(currentUser?.role || '').replace(/^ROLE_/i, '').toLowerCase() === 'admin';
   const wrapperBg = isDark ? '#0b1121' : '#f8fafc';
@@ -471,18 +412,18 @@ function App() {
             <div className="app-layout">
               <div className="sidebar-wrapper"><Sidebar /></div>
               <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
-                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
                 <main className="main-content">
                   <Routes>
                     <Route path="overview" element={<Overview />} />
                     <Route path="tasks" element={<Tasks />} />
                     <Route path="milestones" element={<Milestones />} />
                     <Route path="meetings" element={<MeetingsPage />} />
-                    <Route path="my-team" element={<TeamManagement onMessageClick={(name) => handleOpenChat(name, 'student')} />} />
+                    <Route path="my-team" element={<TeamManagement />} />
                     <Route path="invitations" element={<InvitationsInbox />} />
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="project" element={<ProjectProposal />} />
-                    <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
+                    <Route path="chat" element={<Navigate to="/student/overview" replace />} />
                     <Route path="*" element={<Navigate to="overview" />} />
                   </Routes>
                 </main>
@@ -499,11 +440,11 @@ function App() {
             <div className="app-layout">
               <div className="sidebar-wrapper"><SupervisorSidebar /></div>
               <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
-                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
                 <main className="main-content">
                   <Routes>
                     <Route path="dashboard" element={<SupervisorDashboard />} />
-                    <Route path="students" element={<StudentsList onMessageClick={(name) => handleOpenChat(name, 'supervisor')} />} />
+                    <Route path="students" element={<StudentsList />} />
                     <Route path="projects" element={<ProjectsList />} />
                     <Route path="tasks" element={<TaskManager />} />
                     <Route path="milestones" element={<MilestoneManagement />} />
@@ -512,7 +453,7 @@ function App() {
                     <Route path="meeting-progress" element={<Navigate to="../meetings" replace />} />
                     <Route path="new-meeting" element={<Navigate to="../meetings" replace />} />
                     <Route path="notifications" element={<NotificationsPage />} />
-                    <Route path="chat" element={<ChatComponent initialTarget={chatTarget} />} />
+                    <Route path="chat" element={<Navigate to="/supervisor/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="dashboard" />} />
                   </Routes>
                 </main>
@@ -527,7 +468,7 @@ function App() {
             <div className="app-layout">
               <div className="sidebar-wrapper"><DeanSidebar /></div>
               <div className="content-wrapper" style={{backgroundColor: wrapperBg, transition: 'background 0.3s'}}>
-                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
                 <main className="main-content">
                   <Routes>
                     <Route path="dashboard" element={<DeanDashboard />} />
@@ -539,6 +480,7 @@ function App() {
                     <Route path="meetings" element={<MeetingsPage />} />
                     <Route path="notifications" element={<NotificationsPage />} />
                     <Route path="reports" element={<DeanReports />} />
+                    <Route path="chat" element={<Navigate to="/dean/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="dashboard" />} />
                   </Routes>
                 </main>
@@ -553,7 +495,7 @@ function App() {
             <div className="app-layout">
               <div className="sidebar-wrapper"><AdminSidebar /></div>
               <div className="content-wrapper" style={{backgroundColor: wrapperBg, minHeight: '100vh', transition: 'background 0.3s'}}> 
-                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} onOpenChat={handleOpenChat} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
+                <TopHeader userRole={normalizedUserRole} onLogout={() => setShowLogoutConfirm(true)} globalTheme={globalTheme} setGlobalTheme={setGlobalTheme} globalLang={globalLang} setGlobalLang={setGlobalLang} />
                 <main className="main-content" style={{padding: 0}}>
                   <Routes>
                     <Route path="dashboard" element={<AdminDashboard />} />
@@ -570,6 +512,7 @@ function App() {
                     <Route path="ai-recommendations" element={<AIRecommendations />} />
                     <Route path="logs" element={<SystemLogs />} />
                     <Route path="settings" element={<Settings />} />
+                    <Route path="chat" element={<Navigate to="/admin/dashboard" replace />} />
                     <Route path="*" element={<Navigate to="dashboard" replace />} />
                   </Routes>
                 </main>

@@ -14,7 +14,6 @@ const Sidebar = () => {
     { name: 'My Team', path: '/student/my-team' },
     { name: 'Invitations', path: '/student/invitations' },
     { name: 'Project Proposal', path: '/student/project' },
-    { name: 'Chat', path: '/student/chat' },
   ];
 
   return (
@@ -45,7 +44,7 @@ const Sidebar = () => {
       </nav>
 
       <div className="st-sidebar-footer">
-        <p>GP Portal 2026</p>
+        <p>BAU IT Faculty</p>
       </div>
     </aside>
   );
