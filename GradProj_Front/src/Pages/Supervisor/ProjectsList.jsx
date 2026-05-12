@@ -9,6 +9,7 @@ import {
   rejectSupervisorRequest,
   updateProjectStatus,
 } from '../../api/projectService';
+import StyledSelect from '../../components/StyledSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import ClickableUser from '../../components/ClickableUser';
@@ -42,7 +43,7 @@ const styles = `
 .sup-btn.danger { border-color: #fecaca; background: #fff1f2; color: #be123c; }
 .sup-btn:disabled { opacity: .6; cursor: not-allowed; }
 .sup-feedback { display: grid; gap: 10px; margin-top: 12px; }
-.sup-feedback textarea, .sup-feedback select { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font: inherit; }
+.sup-feedback textarea, .sup-feedback .styled-select-trigger { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; font: inherit; }
 .sup-history { margin-top: 14px; padding: 14px; border-radius: 14px; border: 1px solid #e2e8f0; background: #ffffff; display: grid; gap: 10px; }
 .sup-history-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; background: #f8fafc; display: grid; gap: 8px; }
 .sup-history-meta { font-size: 12px; color: #64748b; font-weight: 700; display: flex; flex-wrap: wrap; gap: 10px; }
@@ -336,12 +337,12 @@ const ProjectsList = () => {
                       </div>
                     )}
                     <div className="sup-feedback">
-                      <select disabled={isArchived} value={state.status || project.status || 'UNDER_REVIEW'} onChange={(event) => setFeedbackById(prev => ({ ...prev, [project.id]: { ...state, status: event.target.value } }))}>
+                      <StyledSelect disabled={isArchived} value={state.status || project.status || 'UNDER_REVIEW'} onChange={(event) => setFeedbackById(prev => ({ ...prev, [project.id]: { ...state, status: event.target.value } }))}>
                         <option value="UNDER_REVIEW">Under Review</option>
                         <option value="NEEDS_CHANGES">Needs Changes</option>
                         <option value="APPROVED">Approved</option>
                         <option value="REJECTED">Rejected</option>
-                      </select>
+                      </StyledSelect>
                       <textarea disabled={isArchived} rows="3" placeholder="Feedback for students" value={state.comment || ''} onChange={(event) => setFeedbackById(prev => ({ ...prev, [project.id]: { ...state, comment: event.target.value } }))} />
                       <button className="sup-btn" disabled={busyId === project.id || isArchived} onClick={() => void submitFeedback(project)}>{busyId === project.id ? 'Updating...' : 'Save Feedback'}</button>
                     </div>
@@ -369,3 +370,4 @@ const ProjectsList = () => {
 };
 
 export default ProjectsList;
+

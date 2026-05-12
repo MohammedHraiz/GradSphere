@@ -17,6 +17,7 @@ import { downloadSingleMeetingForm, getAssignedProjects, getDeanProjects, getMyP
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import StyledSelect from '../../components/StyledSelect';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 import { getAttendanceIcon, getMeetingStatusIcon, getMeetingTypeIcon } from '../../utils/statusIcons';
 import './MeetingsPage.css';
@@ -967,10 +968,10 @@ const MeetingsPage = () => {
                   value={meetingSearch}
                   onChange={(event) => setMeetingSearch(event.target.value)}
                 />
-                <select className="meetings-input meetings-sort-select" value={meetingSort} onChange={(event) => setMeetingSort(event.target.value)}>
+                <StyledSelect className="meetings-input meetings-sort-select" value={meetingSort} onChange={(event) => setMeetingSort(event.target.value)}>
                   <option value="NEWEST">Newest first</option>
                   <option value="OLDEST">Oldest first</option>
-                </select>
+                </StyledSelect>
               </div>
             ) : null}
           </div>
@@ -1373,7 +1374,7 @@ const MeetingsPage = () => {
                           </div>
 
                           <div className="meetings-attendance-controls">
-                            <select
+                            <StyledSelect
                               className="meetings-input"
                               value={attendance.status}
                               onChange={(event) => handleAttendanceChange(member.id, 'status', event.target.value)}
@@ -1381,7 +1382,7 @@ const MeetingsPage = () => {
                               {ATTENDANCE_OPTIONS.map((option) => (
                                 <option key={option} value={option}>{option.charAt(0)}{option.slice(1).toLowerCase()}</option>
                               ))}
-                            </select>
+                            </StyledSelect>
 
                             {needsReason ? (
                               <input
@@ -1538,3 +1539,4 @@ const MeetingsPage = () => {
 };
 
 export default MeetingsPage;
+

@@ -12,6 +12,7 @@ import {
   resolveProfilePhotoUrl,
   roleNeedsDepartment,
 } from '../../utils/userMeta';
+import StyledSelect from '../../components/StyledSelect';
 import './ManageUsers.css';
 
 const emptyCreateForm = {
@@ -116,7 +117,7 @@ const UserFormModal = ({
 
               <div className="admin-users-field">
                 <label htmlFor={`user-role-${mode}`}>Role</label>
-                <select
+                <StyledSelect
                   id={`user-role-${mode}`}
                   className="admin-users-select"
                   name="role"
@@ -126,13 +127,13 @@ const UserFormModal = ({
                   {ROLE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
-                </select>
+                </StyledSelect>
               </div>
 
               {needsDepartment ? (
                 <div className="admin-users-field">
                   <label htmlFor={`user-department-${mode}`}>Department</label>
-                  <select
+                  <StyledSelect
                     id={`user-department-${mode}`}
                     className="admin-users-select"
                     name="department"
@@ -143,7 +144,7 @@ const UserFormModal = ({
                     {DEPARTMENT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
-                  </select>
+                  </StyledSelect>
                 </div>
               ) : null}
 
@@ -437,7 +438,7 @@ const ManageUsers = () => {
 
         <div className="admin-users-field">
           <label htmlFor="admin-user-role-filter">Role Filter</label>
-          <select
+          <StyledSelect
             id="admin-user-role-filter"
             className="admin-users-select"
             value={roleFilter}
@@ -447,12 +448,12 @@ const ManageUsers = () => {
             {ROLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </StyledSelect>
         </div>
 
         <div className="admin-users-field">
           <label htmlFor="admin-user-department-filter">Department Filter</label>
-          <select
+          <StyledSelect
             id="admin-user-department-filter"
             className="admin-users-select"
             value={departmentFilter}
@@ -462,7 +463,7 @@ const ManageUsers = () => {
             {DEPARTMENT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
-          </select>
+          </StyledSelect>
         </div>
       </div>
 
@@ -570,3 +571,4 @@ const ManageUsers = () => {
 };
 
 export default ManageUsers;
+

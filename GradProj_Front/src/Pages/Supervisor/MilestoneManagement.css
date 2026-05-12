@@ -521,10 +521,10 @@
 }
 
 .saas-form input,
-.saas-form select,
+.saas-form .styled-select-trigger,
 .saas-form textarea,
 .review-content input,
-.review-content select,
+.review-content .styled-select-trigger,
 .review-content textarea {
   padding: 13px 14px;
   border: 1px solid #e2e8f0;
@@ -545,10 +545,10 @@
 }
 
 .saas-form input:focus,
-.saas-form select:focus,
+.saas-form .styled-select-trigger:focus-visible,
 .saas-form textarea:focus,
 .review-content input:focus,
-.review-content select:focus,
+.review-content .styled-select-trigger:focus-visible,
 .review-content textarea:focus {
   outline: none;
   border-color: #4f46e5;

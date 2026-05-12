@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 const formStyles = `
   .progress-form-container { 
@@ -158,11 +159,11 @@ const MeetingProgressForm = () => {
             <div className="pf-group">
               <label className="pf-label">Project Group ID</label>
               {/* اختيار المشروع يجلب الطلاب تلقائياً */}
-              <select className="pf-input" value={selectedProject} onChange={handleProjectChange} required>
+              <StyledSelect className="pf-input" value={selectedProject} onChange={handleProjectChange} required>
                 <option value="" disabled>Select Project Group...</option>
                 <option value="PRJ-101">PRJ-101 (Smart Campus)</option>
                 <option value="PRJ-102">PRJ-102 (AI Academic Advisor)</option>
-              </select>
+              </StyledSelect>
             </div>
             <div className="pf-group">
               <label className="pf-label">Meeting Date</label>

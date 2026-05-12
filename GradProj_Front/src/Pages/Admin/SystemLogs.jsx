@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../../components/SearchBar';
+import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 System Logs - System Admin
@@ -209,14 +210,14 @@ const SystemLogs = () => {
           onClear={() => setSearchTerm('')}
           placeholder="Search by Message or Log ID..."
         />
-        <select className="ad-filter" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
+        <StyledSelect className="ad-filter" value={levelFilter} onChange={(e) => setLevelFilter(e.target.value)}>
           <option value="All">All Levels</option>
           <option value="INFO">INFO</option>
           <option value="WARN">WARN</option>
           <option value="ERROR">ERROR</option>
           <option value="FATAL">FATAL</option>
-        </select>
-        <select className="ad-filter" value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
+        </StyledSelect>
+        <StyledSelect className="ad-filter" value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
           <option value="All">All Modules</option>
           <option value="Auth">Auth</option>
           <option value="Database">Database</option>
@@ -224,7 +225,7 @@ const SystemLogs = () => {
           <option value="Storage">Storage</option>
           <option value="Security">Security</option>
           <option value="AI Engine">AI Engine</option>
-        </select>
+        </StyledSelect>
       </div>
 
       {/* Logs Table */}
@@ -293,3 +294,4 @@ const SystemLogs = () => {
 };
 
 export default SystemLogs;
+

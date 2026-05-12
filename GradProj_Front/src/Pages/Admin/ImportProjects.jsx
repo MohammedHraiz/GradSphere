@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 Import / Export Data - System Admin
@@ -215,11 +216,11 @@ const ImportProjects = () => {
           
           <div className="form-group">
             <label className="form-label">Select Data Type to Import</label>
-            <select className="ad-select" value={importType} onChange={(e) => setImportType(e.target.value)} disabled={uploading}>
+            <StyledSelect className="ad-select" value={importType} onChange={(e) => setImportType(e.target.value)} disabled={uploading}>
               <option value="students">Students Registry (CSV/Excel)</option>
               <option value="supervisors">Supervisors Directory (CSV/Excel)</option>
               <option value="projects">Previous Projects Archive (CSV)</option>
-            </select>
+            </StyledSelect>
           </div>
 
           <div 

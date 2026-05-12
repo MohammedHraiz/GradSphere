@@ -7,7 +7,7 @@
 .form-group label { font-size: 11px; font-weight: bold; color: #4a5568; letter-spacing: 0.5px; }
 .form-group label span { color: #e53e3e; }
 
-.form-group input, .form-group textarea, .form-group select {
+.form-group input, .form-group textarea, .form-group .styled-select-trigger {
   padding: 10px 12px;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
@@ -16,7 +16,7 @@
   outline: none;
 }
 
-.form-group input:focus, .form-group textarea:focus { border-color: #cbd5e0; }
+.form-group input:focus, .form-group textarea:focus, .form-group .styled-select-trigger:focus-visible { border-color: #cbd5e0; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 

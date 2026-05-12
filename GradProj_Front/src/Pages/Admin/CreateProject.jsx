@@ -1,5 +1,6 @@
 import React from 'react';
 import './CreateProject.css';
+import StyledSelect from '../../components/StyledSelect';
 
 const CreateProject = () => {
   return (
@@ -27,29 +28,29 @@ const CreateProject = () => {
             <div className="form-grid">
               <div className="input-group">
                 <label>DEPARTMENT <span className="req">*</span></label>
-                <select defaultValue="">
+                <StyledSelect defaultValue="">
                   <option value="" disabled>Select...</option>
                   <option value="cs">Computer Science</option>
                   <option value="se">Software Engineering</option>
-                </select>
+                </StyledSelect>
               </div>
               <div className="input-group">
                 <label>SEMESTER <span className="req">*</span></label>
-                <select defaultValue="">
+                <StyledSelect defaultValue="">
                   <option value="" disabled>Select...</option>
                   <option value="fall">Fall 2025</option>
                   <option value="spring">Spring 2026</option>
-                </select>
+                </StyledSelect>
               </div>
             </div>
 
             <div className="input-group full">
               <label>SUPERVISOR <span className="req">*</span></label>
-              <select defaultValue="">
+              <StyledSelect defaultValue="">
                 <option value="" disabled>Select supervisor...</option>
                 <option value="1">Dr. Sara Hassan</option>
                 <option value="2">Dr. Ahmed Ali</option>
-              </select>
+              </StyledSelect>
             </div>
 
             <div className="input-group full">

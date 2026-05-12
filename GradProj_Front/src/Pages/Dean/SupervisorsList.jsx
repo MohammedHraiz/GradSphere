@@ -7,6 +7,7 @@ import UserPreviewModal from '../../components/UserPreviewModal';
 import { openTeamsChat } from '../../utils/teamsLink';
 import { formatDepartmentLabel, getUserInitials, resolveProfilePhotoUrl } from '../../utils/userMeta';
 import { getSupervisorCapacityMeta } from '../../utils/supervisorCapacity';
+import StyledSelect from '../../components/StyledSelect';
 
 const premiumSupervisorsStyles = `
   .dean-sup-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; animation: fadeInPage 0.4s ease-out; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -153,10 +154,10 @@ const SupervisorsList = () => {
 
       <div className="ds-toolbar">
         <SearchBar className="ds-search" placeholder="Search supervisors..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onClear={() => setSearchTerm('')} />
-        <select className="ds-filter" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
+        <StyledSelect className="ds-filter" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
           <option value="All">All Departments</option>
           {departments.map((department) => <option key={department} value={department}>{formatDepartmentLabel(department)}</option>)}
-        </select>
+        </StyledSelect>
       </div>
 
       <div className="ds-table-card">
@@ -229,3 +230,4 @@ const SupervisorsList = () => {
 };
 
 export default SupervisorsList;
+

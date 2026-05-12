@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
+import StyledFileInput from './StyledFileInput';
+import StyledSelect from './StyledSelect';
 import { resubmitProjectProposal, submitProjectProposal } from '../api/projectService';
 
 const styles = `
 .proposal-form { display: grid; gap: 18px; }
 .proposal-field { display: grid; gap: 8px; }
 .proposal-form label { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-.proposal-form input, .proposal-form textarea, .proposal-form select { width: 100%; box-sizing: border-box; border: 1px solid #dbe2ea; border-radius: 16px; padding: 13px 15px; font: inherit; font-size: 14px; outline: none; background: white; color: #0f172a; transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
-.proposal-form input:focus, .proposal-form textarea:focus, .proposal-form select:focus { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79,70,229,.10); }
+.proposal-form input, .proposal-form textarea, .proposal-form .styled-select-trigger, .proposal-form .styled-file-input-shell { width: 100%; box-sizing: border-box; border: 1px solid #dbe2ea; border-radius: 16px; padding: 13px 15px; font: inherit; font-size: 14px; outline: none; background: white; color: #0f172a; transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
+.proposal-form input:focus, .proposal-form textarea:focus, .proposal-form .styled-select-trigger:focus-visible, .proposal-form .styled-file-input-shell:focus-within { border-color: #4f46e5; box-shadow: 0 0 0 4px rgba(79,70,229,.10); }
 .proposal-form input[readonly] { background: #f8fafc; color: #334155; font-weight: 800; }
 .proposal-form textarea { min-height: 140px; resize: vertical; }
 .proposal-form textarea::placeholder, .proposal-form input::placeholder { color: #94a3b8; }
@@ -145,14 +147,15 @@ const ProjectSubmissionForm = ({
 
       <div className="proposal-field">
         <label htmlFor={`${mode}-proposal-file`}>{isResubmit ? 'Replacement Proposal PDF' : 'Proposal PDF'}</label>
-        <input
+        <StyledFileInput
           id={`${mode}-proposal-file`}
-          type="file"
           accept="application/pdf,.pdf"
           onChange={handleFileChange}
           required={requireFile}
           disabled={isSubmitting}
           aria-invalid={Boolean(fieldErrors.proposalFile || fieldErrors.file)}
+          buttonLabel="Choose PDF"
+          placeholder={requireFile ? 'No proposal PDF selected' : 'Leave empty to keep the current proposal'}
         />
         {!requireFile ? (
           <p className="proposal-form-help">
@@ -166,7 +169,7 @@ const ProjectSubmissionForm = ({
         <>
           <div className="proposal-field">
             <label htmlFor={`${mode}-supervisor`}>Supervisor</label>
-            <select
+            <StyledSelect
               id={`${mode}-supervisor`}
               name="supervisorId"
               value={formData.supervisorId}
@@ -179,7 +182,7 @@ const ProjectSubmissionForm = ({
               {supervisors.map((supervisor) => (
                 <option key={supervisor.id} value={supervisor.id}>{supervisor.name} ({supervisor.email})</option>
               ))}
-            </select>
+            </StyledSelect>
             {fieldErrors.supervisorId ? <p className="proposal-form-error">{fieldErrors.supervisorId}</p> : null}
           </div>
 
@@ -227,3 +230,5 @@ const ProjectSubmissionForm = ({
 };
 
 export default ProjectSubmissionForm;
+
+

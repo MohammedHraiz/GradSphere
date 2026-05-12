@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 const styles = `
 /* =========================================================
@@ -403,17 +404,17 @@ const MeetingHistoryView = () => {
             {searchTerm && <button onClick={() => setSearchTerm('')} style={{position:'absolute', right:'10px', background:'none', border:'none', color:'#EF4444', fontWeight: '800', cursor:'pointer'}}>✕</button>}
           </div>
           
-          <select className="saas-select-history" value={filterProject} onChange={(e) => setFilterProject(e.target.value)}>
+          <StyledSelect className="saas-select-history" value={filterProject} onChange={(e) => setFilterProject(e.target.value)}>
             <option value="All Projects">All Projects</option>
             <option value="Smart Campus">Smart Campus</option>
             <option value="AI Academic Advisor">AI Academic Advisor</option>
             <option value="IoT System">IoT System</option>
-          </select>
+          </StyledSelect>
           
-          <select className="saas-select-history" value={filterSort} onChange={(e) => setFilterSort(e.target.value)}>
+          <StyledSelect className="saas-select-history" value={filterSort} onChange={(e) => setFilterSort(e.target.value)}>
             <option value="Newest First">Sort: Newest First</option>
             <option value="Oldest First">Sort: Oldest First</option>
-          </select>
+          </StyledSelect>
         </div>
 
         {/* --- 3. Timeline --- */}

@@ -3,6 +3,7 @@ import { getAssignedProjects } from '../../api/projectService';
 import { createProjectTask, deleteTask, getProjectTasks, updateTask } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
 import SearchBar from '../../components/SearchBar';
+import StyledSelect from '../../components/StyledSelect';
 
 const styles = `
 .task-manager-container { display: flex; flex-direction: column; height: 100%; animation: fadeIn 0.4s ease-out; padding: 30px; text-align: left; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -13,7 +14,7 @@ const styles = `
 .btn-primary-saas { background: #4F46E5; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
 .btn-primary-saas:disabled { opacity: .6; cursor: not-allowed; }
 .filter-bar { display: grid; grid-template-columns: 1.2fr repeat(3, minmax(180px, 1fr)); gap: 15px; background: white; padding: 15px; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-.filter-bar select { border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; }
+.filter-bar .styled-select-trigger { border: 1px solid #E2E8F0; border-radius: 12px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; }
 .kanban-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; align-items: start; }
 .kanban-column { background-color: #F1F5F9; padding: 18px; border-radius: 18px; border: 1px solid #E2E8F0; min-height: 380px; }
 .column-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #CBD5E1; }
@@ -47,7 +48,7 @@ const styles = `
 .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .form-group { display: grid; gap: 8px; }
 .form-group label { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: .08em; }
-.form-group input, .form-group select, .form-group textarea { width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; font: inherit; background: #F8FAFC; }
+.form-group input, .form-group .styled-select-trigger, .form-group textarea { width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 14px; font: inherit; background: #F8FAFC; }
 .form-group textarea { min-height: 120px; resize: vertical; }
 .modal-footer-saas { display: flex; justify-content: flex-end; gap: 12px; padding: 20px 28px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
 .btn-cancel-saas { background: white; border: 1px solid #E2E8F0; color: #475569; padding: 12px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; }
@@ -236,18 +237,18 @@ const TaskManager = () => {
 
         <div className="filter-bar">
           <SearchBar className="search-box" placeholder="Search tasks, descriptions, or students..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onClear={() => setSearchQuery('')} />
-          <select value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
+          <StyledSelect value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
             <option value="">Select project</option>
             {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
-          </select>
-          <select value={filterStudent} onChange={(event) => setFilterStudent(event.target.value)}>
+          </StyledSelect>
+          <StyledSelect value={filterStudent} onChange={(event) => setFilterStudent(event.target.value)}>
             <option value="ALL">All students</option>
             {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
-          </select>
-          <select value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)}>
+          </StyledSelect>
+          <StyledSelect value={filterStatus} onChange={(event) => setFilterStatus(event.target.value)}>
             <option value="ALL">All statuses</option>
             {TASK_STATUSES.map((status) => <option key={status} value={status}>{labelize(status)}</option>)}
-          </select>
+          </StyledSelect>
         </div>
 
         {isLoading ? <div className="state">Loading assigned projects...</div> : null}
@@ -302,16 +303,16 @@ const TaskManager = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="task-assignee">Assign to Student</label>
-                  <select id="task-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
+                  <StyledSelect id="task-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
                     <option value="">Unassigned</option>
                     {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
-                  </select>
+                  </StyledSelect>
                 </div>
                 <div className="form-group">
                   <label htmlFor="task-priority">Priority</label>
-                  <select id="task-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
+                  <StyledSelect id="task-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
                     {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{labelize(priority)}</option>)}
-                  </select>
+                  </StyledSelect>
                 </div>
               </div>
               <div className="form-row">
@@ -355,16 +356,16 @@ const TaskManager = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="detail-assignee">Assigned To</label>
-                    <select id="detail-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
+                    <StyledSelect id="detail-assignee" value={form.assignedToId} onChange={(event) => setForm((current) => ({ ...current, assignedToId: event.target.value }))}>
                       <option value="">Unassigned</option>
                       {teamMembers.map((member) => <option key={memberId(member)} value={memberId(member)}>{member.name}</option>)}
-                    </select>
+                    </StyledSelect>
                   </div>
                   <div className="form-group">
                     <label htmlFor="detail-priority">Priority</label>
-                    <select id="detail-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
+                    <StyledSelect id="detail-priority" value={form.priority} onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}>
                       {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{labelize(priority)}</option>)}
-                    </select>
+                    </StyledSelect>
                   </div>
                 </div>
                 <div className="form-row">
@@ -394,3 +395,4 @@ const TaskManager = () => {
 };
 
 export default TaskManager;
+

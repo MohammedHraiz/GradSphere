@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 const formStyles = `
   .nm-viewport {
@@ -251,24 +252,24 @@ const NewMeetingForm = () => {
               {/* 💡 Project Selection */}
               <div className="form-group">
                 <label className="fg-label">Select Project</label>
-                <select className="fg-select" required defaultValue="">
+                <StyledSelect className="fg-select" required defaultValue="">
                   <option value="" disabled>Choose a project...</option>
                   <option value="p1">Smart University Campus</option>
                   <option value="p2">AI Academic Advisor</option>
                   <option value="p3">Blockchain Voting System</option>
-                </select>
+                </StyledSelect>
               </div>
 
               {/* 💡 Attendees Selection */}
               <div className="form-group">
                 <label className="fg-label">Attendees (Team / Student)</label>
-                <select className="fg-select" required defaultValue="">
+                <StyledSelect className="fg-select" required defaultValue="">
                   <option value="" disabled>Choose attendees...</option>
                   <option value="t1">Team Alpha (All Members)</option>
                   <option value="t2">Team Beta (All Members)</option>
                   <option value="s1">Ali Mansour (Individual)</option>
                   <option value="s2">Sara Ahmed (Individual)</option>
-                </select>
+                </StyledSelect>
               </div>
 
               {/* 💡 Date & Time */}
