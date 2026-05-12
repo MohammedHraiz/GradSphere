@@ -3,6 +3,9 @@ package com.gradproject.platform.modules.milestone;
 import com.gradproject.platform.modules.milestone.dto.MilestoneResponseDTO;
 import com.gradproject.platform.modules.milestone.dto.MilestoneSubmissionRequestDTO;
 import com.gradproject.platform.modules.milestone.dto.MilestoneUpsertRequestDTO;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,5 +69,15 @@ public class MilestoneController {
                 new MilestoneSubmissionRequestDTO(notes),
                 file
         ));
+    }
+
+    @PreAuthorize("hasAnyRole('STUDENT', 'SUPERVISOR', 'DEAN_OFFICE', 'ADMIN')")
+    @GetMapping("/milestones/{milestoneId}/submission-file")
+    public ResponseEntity<Resource> downloadMilestoneSubmission(@PathVariable UUID milestoneId) {
+        var payload = milestoneService.loadMilestoneSubmission(milestoneId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(payload.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + payload.fileName() + "\"")
+                .body(payload.resource());
     }
 }

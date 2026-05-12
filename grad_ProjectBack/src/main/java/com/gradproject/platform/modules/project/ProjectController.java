@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.io.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +26,7 @@ import com.gradproject.platform.exception.BadRequestException;
 import com.gradproject.platform.modules.meeting.BulkDownloadService;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.project.submission.ProposalSubmission;
 import com.gradproject.platform.modules.project.dto.FeedbackRequestDTO;
 import com.gradproject.platform.modules.project.dto.ProposalSubmissionDTO;
 import com.gradproject.platform.modules.project.dto.ProjectResponseDTO;
@@ -37,6 +38,7 @@ import com.gradproject.platform.modules.user.UserRepository;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -47,19 +49,22 @@ public class ProjectController {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectService projectService;
-    private final FileStorageService fileStorageService;
     private final BulkDownloadService bulkDownloadService;
     private final TeamMemberRepository teamMemberRepository;
     private final SupervisorRequestRepository supervisorRequestRepository;
 
-    public ProjectController(ProjectRepository projectRepository, UserRepository userRepository, ProjectService projectService, FileStorageService fileStorageService, BulkDownloadService bulkDownloadService, TeamMemberRepository teamMemberRepository, SupervisorRequestRepository supervisorRequestRepository) {
+    @Autowired
+    public ProjectController(ProjectRepository projectRepository, UserRepository userRepository, ProjectService projectService, BulkDownloadService bulkDownloadService, TeamMemberRepository teamMemberRepository, SupervisorRequestRepository supervisorRequestRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectService = projectService;
-        this.fileStorageService = fileStorageService;
         this.bulkDownloadService = bulkDownloadService;
         this.teamMemberRepository = teamMemberRepository;
         this.supervisorRequestRepository = supervisorRequestRepository;
+    }
+
+    public ProjectController(ProjectRepository projectRepository, UserRepository userRepository, ProjectService projectService, FileStorageService ignoredFileStorageService, BulkDownloadService bulkDownloadService, TeamMemberRepository teamMemberRepository, SupervisorRequestRepository supervisorRequestRepository) {
+        this(projectRepository, userRepository, projectService, bulkDownloadService, teamMemberRepository, supervisorRequestRepository);
     }
 
     @PreAuthorize("hasRole('STUDENT')")
@@ -100,15 +105,15 @@ public class ProjectController {
         Project project = new Project();
         project.setTitle(team.getName().trim());
         project.setDescription(description.trim());
-        project.setDocumentPath(fileStorageService.storeProposal(proposalFile));
         project.setStudent(student);
         project.setTeam(team);
         project.setStatus(ProjectStatus.SUBMITTED);
         project.setProposalVersion(1);
 
         Project savedProject = projectRepository.save(project);
+        ProposalSubmission savedSubmission = projectService.createProposalSubmission(savedProject, project.getDescription(), null, "Initial submission", student);
+        projectService.attachProposalFile(savedProject, savedSubmission, student, proposalFile);
         projectService.createSupervisorRequest(savedProject, membership, student, supervisorId, requestMessage);
-        projectService.createProposalSubmission(savedProject, project.getDescription(), project.getDocumentPath(), "Initial submission", student);
 
         return ResponseEntity.ok(projectService.toResponse(savedProject));
     }
@@ -187,25 +192,23 @@ public class ProjectController {
     @PreAuthorize("hasAnyRole('STUDENT', 'SUPERVISOR', 'DEAN_OFFICE', 'ADMIN')")
     @GetMapping("/{projectId}/submissions/{submissionId}/file")
     public ResponseEntity<Resource> downloadProposalSubmissionFile(@PathVariable UUID projectId, @PathVariable UUID submissionId) {
-        Resource resource = projectService.loadProposalSubmissionFile(projectId, submissionId);
-        String fileName = projectService.getProposalSubmissionFileName(projectId, submissionId);
+        var payload = projectService.loadProposalSubmissionFile(projectId, submissionId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
-                .body(resource);
+                .contentType(MediaType.parseMediaType(payload.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + payload.fileName() + "\"")
+                .body(payload.resource());
     }
 
     @PreAuthorize("hasAnyRole('STUDENT', 'SUPERVISOR', 'DEAN_OFFICE', 'ADMIN')")
     @GetMapping("/{projectId}/proposal-file")
     public ResponseEntity<Resource> downloadProposalFile(@PathVariable UUID projectId) {
-        Resource resource = projectService.loadProposalFile(projectId);
-        String fileName = projectService.getProposalFileName(projectId);
+        var payload = projectService.loadProposalFile(projectId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
-                .body(resource);
+                .contentType(MediaType.parseMediaType(payload.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + payload.fileName() + "\"")
+                .body(payload.resource());
     }
 
     @PreAuthorize("hasRole('DEAN_OFFICE')")

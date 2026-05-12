@@ -424,7 +424,8 @@ class UserManagementServiceTest {
     @Test
     void authenticatedUserCanUploadValidProfilePhoto() {
         when(userRepository.findByEmailIgnoreCase(student.getEmail())).thenReturn(Optional.of(student));
-        when(fileStorageService.storeProfilePhoto(any())).thenReturn("/files/profile-photos/profile_123.jpg");
+        when(fileStorageService.storeProfilePhoto(any(User.class), any())).thenReturn("/files/profile-photos/profile_123.jpg");
+        when(fileStorageService.resolveProfilePhotoUrl(any(User.class))).thenReturn("/files/profile-photos/profile_123.jpg");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         MockMultipartFile file = new MockMultipartFile("photo", "avatar.jpg", "image/jpeg", new byte[]{1, 2, 3});
@@ -437,7 +438,7 @@ class UserManagementServiceTest {
     @Test
     void invalidProfilePhotoTypeIsRejected() {
         when(userRepository.findByEmailIgnoreCase(student.getEmail())).thenReturn(Optional.of(student));
-        when(fileStorageService.storeProfilePhoto(any())).thenThrow(new com.gradproject.platform.exception.FileStorageException("Profile photo must be JPG, PNG, or WebP."));
+        when(fileStorageService.storeProfilePhoto(any(User.class), any())).thenThrow(new com.gradproject.platform.exception.FileStorageException("Profile photo must be JPG, PNG, or WebP."));
 
         MockMultipartFile file = new MockMultipartFile("photo", "avatar.gif", "image/gif", new byte[]{1, 2, 3});
 
@@ -449,7 +450,7 @@ class UserManagementServiceTest {
     @Test
     void oversizedProfilePhotoIsRejected() {
         when(userRepository.findByEmailIgnoreCase(student.getEmail())).thenReturn(Optional.of(student));
-        when(fileStorageService.storeProfilePhoto(any())).thenThrow(new com.gradproject.platform.exception.FileStorageException("Profile photo is too large."));
+        when(fileStorageService.storeProfilePhoto(any(User.class), any())).thenThrow(new com.gradproject.platform.exception.FileStorageException("Profile photo is too large."));
 
         MockMultipartFile file = new MockMultipartFile("photo", "avatar.jpg", "image/jpeg", new byte[]{1, 2, 3});
 
