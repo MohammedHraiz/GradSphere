@@ -142,7 +142,7 @@
   background: var(--meetings-surface);
   border: 1px solid var(--meetings-border);
   border-radius: 26px;
-  box-shadow: 0 28px 70px -44px rgba(15, 23, 42, 0.48);
+  box-shadow: 0 20px 44px -28px rgba(15, 23, 42, 0.28);
 }
 
 .meetings-project-panel,
@@ -217,6 +217,8 @@
   margin-top: 14px;
   max-height: 360px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding-right: 4px;
 }
 
@@ -673,8 +675,9 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(15, 23, 42, 0.66);
-  backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.44);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .meetings-modal-card {
@@ -720,6 +723,9 @@
 .meetings-modal-body {
   padding: 22px 24px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
   display: grid;
   gap: 18px;
 }
@@ -881,6 +887,8 @@
   gap: 12px;
   max-height: 260px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding-right: 4px;
 }
 
