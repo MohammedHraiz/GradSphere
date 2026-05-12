@@ -1,0 +1,81 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Node / Frontend ###
+node_modules/
+.env
+.env.local
+.env.development
+.env.production
+dist/
+build/
+.next/
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Local Spring config / secrets ###
+src/main/resources/application-local.yml
+src/main/resources/application-local.yaml
+src/main/resources/application-dev.yml
+src/main/resources/application-dev.yaml
+src/main/resources/application-secrets.yml
+src/main/resources/application-secrets.yaml
+src/main/resources/credentials*.json
+src/main/resources/*credentials*.json
+src/main/resources/service-account*.json
+src/main/resources/*service-account*.json
+src/main/resources/*.pem
+src/main/resources/*.key
+src/main/resources/*.crt
+src/main/resources/*.p12
+src/main/resources/*.jks
+src/main/resources/*.keystore
+
+### Runtime / temp ###
+uploads/
+temp/
+tmp/
+*.tmp
+*.pid
+startup*.log
+startup*.txt
+
+### Local databases ###
+*.db
+*.sqlite
+*.sqlite3
+*.mv.db
+*.h2.db
