@@ -17,11 +17,11 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import { formatProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
-.proposal-page { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
-.proposal-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 28px; }
+.proposal-page { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; display: grid; gap: 28px; }
+.proposal-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 0; }
 .proposal-kicker { margin: 0 0 6px; color: #4f46e5; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 .proposal-title { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px; }
-.proposal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start; }
+.proposal-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; width: min(100%, 1180px); }
 .proposal-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; padding: 28px; box-shadow: 0 10px 24px -22px rgba(15,23,42,0.6); }
 .proposal-card h2 { margin: 0 0 10px; font-size: 20px; font-weight: 900; }
 .proposal-card p { margin: 0 0 20px; color: #64748b; font-size: 14px; line-height: 1.7; }
@@ -34,9 +34,9 @@ const styles = `
 .proposal-card form div div { margin-top: 8px; color: #be123c; font-size: 13px; font-weight: 700; }
 .proposal-card button[type="submit"] { border: 0; border-radius: 14px; background: #4f46e5; color: white; padding: 14px 18px; font-weight: 900; cursor: pointer; }
 .proposal-card button[type="submit"]:disabled { opacity: .65; cursor: not-allowed; }
-.proposal-summary { display: grid; gap: 14px; }
-.proposal-row { padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
-.proposal-row:last-child { border-bottom: 0; }
+.proposal-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.proposal-row { min-width: 0; padding: 18px; border: 1px solid #e2e8f0; border-radius: 18px; background: #f8fafc; }
+.proposal-row.full { grid-column: 1 / -1; }
 .proposal-label { margin: 0 0 5px; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .proposal-value { margin: 0; color: #0f172a; font-size: 14px; font-weight: 800; line-height: 1.5; overflow-wrap: anywhere; }
 .proposal-empty { border: 1px dashed #cbd5e1; border-radius: 20px; padding: 24px; background: #f8fafc; color: #64748b; text-align: center; line-height: 1.7; }
@@ -58,7 +58,7 @@ const styles = `
 .proposal-history-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; background: #ede9fe; color: #6d28d9; }
 .proposal-history-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .proposal-history-divider { height: 1px; background: #e2e8f0; }
-@media (max-width: 900px) { .proposal-layout { grid-template-columns: 1fr; } .proposal-header { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 900px) { .proposal-header { align-items: flex-start; flex-direction: column; } .proposal-summary { grid-template-columns: 1fr; } }
 `;
 
 const canResubmitStatus = (status) => ['NEEDS_CHANGES', 'REJECTED', 'REVISION_REQUIRED'].includes(String(status || '').toUpperCase());
@@ -371,20 +371,20 @@ const ProjectProposal = () => {
           ) : project ? (
             <div className="proposal-summary">
               <div className="proposal-row"><p className="proposal-label">Title</p><p className="proposal-value">{project.title}</p></div>
-              <div className="proposal-row"><p className="proposal-label">Description</p><p className="proposal-value">{project.description}</p></div>
               <div className="proposal-row"><p className="proposal-label">Proposal Version</p><p className="proposal-value">Proposal Version {project.proposalVersion || 1}</p></div>
               <div className="proposal-row"><p className="proposal-label">Status</p><p className="proposal-value"><ProjectStatusBadge status={project.status} /></p></div>
-              <div className="proposal-row"><p className="proposal-label">Status Guidance</p><p className="proposal-value">{statusMessage || 'No additional action is needed right now.'}</p></div>
-              <div className="proposal-row"><p className="proposal-label">Assigned Supervisor</p><p className="proposal-value">{project.supervisor ? `${project.supervisor.name}${project.supervisor.email ? ` (${project.supervisor.email})` : ''}` : 'Not assigned yet'}</p></div>
-              <div className="proposal-row">
+              <div className="proposal-row"><p className="proposal-label">Team</p><p className="proposal-value">{project.teamName || 'Not linked'}</p></div>
+              <div className="proposal-row full"><p className="proposal-label">Description</p><p className="proposal-value">{project.description}</p></div>
+              <div className="proposal-row full"><p className="proposal-label">Status Guidance</p><p className="proposal-value">{statusMessage || 'No additional action is needed right now.'}</p></div>
+              <div className="proposal-row full"><p className="proposal-label">Assigned Supervisor</p><p className="proposal-value">{project.supervisor ? `${project.supervisor.name}${project.supervisor.email ? ` (${project.supervisor.email})` : ''}` : 'Not assigned yet'}</p></div>
+              <div className="proposal-row full">
                 <p className="proposal-label">Supervisor Request</p>
                 <p className="proposal-value">
                   {project.pendingSupervisorRequestStatus ? `Pending with ${project.pendingSupervisorName || 'supervisor'}` : project.lastSupervisorRequestResponseMessage ? `Last response: ${project.lastSupervisorRequestResponseMessage}` : 'No pending request'}
                 </p>
               </div>
-              <div className="proposal-row"><p className="proposal-label">Latest Feedback</p><p className="proposal-value">{project.latestFeedback || 'No feedback yet.'}</p></div>
-              <div className="proposal-row"><p className="proposal-label">Team</p><p className="proposal-value">{project.teamName || 'Not linked'}</p></div>
-              <div className="proposal-row">
+              <div className="proposal-row full"><p className="proposal-label">Latest Feedback</p><p className="proposal-value">{project.latestFeedback || 'No feedback yet.'}</p></div>
+              <div className="proposal-row full">
                 <p className="proposal-label">Proposal PDF</p>
                 {project.documentPath ? (
                   <div className="proposal-actions">
