@@ -4,6 +4,7 @@ import { createProjectMilestone, deleteMilestone, downloadMilestoneSubmission, g
 import FeedbackToast from '../../components/FeedbackToast';
 import { extractBlobFromResult, openBlobInNewTab } from '../../utils/downloadFile';
 import './MilestoneManagement.css';
+import StyledSelect from '../../components/StyledSelect';
 
 const MILESTONE_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'NEEDS_CHANGES', 'COMPLETED'];
 const emptyCreateForm = { title: '', description: '', deadlineDate: '', keyRequirements: '' };
@@ -201,10 +202,10 @@ const MilestoneManagement = () => {
 
       <div className="project-selector-bar">
         <label htmlFor="milestone-project-select">Select Project</label>
-        <select id="milestone-project-select" className="saas-select-large" value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
+        <StyledSelect id="milestone-project-select" className="saas-select-large" value={selectedProjectId} onChange={(event) => setSelectedProjectId(event.target.value)}>
           <option value="">Select project</option>
           {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
-        </select>
+        </StyledSelect>
       </div>
 
       {isLoading ? <div className="timeline-empty">Loading assigned projects...</div> : null}
@@ -370,9 +371,9 @@ const MilestoneManagement = () => {
                     </div>
                     <div className="form-group">
                       <label>Status</label>
-                      <select value={reviewForm.status} onChange={(event) => setReviewForm((current) => ({ ...current, status: event.target.value }))}>
+                      <StyledSelect value={reviewForm.status} onChange={(event) => setReviewForm((current) => ({ ...current, status: event.target.value }))}>
                         {MILESTONE_STATUSES.map((status) => <option key={status} value={status}>{labelize(status)}</option>)}
-                      </select>
+                      </StyledSelect>
                     </div>
                     <div className="form-group">
                       <label>Completed Date</label>
@@ -439,3 +440,4 @@ const MilestoneManagement = () => {
 };
 
 export default MilestoneManagement;
+

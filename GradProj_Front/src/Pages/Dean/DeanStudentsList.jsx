@@ -5,6 +5,7 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import SearchBar from '../../components/SearchBar';
 import UserPreviewModal from '../../components/UserPreviewModal';
 import { formatDepartmentLabel, getUserInitials, resolveProfilePhotoUrl } from '../../utils/userMeta';
+import StyledSelect from '../../components/StyledSelect';
 
 const studentStyles = `
   .dean-std-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; animation: fadeInPage 0.4s ease-out; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -147,10 +148,10 @@ const DeanStudentsList = () => {
 
       <div className="std-toolbar">
         <SearchBar className="std-search" placeholder="Search students by name, ID, team, or project..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onClear={() => setSearchTerm('')} />
-        <select className="std-filter" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
+        <StyledSelect className="std-filter" value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)}>
           <option value="All">All Majors</option>
           {departments.map((department) => <option key={department} value={department}>{formatDepartmentLabel(department)}</option>)}
-        </select>
+        </StyledSelect>
       </div>
 
       <div className="std-table-card">
@@ -206,3 +207,4 @@ const DeanStudentsList = () => {
 };
 
 export default DeanStudentsList;
+

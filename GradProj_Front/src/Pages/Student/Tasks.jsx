@@ -6,6 +6,7 @@ import { getProjectTasks, updateTaskStatus } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
 import SearchBar from '../../components/SearchBar';
 import { getPriorityIcon, getTaskStatusIcon } from '../../utils/statusIcons';
+import StyledSelect from '../../components/StyledSelect';
 
 const styles = `
 .tasks-viewport { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a; animation: fadeIn 0.4s ease-out; text-align: left; }
@@ -20,7 +21,7 @@ const styles = `
 .s-value { font-size: 24px; font-weight: 900; color: #0f172a; }
 .search-filter-bar { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 24px; box-shadow: 0 14px 32px -28px rgba(15,23,42,0.28); flex-wrap: wrap; }
 .search-wrapper { flex: 1; min-width: 260px; }
-.search-filter-bar select { border: 1px solid #E2E8F0; border-radius: 14px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; min-width: 200px; }
+.search-filter-bar .styled-select-trigger { border: 1px solid #E2E8F0; border-radius: 14px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; min-width: 200px; }
 .table-card-premium { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 22px 42px -34px rgba(15,23,42,0.34); }
 .premium-table { width: 100%; border-collapse: collapse; text-align: left; }
 .premium-table th { padding: 18px 20px; background: #f8fafc; font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
@@ -77,7 +78,7 @@ const styles = `
 .form-group { display: flex; flex-direction: column; gap: 8px; }
 .form-group.full { grid-column: 1 / -1; }
 .form-group label { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: .08em; }
-.form-group select, .form-group textarea { border: 1px solid #e2e8f0; border-radius: 14px; padding: 13px 14px; font: inherit; background: white; color: #0f172a; }
+.form-group .styled-select-trigger, .form-group textarea { border: 1px solid #e2e8f0; border-radius: 14px; padding: 13px 14px; font: inherit; background: white; color: #0f172a; }
 .form-group textarea { min-height: 110px; resize: vertical; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 18px 32px 24px; border-top: 1px solid #f1f5f9; background: #fff; }
 .btn-secondary { background: #fff; border: 1px solid #cbd5e1; color: #334155; padding: 12px 18px; border-radius: 12px; font-weight: 800; cursor: pointer; }
@@ -247,11 +248,11 @@ const Tasks = () => {
 
       <div className="search-filter-bar">
         <SearchBar className="search-wrapper" placeholder="Search by title, assignee, description, priority, or status..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+        <StyledSelect value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="ALL">All statuses</option>
           {TASK_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
           <option value="OVERDUE">Overdue</option>
-        </select>
+        </StyledSelect>
       </div>
 
       {isLoading ? <div className="page-state">Loading project tasks...</div> : null}
@@ -359,14 +360,14 @@ const Tasks = () => {
                         <div className="form-grid">
                           <div className="form-group">
                             <label htmlFor="task-status">Current Status</label>
-                            <select
+                            <StyledSelect
                               id="task-status"
                               value={statusDraft}
                               onChange={(event) => setStatusDraft(event.target.value)}
                               disabled={isSaving}
                             >
                               {TASK_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status)}</option>)}
-                            </select>
+                            </StyledSelect>
                           </div>
                           <div className="form-group">
                             <label>Overdue</label>
@@ -400,3 +401,4 @@ const Tasks = () => {
 };
 
 export default Tasks;
+

@@ -11,6 +11,7 @@ import {
   getUserInitials,
   resolveProfilePhotoUrl,
 } from '../../utils/userMeta';
+import StyledSelect from '../../components/StyledSelect';
 
 const styles = `
 .students-container { display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.4s ease-out; width: 100%; text-align: left; }
@@ -187,7 +188,7 @@ const StudentsList = () => {
 
       <div className="filter-bar-saas">
         <SearchBar className="search-wrapper" placeholder="Search by student name, ID, email, team, or project..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
-        <select
+        <StyledSelect
           className="saas-select"
           value={filterProject}
           onChange={(event) => setFilterProject(event.target.value)}
@@ -195,7 +196,7 @@ const StudentsList = () => {
           {projectOptions.map((project) => (
             <option key={project} value={project}>{project}</option>
           ))}
-        </select>
+        </StyledSelect>
       </div>
 
       {isLoading ? (
@@ -327,3 +328,4 @@ const StudentsList = () => {
 };
 
 export default StudentsList;
+

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getAllSupervisorRequests } from '../../api/projectService';
 import SearchBar from '../../components/SearchBar';
+import StyledSelect from '../../components/StyledSelect';
 
 const supervisorRequestStyles = `
 .dsr-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -144,11 +145,11 @@ const DeanSupervisorRequests = () => {
 
       <div className="dsr-toolbar">
         <SearchBar className="dsr-search" placeholder="Search by project, team, supervisor, requester, or message..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
-        <select className="dsr-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+        <StyledSelect className="dsr-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>{status === 'ALL' ? 'All Statuses' : formatStatus(status)}</option>
           ))}
-        </select>
+        </StyledSelect>
       </div>
 
       <div className="dsr-table-card">
@@ -202,3 +203,4 @@ const DeanSupervisorRequests = () => {
 };
 
 export default DeanSupervisorRequests;
+

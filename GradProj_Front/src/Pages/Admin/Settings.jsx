@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 Global Settings - System Admin
@@ -185,19 +186,19 @@ const Settings = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Academic Year</label>
-                  <select className="form-select" name="academicYear" value={config.academicYear} onChange={handleInputChange}>
+                  <StyledSelect className="form-select" name="academicYear" value={config.academicYear} onChange={handleInputChange}>
                     <option value="2024/2025">2024/2025</option>
                     <option value="2025/2026">2025/2026</option>
                     <option value="2026/2027">2026/2027</option>
-                  </select>
+                  </StyledSelect>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Current Semester</label>
-                  <select className="form-select" name="currentSemester" value={config.currentSemester} onChange={handleInputChange}>
+                  <StyledSelect className="form-select" name="currentSemester" value={config.currentSemester} onChange={handleInputChange}>
                     <option value="Fall Semester">Fall Semester</option>
                     <option value="Spring Semester">Spring Semester</option>
                     <option value="Summer Semester">Summer Semester</option>
-                  </select>
+                  </StyledSelect>
                 </div>
               </div>
 
@@ -225,11 +226,11 @@ const Settings = () => {
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Session Timeout (Minutes)</label>
-                  <select className="form-select" name="sessionTimeout" value={config.sessionTimeout} onChange={handleInputChange}>
+                  <StyledSelect className="form-select" name="sessionTimeout" value={config.sessionTimeout} onChange={handleInputChange}>
                     <option value="15">15 Minutes</option>
                     <option value="30">30 Minutes</option>
                     <option value="60">1 Hour</option>
-                  </select>
+                  </StyledSelect>
                 </div>
               </div>
 
@@ -284,12 +285,12 @@ const Settings = () => {
 
               <div className="form-group" style={{maxWidth: '50%'}}>
                 <label className="form-label">Automated Backup Frequency</label>
-                <select className="form-select" name="autoBackup" value={config.autoBackup} onChange={handleInputChange}>
+                <StyledSelect className="form-select" name="autoBackup" value={config.autoBackup} onChange={handleInputChange}>
                   <option value="Hourly">Hourly</option>
                   <option value="Daily">Daily</option>
                   <option value="Weekly">Weekly</option>
                   <option value="Manual">Manual Only</option>
-                </select>
+                </StyledSelect>
               </div>
               
               <div style={{background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '15px', borderRadius: '12px', marginTop: '20px'}}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Meetings.css';
+import StyledSelect from '../../components/StyledSelect';
 
 const Meetings = () => {
   // التبويبات المتاحة: upcoming, pending, past
@@ -214,10 +215,10 @@ const Meetings = () => {
                 </div>
                 <div className="input-group">
                   <label>Meeting Type</label>
-                  <select className="input-field" value={newMeeting.type} onChange={e => setNewMeeting({...newMeeting, type: e.target.value})}>
+                  <StyledSelect className="input-field" value={newMeeting.type} onChange={e => setNewMeeting({...newMeeting, type: e.target.value})}>
                     <option value="Online">Online (Zoom/Teams)</option>
                     <option value="In-Person">In-Person (Campus)</option>
-                  </select>
+                  </StyledSelect>
                 </div>
                 <div className="input-group">
                   <label>Additional Notes (Optional)</label>

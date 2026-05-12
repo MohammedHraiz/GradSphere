@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import StyledFileInput from '../../components/StyledFileInput';
 import { getMyProject } from '../../api/projectService';
 import { downloadMilestoneSubmission, getProjectMilestones, submitMilestone } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
@@ -53,7 +54,7 @@ const styles = `
 .meta-box, .field { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; }
 .meta-box label, .field label { display: block; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; }
 .meta-box span { font-weight: 800; color: #0f172a; font-size: 14px; }
-.field input, .field textarea { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px; font: inherit; background: white; }
+.field input, .field textarea, .field .styled-file-input-shell { width: 100%; box-sizing: border-box; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px; font: inherit; background: white; }
 .field textarea { min-height: 120px; resize: vertical; }
 .field.full { grid-column: 1 / -1; }
 .feedback-box { background: #fffcf0; border: 1px solid #fde68a; padding: 20px; border-radius: 16px; margin-top: 20px; }
@@ -263,7 +264,14 @@ const Milestones = () => {
                   </div>
                   <div className="field full">
                     <label htmlFor="milestone-file">Upload Submission File</label>
-                    <input id="milestone-file" type="file" accept=".pdf,.doc,.docx,.zip" onChange={(event) => setSubmissionFile(event.target.files?.[0] ?? null)} />
+                    <StyledFileInput
+                      id="milestone-file"
+                      accept=".pdf,.doc,.docx,.zip"
+                      disabled={isSaving}
+                      onChange={(event) => setSubmissionFile(event.target.files?.[0] ?? null)}
+                      buttonLabel="Choose File"
+                      placeholder="No submission file selected"
+                    />
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -282,3 +290,4 @@ const Milestones = () => {
 };
 
 export default Milestones;
+

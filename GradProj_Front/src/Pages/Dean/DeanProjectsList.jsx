@@ -8,6 +8,7 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ClickableUser from '../../components/ClickableUser';
 import SearchBar from '../../components/SearchBar';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
+import StyledSelect from '../../components/StyledSelect';
 
 const projectsStyles = `
 .dean-proj-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -287,7 +288,7 @@ const DeanProjectsList = () => {
 
       <div className="dp-toolbar">
         <SearchBar className="dp-search" placeholder="Search projects, students, teams, or supervisors..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
-        <select className="dp-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+        <StyledSelect className="dp-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="All">All Statuses</option>
           <option value="SUBMITTED">Submitted</option>
           <option value="UNDER_REVIEW">Under Review</option>
@@ -295,7 +296,7 @@ const DeanProjectsList = () => {
           <option value="APPROVED">Approved</option>
           <option value="REJECTED">Rejected</option>
           <option value="ARCHIVED">Archived</option>
-        </select>
+        </StyledSelect>
       </div>
 
       <div className="dp-table-card">
@@ -377,14 +378,14 @@ const DeanProjectsList = () => {
                         <button className="dp-action-btn" disabled={busy} onClick={() => handleArchive(project.id)}>{actionId === `${project.id}:archive` ? 'Archiving...' : 'Archive'}</button>
                       ) : null}
                       {isArchived ? <div className="dp-proj-id" style={{ width: '100%' }}>Archived project. Dean/Admin can reopen by changing the status.</div> : null}
-                      <select className="dp-filter" style={{minWidth: 150, padding: '8px 10px'}} disabled={busy} value={selectedSupervisorByProject[project.id] || ''} onChange={(event) => setSelectedSupervisorByProject(prev => ({ ...prev, [project.id]: event.target.value }))}>
+                      <StyledSelect className="dp-filter" style={{minWidth: 150, padding: '8px 10px'}} disabled={busy} value={selectedSupervisorByProject[project.id] || ''} onChange={(event) => setSelectedSupervisorByProject(prev => ({ ...prev, [project.id]: event.target.value }))}>
                         <option value="">Supervisor...</option>
                         {supervisors.map((supervisor) => (
                           <option key={supervisor.id} value={supervisor.id}>{supervisor.name}</option>
                         ))}
-                      </select>
+                      </StyledSelect>
                       <button className="dp-action-btn" disabled={busy || isArchived} onClick={() => handleAssignSupervisor(project.id)}>{actionId === `${project.id}:assign` ? 'Assigning...' : 'Assign'}</button>
-                      <select className="dp-filter" style={{minWidth: 145, padding: '8px 10px'}} disabled={busy} value={statusByProject[project.id] || ''} onChange={(event) => setStatusByProject(prev => ({ ...prev, [project.id]: event.target.value }))}>
+                      <StyledSelect className="dp-filter" style={{minWidth: 145, padding: '8px 10px'}} disabled={busy} value={statusByProject[project.id] || ''} onChange={(event) => setStatusByProject(prev => ({ ...prev, [project.id]: event.target.value }))}>
                         <option value="">Status...</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="UNDER_REVIEW">Under Review</option>
@@ -392,7 +393,7 @@ const DeanProjectsList = () => {
                         <option value="APPROVED">Approved</option>
                         <option value="REJECTED">Rejected</option>
                         <option value="ARCHIVED">Archived</option>
-                      </select>
+                      </StyledSelect>
                       <button className="dp-action-btn" disabled={busy} onClick={() => handleManualStatus(project.id)}>{actionId === `${project.id}:status` ? 'Updating...' : 'Update'}</button>
                     </div>
                   </td>
@@ -478,3 +479,4 @@ const DeanProjectsList = () => {
 };
 
 export default DeanProjectsList;
+

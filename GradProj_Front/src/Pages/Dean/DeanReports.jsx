@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 ملاحظة:
@@ -296,11 +297,11 @@ const DeanReports = () => {
         <div className="premium-chart-card">
           <div className="chart-header-row">
             <h3>5-Year Performance Trend</h3>
-            <select className="chart-filter">
+            <StyledSelect className="chart-filter">
               <option>All Departments</option>
               <option>Software Eng.</option>
               <option>AI / ML</option>
-            </select>
+            </StyledSelect>
           </div>
           
           <div style={{ width: '100%', height: '250px', position: 'relative' }}>
