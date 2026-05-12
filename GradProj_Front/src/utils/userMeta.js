@@ -14,6 +14,16 @@ export const DEPARTMENT_OPTIONS = [
 
 const ROLE_LABELS = Object.fromEntries(ROLE_OPTIONS.map((option) => [option.value, option.label]));
 const DEPARTMENT_LABELS = Object.fromEntries(DEPARTMENT_OPTIONS.map((option) => [option.value, option.label]));
+const USER_STORAGE_KEY = 'user';
+const PHOTO_VERSION_STORAGE_KEY = 'profilePhotoVersion';
+
+const safeParseJson = (value) => {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
 
 export const roleNeedsDepartment = (role) => role === 'ROLE_STUDENT' || role === 'ROLE_SUPERVISOR';
 
@@ -36,7 +46,19 @@ export const resolveProfilePhotoUrl = (photoUrl) => {
     import.meta.env.VITE_API_BASE_URL
     || (import.meta.env.MODE === 'development' ? 'http://127.0.0.1:8080' : window.location.origin)
   ).replace(/\/+$/, '');
-  return `${backendBase}${photoUrl.startsWith('/') ? photoUrl : `/${photoUrl}`}`;
+  const normalizedPath = photoUrl.startsWith('/') ? photoUrl : `/${photoUrl}`;
+  const absoluteUrl = `${backendBase}${normalizedPath}`;
+  const storedUser = safeParseJson(localStorage.getItem(USER_STORAGE_KEY));
+  const normalizedBasePath = normalizedPath.split('?', 2)[0];
+
+  if (storedUser?.id && normalizedBasePath === `/files/profile-photos/${storedUser.id}`) {
+    const version = storedUser.profilePhotoVersion || localStorage.getItem(PHOTO_VERSION_STORAGE_KEY);
+    if (version) {
+      return `${absoluteUrl}${absoluteUrl.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
+    }
+  }
+
+  return absoluteUrl;
 };
 
 export const getUserInitials = (name) => {

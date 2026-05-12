@@ -55,6 +55,12 @@ export const submitMilestone = async (milestoneId, { notes, file }) => {
   return response?.data ?? null;
 };
 
+export const downloadMilestoneSubmission = async (milestoneId) => {
+  return apiClient.get(`/milestones/${milestoneId}/submission-file`, {
+    responseType: 'blob',
+  });
+};
+
 export const deleteMilestone = async (milestoneId) => {
   await apiClient.delete(`/milestones/${milestoneId}`);
 };

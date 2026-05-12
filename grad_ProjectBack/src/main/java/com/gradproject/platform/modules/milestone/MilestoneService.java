@@ -82,7 +82,7 @@ public class MilestoneService {
             throw new AccessDeniedException("Only project students can submit milestone work.");
         }
 
-        String storedPath = fileStorageService.storeMilestoneSubmission(file);
+        String storedPath = fileStorageService.storeMilestoneSubmission(milestone, currentUser, file);
         milestone.setSubmissionFilePath(storedPath);
         milestone.setSubmissionFileName(file.getOriginalFilename());
         milestone.setSubmissionNotes(request != null && StringUtils.hasText(request.notes()) ? request.notes().trim() : null);
@@ -113,6 +113,14 @@ public class MilestoneService {
         milestoneRepository.delete(milestone);
     }
 
+    @Transactional(readOnly = true)
+    public FileStorageService.StoredFilePayload loadMilestoneSubmission(UUID milestoneId) {
+        Milestone milestone = milestoneRepository.findById(milestoneId)
+                .orElseThrow(() -> new BadRequestException("Milestone not found."));
+        accessService.requireProjectViewAccess(milestone.getProject().getId());
+        return fileStorageService.loadMilestoneSubmission(milestone);
+    }
+
     public MilestoneResponseDTO toResponse(Milestone milestone) {
         return new MilestoneResponseDTO(
                 milestone.getId(),
@@ -125,7 +133,7 @@ public class MilestoneService {
                 milestone.getStatus(),
                 milestone.getCompletedDate(),
                 milestone.getReviewFeedback(),
-                milestone.getSubmissionFilePath(),
+                fileStorageService.hasMilestoneSubmission(milestone) ? fileStorageService.buildMilestoneSubmissionPath(milestone.getId()) : null,
                 milestone.getSubmissionFileName(),
                 milestone.getSubmissionNotes(),
                 milestone.getSubmittedAt(),

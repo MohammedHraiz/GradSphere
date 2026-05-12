@@ -4,6 +4,7 @@ import { apiClient } from '../api/apiClient';
 const AuthContext = createContext(null);
 
 const USER_STORAGE_KEY = 'user';
+const PHOTO_VERSION_STORAGE_KEY = 'profilePhotoVersion';
 const TOKEN_STORAGE_KEYS = ['accessToken', 'token', 'jwt'];
 
 const ROLE_ALIASES = {
@@ -54,6 +55,7 @@ const normalizeRole = (role) => {
 };
 
 const readStoredToken = () => TOKEN_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean) ?? null;
+const readStoredPhotoVersion = () => localStorage.getItem(PHOTO_VERSION_STORAGE_KEY);
 
 const readStoredUser = () => {
   const rawUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -79,6 +81,7 @@ const readStoredUser = () => {
     ...(isPlainObject(parsedUser?.user) ? parsedUser.user : {}),
     ...(isPlainObject(tokenPayload) ? tokenPayload : {}),
     role: resolvedRole,
+    profilePhotoVersion: parsedUser?.profilePhotoVersion ?? readStoredPhotoVersion() ?? null,
   };
 
   return {
@@ -108,20 +111,21 @@ export const AuthProvider = ({ children }) => {
     const nextUser = nextAuth?.user ?? nextAuth ?? null;
     const nextRole = normalizeRole(nextAuth?.role || nextUser?.role || nextUser?.user?.role || nextUser?.claims?.role);
     const nextHasTeam = Boolean(nextUser?.hasTeam ?? nextUser?.team?.id ?? nextUser?.teamId ?? nextUser?.team);
+    const nextPhotoVersion = nextUser?.profilePhotoVersion ?? readStoredPhotoVersion() ?? null;
 
     if (nextToken) {
       localStorage.setItem('token', nextToken);
     }
 
     if (nextUser) {
-      const storedUser = { ...nextUser, role: nextRole, hasTeam: nextHasTeam };
+      const storedUser = { ...nextUser, role: nextRole, hasTeam: nextHasTeam, profilePhotoVersion: nextPhotoVersion };
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(storedUser));
     }
 
     setAuthState({
       token: nextToken,
       role: nextRole,
-      user: nextUser ? { ...nextUser, role: nextRole, hasTeam: nextHasTeam } : null,
+      user: nextUser ? { ...nextUser, role: nextRole, hasTeam: nextHasTeam, profilePhotoVersion: nextPhotoVersion } : null,
       isAuthenticated: Boolean(nextToken || nextUser),
     });
   }, []);
@@ -146,7 +150,18 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     TOKEN_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
     localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(PHOTO_VERSION_STORAGE_KEY);
     setAuthState({ token: null, role: null, user: null, isAuthenticated: false });
+  }, []);
+
+  const bumpProfilePhotoVersion = useCallback(() => {
+    const nextVersion = String(Date.now());
+    localStorage.setItem(PHOTO_VERSION_STORAGE_KEY, nextVersion);
+    setAuthState((current) => ({
+      ...current,
+      user: current.user ? { ...current.user, profilePhotoVersion: nextVersion } : current.user,
+    }));
+    return nextVersion;
   }, []);
 
   const hasRole = useCallback((allowedRoles = []) => {
@@ -168,7 +183,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     hasRole,
     refreshUserProfile,
-  }), [authState, hasRole, refreshUserProfile]);
+    bumpProfilePhotoVersion,
+  }), [authState, bumpProfilePhotoVersion, hasRole, refreshUserProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

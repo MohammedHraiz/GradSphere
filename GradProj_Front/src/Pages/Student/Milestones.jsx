@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getMyProject } from '../../api/projectService';
-import { getProjectMilestones, submitMilestone } from '../../api/workflowService';
+import { downloadMilestoneSubmission, getProjectMilestones, submitMilestone } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
+import { extractBlobFromResult, openBlobInNewTab } from '../../utils/downloadFile';
 import { getMilestoneStatusIcon } from '../../utils/statusIcons';
 
 const styles = `
@@ -146,6 +147,20 @@ const Milestones = () => {
     }
   };
 
+  const handleOpenSubmission = async (event, milestone) => {
+    event.preventDefault();
+    if (!milestone?.id) {
+      return;
+    }
+
+    try {
+      const result = await downloadMilestoneSubmission(milestone.id);
+      openBlobInNewTab(extractBlobFromResult(result));
+    } catch (err) {
+      setToast({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to open the submitted file.' });
+    }
+  };
+
   return (
     <div className="milestones-wrapper">
       <style>{styles}</style>
@@ -235,7 +250,7 @@ const Milestones = () => {
                 <p>{selectedMilestone.reviewFeedback || 'No supervisor feedback yet.'}</p>
               </div>
               {selectedMilestone.submissionFilePath ? (
-                <a className="file-link" href={selectedMilestone.submissionFilePath} target="_blank" rel="noreferrer">
+                <a className="file-link" href={selectedMilestone.submissionFilePath} target="_blank" rel="noreferrer" onClick={(event) => void handleOpenSubmission(event, selectedMilestone)}>
                   View current submission
                 </a>
               ) : null}

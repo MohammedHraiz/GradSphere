@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getAssignedProjects } from '../../api/projectService';
-import { createProjectMilestone, deleteMilestone, getProjectMilestones, updateMilestone } from '../../api/workflowService';
+import { createProjectMilestone, deleteMilestone, downloadMilestoneSubmission, getProjectMilestones, updateMilestone } from '../../api/workflowService';
 import FeedbackToast from '../../components/FeedbackToast';
+import { extractBlobFromResult, openBlobInNewTab } from '../../utils/downloadFile';
 import './MilestoneManagement.css';
 
 const MILESTONE_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'NEEDS_CHANGES', 'COMPLETED'];
@@ -169,6 +170,20 @@ const MilestoneManagement = () => {
       setToast({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to delete the milestone.' });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleOpenSubmission = async (event, milestone) => {
+    event.preventDefault();
+    if (!milestone?.id) {
+      return;
+    }
+
+    try {
+      const result = await downloadMilestoneSubmission(milestone.id);
+      openBlobInNewTab(extractBlobFromResult(result));
+    } catch (err) {
+      setToast({ type: 'error', message: err?.response?.data?.message || err?.message || 'Unable to open the submitted file.' });
     }
   };
 
@@ -366,7 +381,7 @@ const MilestoneManagement = () => {
                     <div className="review-readonly-card">
                       <span>Current Submission</span>
                       {activeMilestone.submissionFilePath ? (
-                        <a href={activeMilestone.submissionFilePath} target="_blank" rel="noreferrer">{activeMilestone.submissionFileName || 'Download file'}</a>
+                        <a href={activeMilestone.submissionFilePath} target="_blank" rel="noreferrer" onClick={(event) => void handleOpenSubmission(event, activeMilestone)}>{activeMilestone.submissionFileName || 'Download file'}</a>
                       ) : (
                         <strong>No submission yet</strong>
                       )}

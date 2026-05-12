@@ -215,7 +215,7 @@ class ProjectServiceTest {
         when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
         when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
         when(teamMemberRepository.findByUserId(student.getId())).thenReturn(Optional.of(member(project.getTeam(), student, "LEADER")));
-        when(fileStorageService.storeProposal(any())).thenReturn("/files/revised.pdf");
+        when(fileStorageService.storeProposal(any(Project.class), any(ProposalSubmission.class), any(User.class), any())).thenReturn("/files/revised.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var dto = service.resubmitProposal(project.getId(), " Revised description ", new MockMultipartFile("proposalFile", "proposal.pdf", "application/pdf", new byte[] { 1 }), null, null, "Updated scope");
@@ -269,7 +269,7 @@ class ProjectServiceTest {
         assertThat(dto.documentPath()).isEqualTo("/files/old.pdf");
 
         project.setStatus(ProjectStatus.REJECTED);
-        when(fileStorageService.storeProposal(any())).thenReturn("/files/new.pdf");
+        when(fileStorageService.storeProposal(any(Project.class), any(ProposalSubmission.class), any(User.class), any())).thenReturn("/files/new.pdf");
         dto = service.resubmitProposal(project.getId(), "New description", new MockMultipartFile("proposalFile", "proposal.pdf", "application/pdf", new byte[] { 1 }), null, null, "Added diagrams");
 
         assertThat(dto.documentPath()).isEqualTo("/files/new.pdf");

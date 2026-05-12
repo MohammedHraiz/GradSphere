@@ -70,7 +70,7 @@ class ProjectControllerTest {
         when(supervisorRequestRepository.existsByProjectIdAndSupervisorIdAndStatus(any(), any(), any())).thenReturn(false);
         when(supervisorRequestRepository.existsByProjectIdAndStatus(any(), any())).thenReturn(false);
         when(proposalSubmissionRepository.existsByProjectIdAndVersionNumber(any(), any())).thenReturn(false);
-        when(fileStorageService.storeProposal(any())).thenReturn("/files/proposal.pdf");
+        when(fileStorageService.storeProposal(any(Project.class), any(ProposalSubmission.class), any(User.class), any())).thenReturn("/files/proposal.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.save(any(SupervisorRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(proposalSubmissionRepository.save(any(ProposalSubmission.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -92,8 +92,9 @@ class ProjectControllerTest {
         assertThat(currentTeam.getName()).isEqualTo("Smart Campus System");
 
         org.mockito.ArgumentCaptor<ProposalSubmission> submissionCaptor = org.mockito.ArgumentCaptor.forClass(ProposalSubmission.class);
-        verify(proposalSubmissionRepository, times(1)).save(submissionCaptor.capture());
-        ProposalSubmission submission = submissionCaptor.getValue();
+        verify(proposalSubmissionRepository, times(2)).save(submissionCaptor.capture());
+        java.util.List<ProposalSubmission> savedSubmissions = submissionCaptor.getAllValues();
+        ProposalSubmission submission = savedSubmissions.get(savedSubmissions.size() - 1);
         assertThat(submission.getVersionNumber()).isEqualTo(1);
         assertThat(submission.getDescription()).isEqualTo("A valid proposal description for this current team");
         assertThat(submission.getDocumentPath()).isEqualTo("/files/proposal.pdf");
@@ -143,7 +144,7 @@ class ProjectControllerTest {
         when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(member(currentTeam, leader, "LEADER")));
         when(projectRepository.findByTeamId(currentTeam.getId())).thenReturn(Optional.empty());
         when(userRepository.findById(leader.getId())).thenReturn(Optional.of(leader));
-        when(fileStorageService.storeProposal(any())).thenReturn("/files/proposal.pdf");
+        when(fileStorageService.storeProposal(any(Project.class), any(ProposalSubmission.class), any(User.class), any())).thenReturn("/files/proposal.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatThrownBy(() -> controller.submitProject(
@@ -184,7 +185,7 @@ class ProjectControllerTest {
         when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(member(currentTeam, leader, "LEADER")));
         when(projectRepository.findByTeamId(currentTeam.getId())).thenReturn(Optional.empty());
         when(userRepository.findById(supervisor.getId())).thenReturn(Optional.of(supervisor));
-        when(fileStorageService.storeProposal(any())).thenReturn("/files/proposal.pdf");
+        when(fileStorageService.storeProposal(any(Project.class), any(ProposalSubmission.class), any(User.class), any())).thenReturn("/files/proposal.pdf");
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.save(any(SupervisorRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(supervisorRequestRepository.findFirstByTeamIdAndStatusOrderByCreatedAtDesc(currentTeam.getId(), SupervisorRequestStatus.PENDING)).thenReturn(Optional.empty());

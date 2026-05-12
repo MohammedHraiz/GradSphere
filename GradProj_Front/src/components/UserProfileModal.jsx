@@ -24,7 +24,7 @@ const createDraftFromProfile = (profile) => ({
 const getErrorMessage = (error, fallback) => error?.message || error?.response?.data?.message || fallback;
 
 const UserProfileModal = ({ open, onClose }) => {
-  const { currentUser, refreshUserProfile } = useAuth();
+  const { currentUser, refreshUserProfile, bumpProfilePhotoVersion } = useAuth();
   const fileInputRef = useRef(null);
   const [savedProfile, setSavedProfile] = useState(currentUser ?? null);
   const [profileDraft, setProfileDraft] = useState(createDraftFromProfile(currentUser));
@@ -207,6 +207,7 @@ const UserProfileModal = ({ open, onClose }) => {
 
       if (selectedPhotoFile) {
         latestProfile = await uploadProfilePhoto(selectedPhotoFile);
+        bumpProfilePhotoVersion?.();
         setSavedProfile(latestProfile);
       }
 

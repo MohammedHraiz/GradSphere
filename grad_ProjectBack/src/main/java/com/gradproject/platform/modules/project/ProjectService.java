@@ -21,7 +21,6 @@ import com.gradproject.platform.modules.user.UserRepository;
 import com.gradproject.platform.modules.user.UserRole;
 import com.gradproject.platform.modules.user.dto.SupervisorSummaryDTO;
 import jakarta.transaction.Transactional;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -219,14 +218,16 @@ public class ProjectService {
 
         project.setTitle(projectName);
         project.setDescription(cleanDescription);
-        if (proposalFile != null && !proposalFile.isEmpty()) {
-            project.setDocumentPath(fileStorageService.storeProposal(proposalFile));
-        }
         project.setStatus(ProjectStatus.SUBMITTED);
         project.setProposalVersion(project.getProposalVersion() + 1);
 
         project = projectRepository.save(project);
-        createProposalSubmission(project, cleanDescription, project.getDocumentPath(), studentChangeNote, currentUser);
+        ProposalSubmission submission = createProposalSubmission(project, cleanDescription, null, studentChangeNote, currentUser);
+        if (proposalFile != null && !proposalFile.isEmpty()) {
+            attachProposalFile(project, submission, currentUser, proposalFile);
+        } else {
+            cloneProposalFile(project, submission, currentUser);
+        }
 
         if (project.getSupervisor() == null && !supervisorRequestRepository.existsByProjectIdAndStatus(project.getId(), SupervisorRequestStatus.PENDING)) {
             if (supervisorId != null) {
@@ -251,7 +252,8 @@ public class ProjectService {
         submission.setStudentChangeNote(StringUtils.hasText(studentChangeNote) ? studentChangeNote.trim() : null);
         submission.setSubmittedBy(submittedBy);
         submission.setSubmittedAt(Instant.now());
-        return proposalSubmissionRepository.save(submission);
+        ProposalSubmission savedSubmission = proposalSubmissionRepository.save(submission);
+        return savedSubmission != null ? savedSubmission : submission;
     }
 
     public List<ProposalSubmissionDTO> getProjectSubmissions(java.util.UUID projectId) {
@@ -281,13 +283,17 @@ public class ProjectService {
                 .toList();
     }
 
-    public Resource loadProposalSubmissionFile(java.util.UUID projectId, java.util.UUID submissionId) {
+    public FileStorageService.StoredFilePayload loadProposalSubmissionFile(java.util.UUID projectId, java.util.UUID submissionId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BadRequestException("Project not found."));
         validateProjectAccess(project);
 
         ProposalSubmission submission = proposalSubmissionRepository.findByIdAndProjectId(submissionId, projectId)
                 .orElseThrow(() -> new BadRequestException("Proposal submission not found."));
+        FileStorageService.StoredFilePayload payload = fileStorageService.loadProposalSubmission(submission);
+        if (payload != null) {
+            return payload;
+        }
 
         String documentPath = submission.getDocumentPath();
         if (!StringUtils.hasText(documentPath)) {
@@ -296,24 +302,10 @@ public class ProjectService {
 
         String storedFileName = documentPath.substring(documentPath.lastIndexOf('/') + 1);
         try {
-            return fileStorageService.loadAsResource(storedFileName);
+            return new FileStorageService.StoredFilePayload(fileStorageService.loadAsResource(storedFileName), storedFileName, "application/pdf");
         } catch (RuntimeException exception) {
             throw new BadRequestException("Proposal file not found.");
         }
-    }
-
-    public String getProposalSubmissionFileName(java.util.UUID projectId, java.util.UUID submissionId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BadRequestException("Project not found."));
-        validateProjectAccess(project);
-
-        ProposalSubmission submission = proposalSubmissionRepository.findByIdAndProjectId(submissionId, projectId)
-                .orElseThrow(() -> new BadRequestException("Proposal submission not found."));
-        String documentPath = submission.getDocumentPath();
-        if (!StringUtils.hasText(documentPath)) {
-            return "proposal.pdf";
-        }
-        return documentPath.substring(documentPath.lastIndexOf('/') + 1);
     }
 
     public SupervisorRequest createSupervisorRequest(Project project, TeamMember membership, User requestedBy, java.util.UUID supervisorId, String message) {
@@ -357,10 +349,14 @@ public class ProjectService {
         return savedRequest;
     }
 
-    public Resource loadProposalFile(java.util.UUID projectId) {
+    public FileStorageService.StoredFilePayload loadProposalFile(java.util.UUID projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new BadRequestException("Project not found."));
         validateProjectAccess(project);
+        FileStorageService.StoredFilePayload payload = fileStorageService.loadProjectProposal(project);
+        if (payload != null) {
+            return payload;
+        }
 
         String documentPath = project.getDocumentPath();
         if (!StringUtils.hasText(documentPath)) {
@@ -369,20 +365,10 @@ public class ProjectService {
 
         String storedFileName = documentPath.substring(documentPath.lastIndexOf('/') + 1);
         try {
-            return fileStorageService.loadAsResource(storedFileName);
+            return new FileStorageService.StoredFilePayload(fileStorageService.loadAsResource(storedFileName), storedFileName, "application/pdf");
         } catch (RuntimeException exception) {
             throw new BadRequestException("Proposal file not found.");
         }
-    }
-
-    public String getProposalFileName(java.util.UUID projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new BadRequestException("Project not found."));
-        String documentPath = project.getDocumentPath();
-        if (!StringUtils.hasText(documentPath)) {
-            return "proposal.pdf";
-        }
-        return documentPath.substring(documentPath.lastIndexOf('/') + 1);
     }
 
     public ProjectResponseDTO toResponse(Project project) {
@@ -442,7 +428,7 @@ public class ProjectService {
                     leader.getEmail(),
                     leader.getUniversityId(),
                     leader.getDepartment() != null ? leader.getDepartment().name() : null,
-                    leader.getProfilePhotoUrl(),
+                    fileStorageService.resolveProfilePhotoUrl(leader),
                     "LEADER"
             ));
         }
@@ -458,12 +444,40 @@ public class ProjectService {
                     user.getEmail(),
                     user.getUniversityId(),
                     user.getDepartment() != null ? user.getDepartment().name() : null,
-                    user.getProfilePhotoUrl(),
+                    fileStorageService.resolveProfilePhotoUrl(user),
                     member.getMemberRole()
             ));
         });
 
         return new ArrayList<>(members.values());
+    }
+
+    public void attachProposalFile(Project project, ProposalSubmission submission, User owner, MultipartFile proposalFile) {
+        String projectDocumentPath = fileStorageService.storeProposal(project, submission, owner, proposalFile);
+        if (!StringUtils.hasText(projectDocumentPath)) {
+            projectDocumentPath = fileStorageService.storeProposal(proposalFile);
+        }
+        project.setDocumentPath(projectDocumentPath);
+        String submissionDocumentPath = StringUtils.hasText(projectDocumentPath) && !projectDocumentPath.startsWith("/api/projects/")
+                ? projectDocumentPath
+                : fileStorageService.buildProposalSubmissionPath(project.getId(), submission.getId());
+        submission.setDocumentPath(submissionDocumentPath);
+        proposalSubmissionRepository.save(submission);
+        projectRepository.save(project);
+    }
+
+    public void cloneProposalFile(Project project, ProposalSubmission submission, User owner) {
+        String projectDocumentPath = fileStorageService.cloneCurrentProposal(project, submission, owner);
+        if (!StringUtils.hasText(projectDocumentPath)) {
+            projectDocumentPath = project.getDocumentPath();
+        }
+        project.setDocumentPath(projectDocumentPath);
+        String submissionDocumentPath = StringUtils.hasText(projectDocumentPath) && !projectDocumentPath.startsWith("/api/projects/")
+                ? projectDocumentPath
+                : fileStorageService.buildProposalSubmissionPath(project.getId(), submission.getId());
+        submission.setDocumentPath(submissionDocumentPath);
+        proposalSubmissionRepository.save(submission);
+        projectRepository.save(project);
     }
 
     private User resolveCurrentAuthor() {

@@ -74,13 +74,12 @@ public class UserManagementService {
 
     public UserProfileResponseDTO uploadCurrentUserProfilePhoto(String email, MultipartFile photo) {
         User user = getUserByEmail(email);
-        String previousPhoto = user.getProfilePhotoUrl();
-        String storedPhotoPath = fileStorageService.storeProfilePhoto(photo);
+        String storedPhotoPath = fileStorageService.storeProfilePhoto(user, photo);
+        if (!hasText(storedPhotoPath)) {
+            storedPhotoPath = fileStorageService.storeProfilePhoto(photo);
+        }
         user.setProfilePhotoUrl(storedPhotoPath);
         User savedUser = userRepository.save(user);
-        if (previousPhoto != null && !previousPhoto.equals(storedPhotoPath)) {
-            fileStorageService.deleteProfilePhoto(previousPhoto);
-        }
         return toProfileDto(savedUser, hasTeam(savedUser));
     }
 
@@ -172,7 +171,7 @@ public class UserManagementService {
                 user.getPhoneNumber(),
                 user.getSpecialty(),
                 user.getOfficeHours(),
-                user.getProfilePhotoUrl(),
+                fileStorageService.resolveProfilePhotoUrl(user),
                 user.getCreatedAt(),
                 hasTeam
         );
@@ -186,7 +185,7 @@ public class UserManagementService {
                 user.getRole() != null ? user.getRole().name() : null,
                 user.getDepartment() != null ? user.getDepartment().name() : null,
                 user.getUniversityId(),
-                user.getProfilePhotoUrl(),
+                fileStorageService.resolveProfilePhotoUrl(user),
                 user.getPhoneNumber(),
                 user.getSpecialty(),
                 user.getOfficeHours(),

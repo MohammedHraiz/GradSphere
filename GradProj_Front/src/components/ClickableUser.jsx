@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import UserPreviewModal from './UserPreviewModal';
 import {
   formatRoleLabel,
@@ -22,13 +23,26 @@ const ClickableUser = ({
   onClick,
 }) => {
   const [activePreviewUser, setActivePreviewUser] = useState(null);
+  const { currentUser } = useAuth();
 
-  const previewUser = useMemo(() => ({
-    ...(user ?? {}),
-    id: user?.id ?? user?.userId ?? user?.studentId ?? userId ?? null,
-    name: user?.name ?? name ?? 'Unknown User',
-    role: user?.role ?? role ?? '',
-  }), [name, role, user, userId]);
+  const previewUser = useMemo(() => {
+    const baseUser = {
+      ...(user ?? {}),
+      id: user?.id ?? user?.userId ?? user?.studentId ?? userId ?? null,
+      name: user?.name ?? name ?? 'Unknown User',
+      email: user?.email ?? '',
+      role: user?.role ?? role ?? '',
+    };
+
+    const isCurrentUser = Boolean(
+      (baseUser.id && currentUser?.id && String(baseUser.id) === String(currentUser.id))
+      || (baseUser.email && currentUser?.email && String(baseUser.email).toLowerCase() === String(currentUser.email).toLowerCase())
+    );
+
+    return isCurrentUser
+      ? { ...baseUser, ...currentUser, id: currentUser?.id ?? baseUser.id, name: currentUser?.name ?? baseUser.name, role: currentUser?.role ?? baseUser.role }
+      : baseUser;
+  }, [currentUser, name, role, user, userId]);
 
   const theme = getRoleTheme(previewUser?.role);
   const photoUrl = resolveProfilePhotoUrl(previewUser?.profilePhotoUrl);
