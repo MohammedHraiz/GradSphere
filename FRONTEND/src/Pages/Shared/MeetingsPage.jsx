@@ -871,33 +871,35 @@ const MeetingsPage = () => {
                 </div>
               ) : null}
 
-              <div className="meetings-project-list" role="list" aria-label="Project list">
-                {filteredProjects.length > 0 ? (
-                  filteredProjects.map((project) => {
-                    const active = selectedProject?.id === project.id;
+              <div className="meetings-project-list-shell">
+                <div className="meetings-project-list" role="list" aria-label="Project list">
+                  {filteredProjects.length > 0 ? (
+                    filteredProjects.map((project) => {
+                      const active = selectedProject?.id === project.id;
 
-                    return (
-                      <button
-                        key={project.id}
-                        type="button"
-                        className={`meetings-project-option ${active ? 'active' : ''}`}
-                        onClick={() => handleSelectProject(project)}
-                      >
-                        <div className="meetings-project-option-top">
-                          <strong>{project.title}</strong>
-                          <ProjectStatusBadge status={project.status} className="meetings-inline-badge" />
-                        </div>
-                        <p>{project.teamName ? `Team: ${project.teamName}` : 'Team information not available'}</p>
-                        {project.supervisorName ? <span className="meetings-project-meta">Supervisor: {project.supervisorName}</span> : null}
-                      </button>
-                    );
-                  })
-                ) : (
-                  <div className="meetings-empty-filter">
-                    <strong>No matching projects</strong>
-                    <p>Try a different search term.</p>
-                  </div>
-                )}
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          className={`meetings-project-option ${active ? 'active' : ''}`}
+                          onClick={() => handleSelectProject(project)}
+                        >
+                          <div className="meetings-project-option-top">
+                            <strong>{project.title}</strong>
+                            <ProjectStatusBadge status={project.status} className="meetings-inline-badge" />
+                          </div>
+                          <p>{project.teamName ? `Team: ${project.teamName}` : 'Team information not available'}</p>
+                          {project.supervisorName ? <span className="meetings-project-meta">Supervisor: {project.supervisorName}</span> : null}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="meetings-empty-filter">
+                      <strong>No matching projects</strong>
+                      <p>Try a different search term.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
