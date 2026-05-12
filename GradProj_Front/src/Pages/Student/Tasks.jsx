@@ -93,6 +93,7 @@ const styles = `
 const TASK_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED'];
 const statusLabel = (status) => String(status || '').replaceAll('_', ' ');
 const getCurrentUserId = (user) => user?.id ?? user?.userId ?? user?.sub ?? user?.uuid ?? '';
+const canStudentActOnTask = (task, currentUserId) => !task?.assignedToId || String(task.assignedToId) === String(currentUserId);
 const truncateText = (value, fallback = 'No description was added for this task yet.') => {
   const text = String(value || '').trim();
   if (!text) return fallback;
@@ -177,7 +178,7 @@ const Tasks = () => {
   }), [tasks, searchTerm, statusFilter]);
 
   const canUpdateStatus = useMemo(
-    () => selectedTask?.assignedToId && String(selectedTask.assignedToId) === String(currentUserId),
+    () => canStudentActOnTask(selectedTask, currentUserId),
     [currentUserId, selectedTask],
   );
 
@@ -220,7 +221,7 @@ const Tasks = () => {
           <p className="kicker">Student Portal / Workflow</p>
           <h1 className="hero-title">Team Tasks</h1>
           <p className="hero-subtitle">
-            Review your project team tasks in one place. You can update only tasks assigned directly to you.
+            Review your project team tasks in one place. You can update tasks assigned to you, and claim an unassigned team task the first time you submit a status change.
           </p>
         </div>
 
@@ -280,22 +281,25 @@ const Tasks = () => {
             <tbody>
               {filteredTasks.map((task) => {
                 const isOwnTask = String(task.assignedToId || '') === String(currentUserId);
+                const isUnassignedTask = !task.assignedToId;
+                const canActOnTask = canStudentActOnTask(task, currentUserId);
 
                 return (
                   <tr key={task.id} className="row-animated" onClick={() => openTaskModal(task)}>
                     <td className="task-cell">
                       <span className="task-cell-title">{task.title}</span>
                       <span className="task-cell-desc">{truncateText(task.description)}</span>
-                      {!isOwnTask ? <span className="task-cell-note">Read-only: assigned to another team member.</span> : null}
+                      {!canActOnTask ? <span className="task-cell-note">Read-only: assigned to another team member.</span> : null}
+                      {isUnassignedTask ? <span className="task-cell-note">Unassigned: first student update will claim this task.</span> : null}
                     </td>
                     <td className="assignee-cell">
                       <span className="assignee-name">{task.assignedToName || 'Unassigned'}</span>
-                      <span className="assignee-note">{isOwnTask ? 'Assigned to you' : 'View only'}</span>
+                      <span className="assignee-note">{isOwnTask ? 'Assigned to you' : isUnassignedTask ? 'Available to claim' : 'View only'}</span>
                     </td>
                     <td><span className={`priority-pill-saas ${String(task.priority || '').toLowerCase()}`}>{getPriorityIcon(task.priority)} {statusLabel(task.priority)}</span></td>
                     <td><span className={`status-pill-saas ${String(task.status || '').toLowerCase()}`}>{getTaskStatusIcon(task.status)} {statusLabel(task.status)}</span></td>
                     <td>{task.dueDate || <span className="empty-line">No due date</span>}</td>
-                    <td><button type="button" className="btn-action-update">{isOwnTask ? 'Update Status' : 'View Task'}</button></td>
+                    <td><button type="button" className="btn-action-update">{isOwnTask ? 'Update Status' : isUnassignedTask ? 'Claim Task' : 'View Task'}</button></td>
                   </tr>
                 );
               })}
@@ -341,7 +345,9 @@ const Tasks = () => {
                         <h3>Status Update</h3>
                         <p>
                           {canUpdateStatus
-                            ? 'You can update the live workflow status for this task here.'
+                            ? selectedTask.assignedToId
+                              ? 'You can update the live workflow status for this task here.'
+                              : 'This task is currently unassigned. Your first saved status change will claim it for you.'
                             : 'This task is visible to you, but only the assigned student can change its status.'}
                         </p>
                       </div>
@@ -375,7 +381,7 @@ const Tasks = () => {
                         <button type="button" className="btn-secondary" onClick={closeModal} disabled={isSaving}>Close</button>
                         {canUpdateStatus ? (
                           <button type="submit" className="btn-primary" disabled={isSaving}>
-                            {isSaving ? 'Saving...' : 'Save Status'}
+                            {isSaving ? 'Saving...' : selectedTask.assignedToId ? 'Save Status' : 'Claim & Save Status'}
                           </button>
                         ) : null}
                       </div>

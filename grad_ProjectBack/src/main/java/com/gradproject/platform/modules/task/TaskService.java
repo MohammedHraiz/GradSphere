@@ -83,7 +83,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new BadRequestException("Task not found."));
         User currentUser = accessService.requireCurrentUser();
-        if (currentUser.getRole() != UserRole.ROLE_STUDENT || task.getAssignedTo() == null || !currentUser.getId().equals(task.getAssignedTo().getId())) {
+        if (currentUser.getRole() != UserRole.ROLE_STUDENT) {
             throw new AccessDeniedException("Only the assigned student can update this task status.");
         }
         if (!accessService.isProjectStudent(task.getProject(), currentUser)) {
@@ -91,6 +91,11 @@ public class TaskService {
         }
         if (request == null || request.status() == null) {
             throw new BadRequestException("Task status is required.");
+        }
+        if (task.getAssignedTo() == null) {
+            task.setAssignedTo(currentUser);
+        } else if (!currentUser.getId().equals(task.getAssignedTo().getId())) {
+            throw new AccessDeniedException("Only the assigned student can update this task status.");
         }
 
         TaskStatus previousStatus = task.getStatus();

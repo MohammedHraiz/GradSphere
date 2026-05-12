@@ -86,6 +86,28 @@ class TaskServiceTest {
     }
 
     @Test
+    void unassignedTaskCanBeClaimedByFirstProjectStudentWhoUpdatesStatus() {
+        Project project = project();
+        User student = user("student@example.com", UserRole.ROLE_STUDENT);
+        Task task = new Task();
+        ReflectionTestUtils.setField(task, "id", UUID.randomUUID());
+        task.setProject(project);
+        task.setTitle("Claimable task");
+        task.setStatus(TaskStatus.NOT_STARTED);
+
+        when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+        when(accessService.requireCurrentUser()).thenReturn(student);
+        when(accessService.isProjectStudent(project, student)).thenReturn(true);
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = taskService.updateTaskStatus(task.getId(), new TaskStatusUpdateRequestDTO(TaskStatus.IN_PROGRESS));
+
+        assertThat(response.status()).isEqualTo(TaskStatus.IN_PROGRESS);
+        assertThat(response.assignedToId()).isEqualTo(student.getId());
+        assertThat(task.getAssignedTo()).isEqualTo(student);
+    }
+
+    @Test
     void studentSeesTasksAssignedToTeammateInSameTeam() {
         Project project = project();
         User student = user("student@example.com", UserRole.ROLE_STUDENT);
@@ -111,10 +133,30 @@ class TaskServiceTest {
 
         when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
         when(accessService.requireCurrentUser()).thenReturn(student);
+        when(accessService.isProjectStudent(project, student)).thenReturn(true);
 
         assertThatThrownBy(() -> taskService.updateTaskStatus(task.getId(), new TaskStatusUpdateRequestDTO(TaskStatus.IN_PROGRESS)))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("Only the assigned student can update this task status.");
+    }
+
+    @Test
+    void unrelatedStudentCannotClaimUnassignedTask() {
+        Project project = project();
+        User outsider = user("outsider@example.com", UserRole.ROLE_STUDENT);
+        Task task = new Task();
+        ReflectionTestUtils.setField(task, "id", UUID.randomUUID());
+        task.setProject(project);
+        task.setTitle("Claimable task");
+        task.setStatus(TaskStatus.NOT_STARTED);
+
+        when(taskRepository.findById(task.getId())).thenReturn(Optional.of(task));
+        when(accessService.requireCurrentUser()).thenReturn(outsider);
+        when(accessService.isProjectStudent(project, outsider)).thenReturn(false);
+
+        assertThatThrownBy(() -> taskService.updateTaskStatus(task.getId(), new TaskStatusUpdateRequestDTO(TaskStatus.IN_PROGRESS)))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("You are not allowed to update this task.");
     }
 
     @Test

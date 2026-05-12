@@ -404,3 +404,44 @@ html, body, #root {
 .btn-no, .btn-yes { flex: 1; padding: 10px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
 .btn-no { background: #F1F5F9; color: #475569; }
 .btn-yes { background: #EF4444; color: white; }
+
+select:not([multiple]):not([size]) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  min-height: 44px;
+  padding-right: 40px !important;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%) !important;
+  background-position:
+    calc(100% - 18px) calc(50% - 1px),
+    calc(100% - 12px) calc(50% - 1px) !important;
+  background-size: 6px 6px, 6px 6px !important;
+  background-repeat: no-repeat !important;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+select:not([multiple]):not([size]):hover {
+  border-color: #CBD5E1;
+}
+
+select:not([multiple]):not([size]):focus-visible {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+select:not([multiple]):not([size]):disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+select option {
+  color: #0F172A;
+  background: #FFFFFF;
+}
