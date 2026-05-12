@@ -1,10 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "GradProj_Front"
+			"path": "FRONTEND"
 		},
 		{
-			"path": "grad_ProjectBack"
+			"path": "BACKEND"
 		}
 	],
 	"settings": {}

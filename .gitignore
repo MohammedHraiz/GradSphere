@@ -1,0 +1,48 @@
+# OS / machine-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+
+# Logs / runtime / temp
+*.log
+*.pid
+*.tmp
+tmp/
+temp/
+coverage/
+.codex_tmp/
+__pycache__/
+*.py[cod]
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+!**/.env.example
+application-local.yml
+application-local.yaml
+application-dev.yml
+application-dev.yaml
+application-secrets.yml
+application-secrets.yaml
+credentials*.json
+*credentials*.json
+service-account*.json
+*service-account*.json
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+*.mv.db
+*.h2.db
