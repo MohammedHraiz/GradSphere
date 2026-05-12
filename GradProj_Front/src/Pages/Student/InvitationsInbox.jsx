@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
+import FeedbackToast from '../../components/FeedbackToast';
 
 const styles = `
 .inv-page { min-height: 100vh; background: radial-gradient(circle at top, rgba(79,70,229,0.10), transparent 34%), linear-gradient(180deg, #020617 0%, #0f172a 100%); color: #e2e8f0; }
@@ -52,10 +53,6 @@ const styles = `
 .inv-error-copy { color: #fecaca; }
 .inv-action { margin-top: 20px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9999px; padding: 12px 18px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 18px 32px -24px rgba(124,58,237,0.95); transition: transform 160ms ease, box-shadow 160ms ease; }
 .inv-action:hover { transform: translateY(-1px); box-shadow: 0 24px 38px -26px rgba(124,58,237,0.95); }
-.inv-toast { position: fixed; right: 20px; top: 20px; z-index: 60; max-width: calc(100vw - 40px); }
-.inv-toast-box { border-radius: 18px; padding: 14px 16px; font-size: 14px; font-weight: 700; box-shadow: 0 26px 48px -30px rgba(2,6,23,0.9); backdrop-filter: blur(12px); }
-.inv-toast-success { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.18); color: #a7f3d0; }
-.inv-toast-error { background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.18); color: #fecaca; }
 .inv-reject-spin { color: #fca5a5; }
 @media (max-width: 1024px) { .inv-layout { grid-template-columns: 1fr; } .inv-panel { position: static; } }
 @media (max-width: 700px) { .inv-shell { padding: 18px 16px 40px; } .inv-hero { padding: 20px 18px; align-items: flex-start; } .inv-card { grid-template-columns: 1fr; } .inv-actions { justify-content: stretch; } .inv-btn { width: 100%; } }
@@ -156,15 +153,6 @@ const InvitationsInbox = () => {
   useEffect(() => {
     void loadInvitations();
   }, [loadInvitations]);
-
-  useEffect(() => {
-    if (!toast) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => setToast(null), 3000);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
 
   const showToast = (type, message) => {
     setToast({ type, message });
@@ -356,11 +344,7 @@ const InvitationsInbox = () => {
           </aside>
         </div>
 
-        {toast && (
-          <div className="inv-toast">
-            <div className={`inv-toast-box ${toast.type === 'error' ? 'inv-toast-error' : 'inv-toast-success'}`}>{toast.message}</div>
-          </div>
-        )}
+        <FeedbackToast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       </div>
     </div>
   );

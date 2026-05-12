@@ -1,8 +1,8 @@
 import { createPortal } from 'react-dom';
 
 const confirmStyles = `
-.confirm-backdrop { position: fixed; inset: 0; z-index: 10040; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(2, 6, 23, .68); backdrop-filter: blur(10px); }
-.confirm-card { width: min(460px, 100%); max-height: min(88vh, 760px); overflow: auto; border-radius: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98)); border: 1px solid rgba(226, 232, 240, 0.95); box-shadow: 0 36px 80px -34px rgba(2, 6, 23, .92); padding: 22px; color: #0f172a; text-align: left; }
+.confirm-backdrop { position: fixed; inset: 0; z-index: 10040; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, .44); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.confirm-card { width: min(460px, 100%); max-height: min(88vh, 760px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border-radius: 24px; background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,250,252,0.99)); border: 1px solid rgba(226, 232, 240, 0.95); box-shadow: 0 20px 44px -28px rgba(15, 23, 42, .34); padding: 22px; color: #0f172a; text-align: left; }
 .confirm-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 10px; }
 .confirm-title-wrap { display: grid; gap: 4px; }
 .confirm-eyebrow { margin: 0; color: #4f46e5; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }

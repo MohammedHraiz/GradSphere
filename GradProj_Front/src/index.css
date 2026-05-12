@@ -39,6 +39,9 @@
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --scrollbar-size: 10px;
+  --scrollbar-thumb: rgba(148, 163, 184, 0.62);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.8);
 }
 
 /* =========================================================
@@ -59,19 +62,188 @@ body {
 }
 
 /* تخصيص الـ Scrollbar ليكون رفيع وأنيق */
+:where(
+  .main-content,
+  .content-area,
+  .msg-list,
+  .notif-list-portal,
+  .admin-nav-menu,
+  .sidebar-nav,
+  .invite-modal-body,
+  .invite-results,
+  .modal-body,
+  .modal-content-scroll,
+  .comments-scroller,
+  .meetings-modal-body,
+  .meetings-project-list,
+  .meetings-attendance-editor,
+  .results-scroll-area,
+  .results-list,
+  .styled-select-menu,
+  .notifications-list,
+  .confirm-card,
+  .dp-history-body,
+  .detail-body,
+  .saas-modal-box
+) {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 10px;
+  background: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: var(--scrollbar-thumb-hover);
+}
+
+.msg-list::-webkit-scrollbar,
+.notif-list-portal::-webkit-scrollbar,
+.admin-nav-menu::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar,
+.styled-select-menu::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+.msg-list::-webkit-scrollbar-track,
+.notif-list-portal::-webkit-scrollbar-track,
+.admin-nav-menu::-webkit-scrollbar-track,
+.sidebar-nav::-webkit-scrollbar-track,
+.styled-select-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.msg-list::-webkit-scrollbar-thumb,
+.notif-list-portal::-webkit-scrollbar-thumb,
+.admin-nav-menu::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb,
+.styled-select-menu::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+.msg-list::-webkit-scrollbar-thumb:hover,
+.notif-list-portal::-webkit-scrollbar-thumb:hover,
+.admin-nav-menu::-webkit-scrollbar-thumb:hover,
+.sidebar-nav::-webkit-scrollbar-thumb:hover,
+.styled-select-menu::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+:where(
+  .invite-modal-backdrop,
+  .confirm-backdrop,
+  .modal-overlay,
+  .modal-backdrop,
+  .meetings-modal,
+  .saas-modal-backdrop,
+  .dp-history-backdrop,
+  .profile-sheet-backdrop,
+  .user-preview-backdrop,
+  .th-modal-overlay
+) {
+  background: rgba(15, 23, 42, 0.44) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:where(
+  .invite-modal,
+  .confirm-card,
+  .meetings-modal-card,
+  .task-modal-card,
+  .modal-content,
+  .saas-modal,
+  .saas-modal-box,
+  .modal-box-saas,
+  .create-team-panel,
+  .dp-history-card,
+  .profile-sheet,
+  .user-preview-modal,
+  .th-modal-card
+) {
+  box-shadow: 0 20px 44px -28px rgba(15, 23, 42, 0.32) !important;
+}
+
+:where(
+  .team-card-main,
+  .team-stats-card,
+  .roster-card,
+  .pending-card,
+  .table-card-premium,
+  .search-filter-bar,
+  .glass-stat,
+  .notifications-card
+) {
+  box-shadow: 0 16px 34px -30px rgba(15, 23, 42, 0.18) !important;
+}
+
+:where(
+  .invite-modal-body,
+  .invite-results,
+  .modal-content-scroll,
+  .modal-body,
+  .detail-body,
+  .comments-scroller,
+  .meetings-modal-body,
+  .meetings-project-list,
+  .meetings-attendance-editor,
+  .results-list,
+  .results-scroll-area,
+  .confirm-card,
+  .dp-history-body,
+  .profile-sheet-body,
+  .user-preview-body,
+  .notifications-list
+) {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  :where(
+    .main-content,
+    .content-area,
+    .msg-list,
+    .notif-list-portal,
+    .admin-nav-menu,
+    .sidebar-nav,
+    .invite-modal-body,
+    .invite-results,
+    .modal-body,
+    .modal-content-scroll,
+    .comments-scroller,
+    .meetings-modal-body,
+    .meetings-project-list,
+    .meetings-attendance-editor,
+    .results-scroll-area,
+    .results-list,
+    .styled-select-menu,
+    .notifications-list,
+    .confirm-card,
+    .dp-history-body,
+    .detail-body,
+    .saas-modal-box
+  ) {
+    scroll-behavior: auto;
+  }
 }
 
 /* =========================================================
