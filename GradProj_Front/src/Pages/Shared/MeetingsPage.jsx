@@ -171,6 +171,41 @@ const truncateText = (value, fallback) => {
   return text.length > 170 ? `${text.slice(0, 167)}...` : text;
 };
 
+const getTextOrFallback = (value, fallback) => {
+  const text = String(value || '').trim();
+  return text || fallback;
+};
+
+const formatMeetingTypeLabel = (value) => {
+  if (!value) return 'Unknown';
+  return String(value).replaceAll('_', ' ');
+};
+
+const getMeetingPreview = (meeting) => {
+  const previewSource = [
+    meeting?.status === 'REQUESTED' ? meeting?.requestMessage : null,
+    meeting?.summary,
+    meeting?.progressDiscussed,
+    meeting?.tasksAssigned,
+    meeting?.nextSteps,
+    meeting?.locationOrLink,
+  ].find((value) => String(value || '').trim());
+
+  if (previewSource) {
+    return truncateText(previewSource, '');
+  }
+
+  if (meeting?.status === 'REQUESTED') {
+    return 'No request message provided.';
+  }
+
+  if (meeting?.status === 'COMPLETED') {
+    return 'No summary has been recorded for this meeting yet.';
+  }
+
+  return 'No agenda notes have been added for this meeting yet.';
+};
+
 const getAttendanceSummary = (attendance) => {
   const base = { PRESENT: 0, ABSENT: 0, EXCUSED: 0 };
   (attendance || []).forEach((item) => {
@@ -334,6 +369,7 @@ const MeetingsPage = () => {
     return 'ALL';
   });
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [expandedMeetingId, setExpandedMeetingId] = useState(null);
 
   const pageTitle = useMemo(() => {
     if (canManage) return 'Project Meetings';
@@ -486,6 +522,10 @@ const MeetingsPage = () => {
       document.body.style.overflow = previousOverflow;
     };
   }, [meetingToDelete, showFormModal]);
+
+  useEffect(() => {
+    setExpandedMeetingId(null);
+  }, [selectedProject?.id, activeTab]);
 
   const filteredProjects = useMemo(() => {
     const query = projectSearch.trim().toLowerCase();
@@ -957,23 +997,31 @@ const MeetingsPage = () => {
               </div>
             ) : null}
 
-            {meetings.length > 0 ? (
-              <div className="meetings-results-tools">
-                <label className="meetings-search-label" htmlFor="meeting-search">Search meetings</label>
-                <input
-                  id="meeting-search"
-                  type="search"
-                  className="meetings-input meetings-search-input"
-                  placeholder="Filter by title, notes, attendance, or date"
-                  value={meetingSearch}
-                  onChange={(event) => setMeetingSearch(event.target.value)}
-                />
-                <StyledSelect className="meetings-input meetings-sort-select" value={meetingSort} onChange={(event) => setMeetingSort(event.target.value)}>
-                  <option value="NEWEST">Newest first</option>
-                  <option value="OLDEST">Oldest first</option>
-                </StyledSelect>
-              </div>
-            ) : null}
+             {meetings.length > 0 ? (
+               <div className="meetings-results-tools">
+                 <span className="meetings-search-label">Search meetings</span>
+                 <div className="meetings-filter-bar">
+                   <div className="meetings-toolbar-field meetings-toolbar-field-search">
+                     <label className="meetings-sr-only" htmlFor="meeting-search">Search meetings</label>
+                     <input
+                       id="meeting-search"
+                       type="search"
+                       className="meetings-input meetings-search-input"
+                       placeholder="Filter by title, notes, attendance, or date"
+                       value={meetingSearch}
+                       onChange={(event) => setMeetingSearch(event.target.value)}
+                     />
+                   </div>
+                   <div className="meetings-toolbar-field meetings-toolbar-field-sort">
+                     <label className="meetings-sr-only" htmlFor="meeting-sort">Sort meetings</label>
+                     <StyledSelect id="meeting-sort" className="meetings-input meetings-sort-select" value={meetingSort} onChange={(event) => setMeetingSort(event.target.value)}>
+                       <option value="NEWEST">Newest first</option>
+                       <option value="OLDEST">Oldest first</option>
+                     </StyledSelect>
+                   </div>
+                 </div>
+               </div>
+             ) : null}
           </div>
 
           {meetings.length === 0 ? (
@@ -989,184 +1037,222 @@ const MeetingsPage = () => {
           ) : (
             <div className="meetings-grid">
               {filteredMeetings.map((meeting) => {
-                const attendanceSummary = getAttendanceSummary(meeting.attendance);
-                const attendanceRows = meeting.attendance?.length
-                  ? buildAttendanceView(meeting.attendance, buildAttendanceRoster(selectedProject, meeting.attendance))
-                  : [];
-                const isCompletedMeeting = meeting.status === 'COMPLETED';
+                 const attendanceSummary = getAttendanceSummary(meeting.attendance);
+                 const attendanceRows = meeting.attendance?.length
+                   ? buildAttendanceView(meeting.attendance, buildAttendanceRoster(selectedProject, meeting.attendance))
+                   : [];
+                 const isCompletedMeeting = meeting.status === 'COMPLETED';
+                 const isExpanded = expandedMeetingId === meeting.id;
+                 const attendanceSummaryLabel = isCompletedMeeting || attendanceRows.length > 0
+                   ? `${attendanceSummary.PRESENT} present · ${attendanceSummary.ABSENT} absent · ${attendanceSummary.EXCUSED} excused`
+                   : meeting.status === 'REQUESTED'
+                     ? 'Attendance will appear after the meeting is completed.'
+                     : 'Attendance has not been recorded yet.';
 
-                return (
-                  <article key={meeting.id} className="meetings-card meeting-item">
-                    <div className="meeting-item-header">
-                      <div>
-                        <div className="meetings-inline-badge-group">
-                           <h3 className="meeting-item-title">{meeting.title}</h3>
-                           <span className={`meeting-attendance-badge ${String(meeting.status).toLowerCase()}`}>{getMeetingStatusIcon(meeting.status)} {meeting.status}</span>
-                        </div>
-                        <p className="meeting-item-date">{formatDateTime(meeting.meetingDate)}</p>
-                      </div>
-                      {meeting.supervisorName ? <span className="meeting-owner-badge">{meeting.supervisorName}</span> : null}
-                    </div>
-
-                    {meeting.status === 'REQUESTED' ? (
-                       <div className="meeting-meta">
-                          <div className="meeting-meta-block">
-                             <h4>Requested By</h4>
-                             <p>{meeting.requestedByName || 'Unknown'}</p>
-                          </div>
-                          <div className="meeting-meta-block">
-                             <h4>Meeting Type</h4>
-                             <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
-                          </div>
-                          <div className="meeting-meta-block full">
-                             <h4>Message</h4>
-                             <p>{meeting.requestMessage || 'No message provided.'}</p>
-                          </div>
-                          {meeting.locationOrLink ? (
-                             <div className="meeting-meta-block full">
-                               <h4>Location / Link</h4>
-                               <p>{meeting.locationOrLink}</p>
-                             </div>
-                          ) : null}
+                 return (
+                   <article key={meeting.id} className={`meetings-card meeting-item ${isExpanded ? 'expanded' : ''}`.trim()}>
+                     <button
+                       type="button"
+                       className="meeting-item-toggle"
+                       onClick={() => setExpandedMeetingId((current) => (current === meeting.id ? null : meeting.id))}
+                       aria-expanded={isExpanded}
+                       aria-controls={`meeting-details-${meeting.id}`}
+                     >
+                       <div className="meeting-item-header">
+                         <div>
+                           <div className="meetings-inline-badge-group">
+                              <h3 className="meeting-item-title">{meeting.title}</h3>
+                              <span className={`meeting-attendance-badge ${String(meeting.status).toLowerCase()}`}>{getMeetingStatusIcon(meeting.status)} {meeting.status}</span>
+                           </div>
+                           <p className="meeting-item-date">{formatDateTime(meeting.meetingDate)}</p>
+                         </div>
+                         {meeting.supervisorName ? <span className="meeting-owner-badge">{meeting.supervisorName}</span> : null}
                        </div>
-                    ) : isCompletedMeeting ? (
-                      <>
-                        <div className="meeting-highlights">
-                          <div className="meeting-highlight">
-                            <span>Present</span>
-                            <strong>{attendanceSummary.PRESENT}</strong>
-                          </div>
-                          <div className="meeting-highlight">
-                            <span>Absent</span>
-                            <strong>{attendanceSummary.ABSENT}</strong>
-                          </div>
-                          <div className="meeting-highlight">
-                            <span>Excused</span>
-                            <strong>{attendanceSummary.EXCUSED}</strong>
-                          </div>
-                        </div>
 
-                        <div className="meeting-meta">
-                          <div className="meeting-meta-block">
-                            <h4>Meeting Type</h4>
-                            <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
-                          </div>
-                          {meeting.locationOrLink ? (
-                            <div className="meeting-meta-block">
-                              <h4>Location / Link</h4>
-                              <p>{meeting.locationOrLink}</p>
+                       <div className="meeting-item-summary-grid">
+                         <div className="meeting-item-summary-pill">
+                           <span>Meeting Type</span>
+                           <strong>{getMeetingTypeIcon(meeting.meetingType)} {formatMeetingTypeLabel(meeting.meetingType)}</strong>
+                         </div>
+                         <div className="meeting-item-summary-pill">
+                           <span>Supervisor</span>
+                           <strong>{meeting.supervisorName || 'Supervisor not listed'}</strong>
+                         </div>
+                         <div className="meeting-item-summary-pill">
+                           <span>Attendance</span>
+                           <strong>{attendanceSummaryLabel}</strong>
+                         </div>
+                       </div>
+
+                       <p className="meeting-item-preview">{getMeetingPreview(meeting)}</p>
+                       <div className="meeting-item-toggle-meta">
+                         <span className="meeting-toggle-indicator">{isExpanded ? 'Collapse details' : 'Expand details'}</span>
+                       </div>
+                     </button>
+
+                     <div id={`meeting-details-${meeting.id}`} className={`meeting-details-shell ${isExpanded ? 'is-expanded' : ''}`.trim()}>
+                       <div className="meeting-details-inner">
+                         {meeting.status === 'REQUESTED' ? (
+                            <div className="meeting-meta">
+                               <div className="meeting-meta-block">
+                                  <h4>Requested By</h4>
+                                  <p>{meeting.requestedByName || 'Unknown'}</p>
+                               </div>
+                               <div className="meeting-meta-block">
+                                  <h4>Meeting Type</h4>
+                                  <p>{getMeetingTypeIcon(meeting.meetingType)} {formatMeetingTypeLabel(meeting.meetingType)}</p>
+                               </div>
+                               <div className="meeting-meta-block full">
+                                  <h4>Message</h4>
+                                  <p>{getTextOrFallback(meeting.requestMessage, 'No message provided.')}</p>
+                               </div>
+                               {meeting.locationOrLink ? (
+                                  <div className="meeting-meta-block full">
+                                    <h4>Location / Link</h4>
+                                    <p>{meeting.locationOrLink}</p>
+                                  </div>
+                               ) : null}
                             </div>
-                          ) : null}
-                          <div className="meeting-meta-block full">
-                            <h4>Summary</h4>
-                            <p>{truncateText(meeting.summary, 'No summary provided.')}</p>
-                          </div>
-                          <div className="meeting-meta-block">
-                            <h4>Progress Discussed</h4>
-                            <p>{truncateText(meeting.progressDiscussed, 'No progress notes provided.')}</p>
-                          </div>
-                          <div className="meeting-meta-block">
-                            <h4>Tasks Assigned</h4>
-                            <p>{truncateText(meeting.tasksAssigned, 'No tasks assigned.')}</p>
-                          </div>
-                          <div className="meeting-meta-block">
-                            <h4>Next Steps</h4>
-                            <p>{truncateText(meeting.nextSteps, 'No next steps recorded.')}</p>
-                          </div>
-                          <div className="meeting-meta-block">
-                            <h4>Progress Rating</h4>
-                            <p>{meeting.overallRating ? meeting.overallRating.replaceAll('_', ' ') : 'Not rated yet.'}</p>
-                          </div>
-                          {meeting.concernActions ? (
-                            <div className="meeting-meta-block full">
-                              <h4>Required Actions</h4>
-                              <p>{truncateText(meeting.concernActions, 'No required actions recorded.')}</p>
-                            </div>
-                          ) : null}
-                        </div>
+                         ) : isCompletedMeeting ? (
+                           <>
+                             <div className="meeting-highlights">
+                               <div className="meeting-highlight">
+                                 <span>Present</span>
+                                 <strong>{attendanceSummary.PRESENT}</strong>
+                               </div>
+                               <div className="meeting-highlight">
+                                 <span>Absent</span>
+                                 <strong>{attendanceSummary.ABSENT}</strong>
+                               </div>
+                               <div className="meeting-highlight">
+                                 <span>Excused</span>
+                                 <strong>{attendanceSummary.EXCUSED}</strong>
+                               </div>
+                             </div>
 
-                        <div className="meeting-attendance-card">
-                          <div className="meeting-attendance-header">
-                            <h4>Attendance</h4>
-                            <span>{attendanceRows.length || 0} students</span>
-                          </div>
-                          <div className="meeting-attendance-list">
-                            {attendanceRows.length ? attendanceRows.map((item) => (
-                              <div key={item.studentId} className="meeting-attendance-row">
-                                <div>
-                                  <strong>{item.studentName}</strong>
-                                  <p>{item.studentUniversityId || item.studentEmail || 'Student details unavailable'}</p>
-                                </div>
-                                <div className="meeting-attendance-status">
-                                  <span className={`meeting-attendance-badge ${String(item.status || 'PRESENT').toLowerCase()}`}>{getAttendanceIcon(item.status)} {item.status}</span>
-                                  {item.absenceReason ? <small>{item.absenceReason}</small> : null}
-                                </div>
-                              </div>
-                            )) : (
-                              <div className="meeting-attendance-empty">Attendance has not been recorded for this meeting yet.</div>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="meeting-meta">
-                        <div className="meeting-meta-block">
-                          <h4>Meeting Type</h4>
-                          <p>{getMeetingTypeIcon(meeting.meetingType)} {meeting.meetingType || 'Unknown'}</p>
-                        </div>
-                        {meeting.locationOrLink ? (
-                          <div className="meeting-meta-block">
-                            <h4>Location / Link</h4>
-                            <p>{meeting.locationOrLink}</p>
-                          </div>
-                        ) : null}
-                        <div className="meeting-meta-block full">
-                          <h4>Agenda / Notes</h4>
-                          <p>{truncateText(meeting.summary, 'No agenda notes provided yet.')}</p>
-                        </div>
-                      </div>
-                    )}
+                             <div className="meeting-meta">
+                               <div className="meeting-meta-block">
+                                 <h4>Meeting Type</h4>
+                                 <p>{getMeetingTypeIcon(meeting.meetingType)} {formatMeetingTypeLabel(meeting.meetingType)}</p>
+                               </div>
+                               {meeting.locationOrLink ? (
+                                 <div className="meeting-meta-block">
+                                   <h4>Location / Link</h4>
+                                   <p>{meeting.locationOrLink}</p>
+                                 </div>
+                               ) : null}
+                               <div className="meeting-meta-block full">
+                                 <h4>Summary</h4>
+                                 <p>{getTextOrFallback(meeting.summary, 'No summary provided.')}</p>
+                               </div>
+                               <div className="meeting-meta-block">
+                                 <h4>Progress Discussed</h4>
+                                 <p>{getTextOrFallback(meeting.progressDiscussed, 'No progress notes provided.')}</p>
+                               </div>
+                               <div className="meeting-meta-block">
+                                 <h4>Tasks Assigned</h4>
+                                 <p>{getTextOrFallback(meeting.tasksAssigned, 'No tasks assigned.')}</p>
+                               </div>
+                               <div className="meeting-meta-block">
+                                 <h4>Next Steps</h4>
+                                 <p>{getTextOrFallback(meeting.nextSteps, 'No next steps recorded.')}</p>
+                               </div>
+                               <div className="meeting-meta-block">
+                                 <h4>Progress Rating</h4>
+                                 <p>{meeting.overallRating ? meeting.overallRating.replaceAll('_', ' ') : 'Not rated yet.'}</p>
+                               </div>
+                               {meeting.concernActions ? (
+                                 <div className="meeting-meta-block full">
+                                   <h4>Required Actions</h4>
+                                   <p>{getTextOrFallback(meeting.concernActions, 'No required actions recorded.')}</p>
+                                 </div>
+                               ) : null}
+                             </div>
 
-                    <div className="meeting-item-footer">
-                      {isCompletedMeeting ? (
-                        <button type="button" className="meetings-btn-ghost" onClick={() => handleDownload(meeting)}>
-                          Download PDF
-                        </button>
-                      ) : null}
+                             <div className="meeting-attendance-card">
+                               <div className="meeting-attendance-header">
+                                 <h4>Attendance</h4>
+                                 <span>{attendanceRows.length || 0} students</span>
+                               </div>
+                               <div className="meeting-attendance-list">
+                                 {attendanceRows.length ? attendanceRows.map((item) => (
+                                   <div key={item.studentId} className="meeting-attendance-row">
+                                     <div>
+                                       <strong>{item.studentName}</strong>
+                                       <p>{item.studentUniversityId || item.studentEmail || 'Student details unavailable'}</p>
+                                     </div>
+                                     <div className="meeting-attendance-status">
+                                       <span className={`meeting-attendance-badge ${String(item.status || 'PRESENT').toLowerCase()}`}>{getAttendanceIcon(item.status)} {item.status}</span>
+                                       {item.absenceReason ? <small>{item.absenceReason}</small> : null}
+                                     </div>
+                                   </div>
+                                 )) : (
+                                   <div className="meeting-attendance-empty">Attendance has not been recorded for this meeting yet.</div>
+                                 )}
+                               </div>
+                             </div>
+                           </>
+                         ) : (
+                           <div className="meeting-meta">
+                             <div className="meeting-meta-block">
+                               <h4>Meeting Type</h4>
+                               <p>{getMeetingTypeIcon(meeting.meetingType)} {formatMeetingTypeLabel(meeting.meetingType)}</p>
+                             </div>
+                             {meeting.locationOrLink ? (
+                               <div className="meeting-meta-block">
+                                 <h4>Location / Link</h4>
+                                 <p>{meeting.locationOrLink}</p>
+                               </div>
+                             ) : null}
+                             <div className="meeting-meta-block full">
+                               <h4>Agenda / Notes</h4>
+                               <p>{getTextOrFallback(meeting.summary, 'No agenda notes provided yet.')}</p>
+                             </div>
+                           </div>
+                         )}
 
-                      {canStudentCancelMeeting(meeting) ? (
-                         <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>
-                            Cancel Request
-                         </button>
-                      ) : null}
+                         <div className="meeting-item-footer">
+                           {isCompletedMeeting ? (
+                             <button type="button" className="meetings-btn-ghost" onClick={() => handleDownload(meeting)}>
+                               Download PDF
+                             </button>
+                           ) : null}
 
-                      {canManage && meeting.status === 'REQUESTED' && !selectedProjectArchived ? (
-                         <>
-                           <button type="button" className="meetings-btn" onClick={() => handleAction(meeting, 'APPROVE')}>Approve</button>
-                           <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'REJECT')}>Reject</button>
-                         </>
-                      ) : null}
+                           {canStudentCancelMeeting(meeting) ? (
+                              <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>
+                                 Cancel Request
+                              </button>
+                           ) : null}
 
-                      {canManage && meeting.status === 'SCHEDULED' && !selectedProjectArchived ? (
-                         <>
-                           <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>Cancel Meeting</button>
-                         </>
-                      ) : null}
+                           {canManage && meeting.status === 'REQUESTED' && !selectedProjectArchived ? (
+                              <>
+                                <button type="button" className="meetings-btn" onClick={() => handleAction(meeting, 'APPROVE')}>Approve</button>
+                                <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'REJECT')}>Reject</button>
+                              </>
+                           ) : null}
 
-                      {canManage && meeting.canEdit && !selectedProjectArchived && meeting.status !== 'REJECTED' && meeting.status !== 'CANCELED' ? (
-                        <button type="button" className="meetings-btn-ghost" onClick={() => openEditModal(meeting)}>
-                          {meeting.status === 'SCHEDULED' ? 'Complete / Progress' : 'View Full Report'}
-                        </button>
-                      ) : null}
-                      {canManage && meeting.canDelete && !selectedProjectArchived ? (
-                        <button type="button" className="meetings-btn-danger" onClick={() => setMeetingToDelete(meeting)}>
-                          Delete
-                        </button>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
+                           {canManage && meeting.status === 'SCHEDULED' && !selectedProjectArchived ? (
+                              <>
+                                <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>Cancel Meeting</button>
+                              </>
+                           ) : null}
+
+                           {canManage && meeting.canEdit && !selectedProjectArchived && meeting.status !== 'REJECTED' && meeting.status !== 'CANCELED' ? (
+                             <button type="button" className="meetings-btn-ghost" onClick={() => openEditModal(meeting)}>
+                               {meeting.status === 'SCHEDULED' ? 'Complete / Progress' : 'View Full Report'}
+                             </button>
+                           ) : null}
+                           {canManage && meeting.canDelete && !selectedProjectArchived ? (
+                             <button type="button" className="meetings-btn-danger" onClick={() => setMeetingToDelete(meeting)}>
+                               Delete
+                             </button>
+                           ) : null}
+                         </div>
+                       </div>
+                     </div>
+                   </article>
+                 );
+               })}
             </div>
           )}
         </section>

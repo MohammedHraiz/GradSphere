@@ -39,9 +39,9 @@
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --scrollbar-size: 10px;
-  --scrollbar-thumb: rgba(148, 163, 184, 0.62);
-  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.8);
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: rgba(148, 163, 184, 0.42);
+  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.62);
 }
 
 /* =========================================================
@@ -59,6 +59,10 @@ body {
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 /* تخصيص الـ Scrollbar ليكون رفيع وأنيق */
@@ -84,13 +88,16 @@ body {
   .confirm-card,
   .dp-history-body,
   .detail-body,
-  .saas-modal-box
+  .saas-modal-box,
+  .profile-sheet-body,
+  .user-preview-body
 ) {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
+  scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {

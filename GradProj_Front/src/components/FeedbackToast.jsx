@@ -1,11 +1,12 @@
 import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const EXIT_DURATION = 220;
-const STACK_GAP = 14;
+const STACK_GAP = 10;
 
 const activeToastIds = [];
 const stackSubscribers = new Set();
+const toastHeights = new Map();
 
 const notifyStackSubscribers = () => {
   stackSubscribers.forEach((callback) => callback());
@@ -38,18 +39,43 @@ const getToastStackIndex = (toastId) => {
   return index >= 0 ? index : 0;
 };
 
+const setToastHeight = (toastId, height) => {
+  const nextHeight = Math.max(0, Math.round(height));
+  if (toastHeights.get(toastId) !== nextHeight) {
+    toastHeights.set(toastId, nextHeight);
+    notifyStackSubscribers();
+  }
+};
+
+const clearToastHeight = (toastId) => {
+  if (toastHeights.delete(toastId)) {
+    notifyStackSubscribers();
+  }
+};
+
+const getToastStackOffset = (toastId) => {
+  const index = activeToastIds.indexOf(toastId);
+  if (index <= 0) {
+    return 0;
+  }
+
+  return activeToastIds.slice(0, index).reduce((total, id) => {
+    return total + (toastHeights.get(id) ?? 0) + STACK_GAP;
+  }, 0);
+};
+
 const toastStyles = `
 .feedback-toast-layer {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  top: calc(env(safe-area-inset-top, 0px) + clamp(12px, 1.8vw, 18px));
   right: clamp(12px, 1.8vw, 20px);
   z-index: 12080;
-  width: min(348px, calc(100vw - 24px));
+  width: min(336px, calc(100vw - 24px));
   pointer-events: none;
   opacity: 0;
   will-change: transform, opacity;
-  transform: translate3d(26px, calc(var(--feedback-toast-offset, 0px) - 4px), 0) scale(0.985);
-  transition: transform 260ms cubic-bezier(.22,1,.36,1), opacity 180ms ease;
+  transform: translate3d(18px, calc(var(--feedback-toast-offset, 0px) - 8px), 0) scale(0.985);
+  transition: transform 320ms cubic-bezier(.16,1,.3,1), opacity 220ms ease;
 }
 
 .feedback-toast-layer.is-visible {
@@ -68,31 +94,33 @@ const toastStyles = `
   pointer-events: auto;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 10px;
   align-items: start;
-  padding: 12px 12px 14px;
-  border-radius: 18px;
+  padding: 10px 10px 12px;
+  border-radius: 20px;
   border: 1px solid var(--feedback-toast-border, rgba(199, 210, 254, 0.92));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(248, 250, 252, 0.985));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(248, 250, 252, 0.955));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   color: #0f172a;
   box-shadow:
-    0 18px 40px -26px rgba(15, 23, 42, 0.34),
-    0 10px 24px -22px var(--feedback-toast-shadow, rgba(79, 70, 229, 0.24));
+    0 24px 44px -30px rgba(15, 23, 42, 0.36),
+    0 12px 26px -22px var(--feedback-toast-shadow, rgba(79, 70, 229, 0.2));
 }
 
 .feedback-toast::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(90deg, var(--feedback-toast-accent), rgba(255, 255, 255, 0.96));
 }
 
 .feedback-toast__icon {
   position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -107,15 +135,15 @@ const toastStyles = `
 }
 
 .feedback-toast__icon svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .feedback-toast__body {
   min-width: 0;
   display: grid;
-  gap: 2px;
-  padding-top: 1px;
+  gap: 3px;
+  padding-top: 2px;
 }
 
 .feedback-toast__eyebrow {
@@ -130,19 +158,19 @@ const toastStyles = `
 .feedback-toast__message {
   margin: 0;
   color: #0f172a;
-  font-size: 13.5px;
-  line-height: 1.45;
-  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.42;
+  font-weight: 750;
   overflow-wrap: anywhere;
 }
 
 .feedback-toast__close {
-  width: 28px;
-  height: 28px;
-  margin-top: 1px;
+  width: 30px;
+  height: 30px;
+  margin-top: 0;
   border: 1px solid rgba(226, 232, 240, 0.96);
   border-radius: 999px;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.84);
   color: #64748b;
   display: inline-flex;
   align-items: center;
@@ -154,9 +182,9 @@ const toastStyles = `
 .feedback-toast__close:hover {
   transform: translateY(-1px);
   background: #ffffff;
-  border-color: rgba(148, 163, 184, 0.44);
+  border-color: rgba(148, 163, 184, 0.36);
   color: #0f172a;
-  box-shadow: 0 10px 18px -18px rgba(15, 23, 42, 0.28);
+  box-shadow: 0 12px 20px -18px rgba(15, 23, 42, 0.32);
 }
 
 .feedback-toast__close:focus-visible {
@@ -172,8 +200,8 @@ const toastStyles = `
 
 .feedback-toast__meter {
   position: absolute;
-  left: 12px;
-  right: 12px;
+  left: 10px;
+  right: 10px;
   bottom: 0;
   height: 2px;
   overflow: hidden;
@@ -210,15 +238,14 @@ const toastStyles = `
 @media (max-width: 640px) {
   .feedback-toast-layer {
     top: calc(env(safe-area-inset-top, 0px) + 12px);
-    right: 12px;
-    left: 12px;
-    width: min(100%, calc(100vw - 24px));
+    right: 10px;
+    width: min(320px, calc(100vw - 20px));
   }
 
   .feedback-toast {
-    padding: 12px 12px 14px;
+    padding: 10px 10px 12px;
     gap: 10px;
-    border-radius: 16px;
+    border-radius: 18px;
   }
 
   .feedback-toast__message {
@@ -349,6 +376,7 @@ const CloseIcon = () => (
 const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onClose }) => {
   const generatedId = useId().replaceAll(':', '');
   const toastId = useRef(`feedback-toast-${generatedId}`).current;
+  const toastElementRef = useRef(null);
   const closeTimeoutRef = useRef(null);
   const autoDismissRef = useRef(null);
   const animationFrameRef = useRef(0);
@@ -361,7 +389,7 @@ const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onCl
   ));
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  const [stackIndex, setStackIndex] = useState(0);
+  const [stackMetrics, setStackMetrics] = useState({ index: 0, offset: 0 });
 
   const clearTimers = useCallback(() => {
     if (closeTimeoutRef.current) {
@@ -450,7 +478,10 @@ const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onCl
     }
 
     const syncStackIndex = () => {
-      setStackIndex(getToastStackIndex(toastId));
+      setStackMetrics({
+        index: getToastStackIndex(toastId),
+        offset: getToastStackOffset(toastId),
+      });
     };
 
     registerToast(toastId);
@@ -460,6 +491,38 @@ const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onCl
     return () => {
       unsubscribe();
       unregisterToast(toastId);
+    };
+  }, [renderedToast, toastId]);
+
+  useLayoutEffect(() => {
+    if (!renderedToast || !toastElementRef.current) {
+      return undefined;
+    }
+
+    const element = toastElementRef.current;
+
+    const measure = () => {
+      setToastHeight(toastId, element.getBoundingClientRect().height);
+    };
+
+    measure();
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver === 'function') {
+      resizeObserver = new ResizeObserver(() => {
+        measure();
+      });
+      resizeObserver.observe(element);
+    } else {
+      window.addEventListener('resize', measure);
+    }
+
+    return () => {
+      resizeObserver?.disconnect();
+      if (!resizeObserver) {
+        window.removeEventListener('resize', measure);
+      }
+      clearToastHeight(toastId);
     };
   }, [renderedToast, toastId]);
 
@@ -494,8 +557,8 @@ const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onCl
   }
 
   const resolvedType = toastMeta[renderedToast.type] ? renderedToast.type : 'info';
-  const stackOffset = stackIndex * STACK_GAP;
-  const stackScale = Math.max(0.94, 1 - (stackIndex * 0.018));
+  const stackOffset = stackMetrics.offset;
+  const stackScale = 1;
   const ariaLive = resolvedType === 'error' || resolvedType === 'warning' ? 'assertive' : 'polite';
   const role = resolvedType === 'error' ? 'alert' : 'status';
 
@@ -508,11 +571,12 @@ const FeedbackToast = ({ message, type = 'success', title, duration = 3200, onCl
       style={{
         '--feedback-toast-offset': `${stackOffset}px`,
         '--feedback-toast-scale': String(stackScale),
-        zIndex: 10050 + stackIndex,
+        zIndex: 10050 + stackMetrics.index,
       }}
     >
       <style>{toastStyles}</style>
       <div
+        ref={toastElementRef}
         className={`feedback-toast ${resolvedType}`}
         style={{
           '--feedback-toast-accent': meta.accent,
