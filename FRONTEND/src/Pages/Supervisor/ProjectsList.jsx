@@ -18,13 +18,13 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
-.sup-projects { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
-.sup-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 24px; }
+.sup-projects { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; display: grid; gap: 24px; justify-items: center; }
+.sup-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 0; width: min(100%, 1120px); }
 .sup-kicker { margin: 0 0 6px; color: #2563eb; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .sup-title { margin: 0; font-size: 32px; font-weight: 900; }
 .sup-refresh { border: 0; background: #0f172a; color: white; border-radius: 12px; padding: 11px 15px; font-weight: 900; cursor: pointer; }
-.sup-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 22px; align-items: start; }
-.sup-section { background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 22px -24px rgba(15,23,42,.8); }
+.sup-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; width: min(100%, 1120px); }
+.sup-section { background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 22px; box-shadow: 0 10px 22px -24px rgba(15,23,42,.8); width: 100%; }
 .sup-section h2 { margin: 0 0 14px; font-size: 19px; font-weight: 900; }
 .sup-list { display: grid; gap: 12px; }
 .sup-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; background: #f8fafc; }
@@ -54,7 +54,7 @@ const styles = `
 .sup-alert.error { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
 .sup-alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; }
 .sup-empty { padding: 18px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #f8fafc; text-align: center; }
-@media (max-width: 900px) { .sup-grid { grid-template-columns: 1fr; } .sup-header { flex-direction: column; align-items: flex-start; } }
+@media (max-width: 900px) { .sup-header { flex-direction: column; align-items: flex-start; } }
 `;
 
 const ProjectsList = () => {

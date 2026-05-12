@@ -17,11 +17,11 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import { formatProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
-.proposal-page { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; display: grid; gap: 28px; }
-.proposal-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 0; }
+.proposal-page { padding: 10px 20px 40px 20px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; display: grid; gap: 28px; justify-items: center; }
+.proposal-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 0; width: min(100%, 1180px); }
 .proposal-kicker { margin: 0 0 6px; color: #4f46e5; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 .proposal-title { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -1px; }
-.proposal-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; width: min(100%, 1180px); }
+.proposal-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; width: min(100%, 1120px); }
 .proposal-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; padding: 28px; box-shadow: 0 10px 24px -22px rgba(15,23,42,0.6); }
 .proposal-card h2 { margin: 0 0 10px; font-size: 20px; font-weight: 900; }
 .proposal-card p { margin: 0 0 20px; color: #64748b; font-size: 14px; line-height: 1.7; }

@@ -67,25 +67,25 @@ const getToastStackOffset = (toastId) => {
 const toastStyles = `
 .feedback-toast-layer {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + clamp(12px, 1.8vw, 18px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(12px, 1.8vw, 18px));
   right: clamp(12px, 1.8vw, 20px);
   z-index: 12080;
   width: min(336px, calc(100vw - 24px));
   pointer-events: none;
   opacity: 0;
   will-change: transform, opacity;
-  transform: translate3d(18px, calc(var(--feedback-toast-offset, 0px) - 8px), 0) scale(0.985);
+  transform: translate3d(18px, calc(var(--feedback-toast-offset, 0px) * -1 + 8px), 0) scale(0.985);
   transition: transform 320ms cubic-bezier(.16,1,.3,1), opacity 220ms ease;
 }
 
 .feedback-toast-layer.is-visible {
   opacity: 1;
-  transform: translate3d(0, var(--feedback-toast-offset, 0px), 0) scale(var(--feedback-toast-scale, 1));
+  transform: translate3d(0, calc(var(--feedback-toast-offset, 0px) * -1), 0) scale(var(--feedback-toast-scale, 1));
 }
 
 .feedback-toast-layer.is-leaving {
   opacity: 0;
-  transform: translate3d(18px, var(--feedback-toast-offset, 0px), 0) scale(0.98);
+  transform: translate3d(18px, calc(var(--feedback-toast-offset, 0px) * -1 + 6px), 0) scale(0.98);
 }
 
 .feedback-toast {
@@ -237,7 +237,7 @@ const toastStyles = `
 
 @media (max-width: 640px) {
   .feedback-toast-layer {
-    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
     right: 10px;
     width: min(320px, calc(100vw - 20px));
   }
