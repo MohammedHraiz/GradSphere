@@ -568,7 +568,7 @@ const Login = () => {
             </div>
 
             <div className="input-box">
-              <label className="input-label">Security Key (Password)</label>
+              <label className="input-label">Password</label>
               <input 
                 type={showPass ? "text" : "password"} className="input-field" placeholder="••••••••" 
                 value={password} onChange={(e) => { setPassword(e.target.value); if (loginError) setLoginError(''); }} required 
@@ -611,7 +611,7 @@ const Login = () => {
                   onClick={(e) => { e.stopPropagation(); setIsForgotMode(true); }}
                   tabIndex={!isForgotMode ? 5 : -1}
                 >
-                  Forgot Security Key?
+                  Forgot Password?
                 </span>
                 <span style={{color: '#64748b', margin: '0 10px'}}>|</span>
                 <span 
