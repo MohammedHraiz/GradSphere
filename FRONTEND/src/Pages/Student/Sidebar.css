@@ -20,16 +20,15 @@
 }
 
 .st-logo-icon {
-  background: linear-gradient(135deg, #ffffff, #e0f2fe);
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
-  box-shadow: 0 18px 28px -18px rgba(15, 23, 42, 0.42);
   overflow: hidden;
-  padding: 3px;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
   flex: 0 0 auto;
 }
 

@@ -532,9 +532,17 @@ const TeamManagement = () => {
   const completedTasks = Number.isFinite(Number(teamData?.completedTasks)) ? Number(teamData?.completedTasks) : 0;
   const completionRate = Math.max(0, Math.min(100, Number.isFinite(Number(teamData?.completionRate)) ? Math.round(Number(teamData?.completionRate)) : 0));
   const isLeader = roster.find(m => String(m.userId).toLowerCase() === String(currentUserId).toLowerCase())?.memberRole === 'LEADER';
-  const leaderCanDisband = isLeader && membersCount <= 1;
-  const leaderCannotLeave = isLeader && membersCount > 1;
-  const leaderLeaveMessage = 'Team leader cannot leave or disband the team while other members are still in the team.';
+  const hasOtherMembers = isLeader && membersCount > 1;
+  const hasPendingInvitations = isLeader && pendingInvitations.length > 0;
+  const leaderCanDisband = isLeader && !hasOtherMembers && !hasPendingInvitations;
+  const leaderCannotLeave = isLeader && !leaderCanDisband;
+  const leaderLeaveMessage = hasOtherMembers && hasPendingInvitations
+    ? 'You can only disband the team after removing other members and cancelling pending invitations.'
+    : hasOtherMembers
+      ? 'You can only disband the team after removing the other team members.'
+      : hasPendingInvitations
+        ? 'You can only disband the team after cancelling pending invitations.'
+        : 'Team leaders must disband the team instead of leaving it directly.';
   const projectExists = Boolean(projectInfo);
   const projectArchived = normalizeProjectStatus(projectInfo?.status) === 'ARCHIVED';
   const projectDomainLabel = getProjectDomainLabel(projectInfo?.projectDomain || teamData?.projectDomain, 'Not specified');
