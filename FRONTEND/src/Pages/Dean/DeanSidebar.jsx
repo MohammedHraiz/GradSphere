@@ -5,7 +5,7 @@ import bauLogo from '../../assets/bau_logo.png';
 const deanSidebarStyles = `
   .dean-sidebar { width: 260px; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
   .dean-logo-container { display: flex; align-items: center; gap: 16px; margin-bottom: 50px; padding-left: 10px; }
-  .dean-logo-icon { background: linear-gradient(135deg, #fff7ed, #ffffff); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 18px; box-shadow: 0 18px 28px -18px rgba(15, 23, 42, 0.42); overflow: hidden; padding: 3px; flex: 0 0 auto; }
+  .dean-logo-icon { background: linear-gradient(135deg, #fff7ed00, #ffffff00); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 18px; box-shadow: 0 18px 28px -18px rgba(15, 23, 42, 0.42); overflow: hidden; padding: 3px; flex: 0 0 auto; }
   .dean-logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .dean-logo-text { display: grid; gap: 4px; min-width: 0; }
   .dean-logo-text h2 { font-size: 18px; font-weight: 900; margin: 0; letter-spacing: 0.08em; line-height: 1.1; color: white; }
