@@ -5,7 +5,7 @@ import bauLogo from '../../assets/bau_logo.png';
 const adminSidebarStyles = `
   .admin-sidebar { width: 260px; height: 100vh; background: #020617; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
   .admin-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
-  .admin-logo-icon { background: linear-gradient(135deg, #ecfeff, #ffffff); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 20px rgba(15, 23, 42, 0.32); overflow: hidden; padding: 6px; }
+  .admin-logo-icon { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent; border-radius: 0; padding: 0; flex: 0 0 auto; }
   .admin-logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .admin-logo-text h2 { font-size: 16px; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; }
   .admin-logo-text p { font-size: 10px; font-weight: 700; margin: 0; color: #06b6d4; text-transform: uppercase; letter-spacing: 2px; }

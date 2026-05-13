@@ -10,6 +10,7 @@ public interface SupervisorRequestRepository extends JpaRepository<SupervisorReq
     List<SupervisorRequest> findBySupervisorIdAndStatusOrderByCreatedAtDesc(UUID supervisorId, SupervisorRequestStatus status);
     List<SupervisorRequest> findByProjectId(UUID projectId);
     List<SupervisorRequest> findByTeamIdOrderByCreatedAtDesc(UUID teamId);
+    void deleteByTeamId(UUID teamId);
     List<SupervisorRequest> findByProjectIdAndStatus(UUID projectId, SupervisorRequestStatus status);
     List<SupervisorRequest> findTop5ByOrderByCreatedAtDesc();
     List<SupervisorRequest> findTop5BySupervisorIdAndStatusOrderByCreatedAtDesc(UUID supervisorId, SupervisorRequestStatus status);

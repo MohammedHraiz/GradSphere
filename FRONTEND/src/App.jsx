@@ -4,6 +4,9 @@ import './App.css';
 
 import { useAuth } from './auth/AuthContext';
 
+// --- Imports: Landing Page ---
+import Landing from './Pages/Landing/Landing';
+
 // --- Imports: Authentication ---
 import Login from './Pages/Login/Login';
 
@@ -521,12 +524,12 @@ function App() {
           ) : <Navigate to="/login" />
         } />
 
-        <Route path="/" element={<Navigate to={
-          normalizedUserRole === 'student' ? "/student/overview" : 
-          normalizedUserRole === 'supervisor' ? "/supervisor/dashboard" : 
-          normalizedUserRole === 'dean' ? "/dean/dashboard" : 
-          normalizedUserRole === 'admin' ? "/admin/dashboard" : "/login"
-        } />} />
+        <Route path="/" element={!normalizedUserRole ? <Landing /> : (
+          normalizedUserRole === 'student' ? <Navigate to="/student/overview" /> : 
+          normalizedUserRole === 'supervisor' ? <Navigate to="/supervisor/dashboard" /> : 
+          normalizedUserRole === 'dean' ? <Navigate to="/dean/dashboard" /> : 
+          normalizedUserRole === 'admin' ? <Navigate to="/admin/dashboard" /> : <Landing />
+        )} />
       </Routes>
 
       {/* Shared Premium Logout Modal */}
