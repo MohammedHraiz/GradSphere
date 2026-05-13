@@ -59,3 +59,17 @@ export const uploadProfilePhoto = async (file) => {
   const response = await apiClient.post('/v1/users/me/profile-photo', formData);
   return response?.data?.data ?? response?.data ?? null;
 };
+
+export const previewStudentPdfImport = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.post('/v1/admin/import/students/pdf/preview', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response?.data ?? null;
+};
+
+export const confirmStudentPdfImport = async (payload) => {
+  const response = await apiClient.post('/v1/admin/import/students/pdf/confirm', payload);
+  return response?.data ?? null;
+};

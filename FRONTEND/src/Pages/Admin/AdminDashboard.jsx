@@ -63,7 +63,6 @@ const AdminDashboard = () => {
           <p className="ad-kicker">Core System Overview</p>
           <h1 className="ad-title">System Dashboard</h1>
         </div>
-        <button className="btn-ad-action" onClick={() => window.print()}>Export System Report</button>
       </div>
 
       {isLoading ? <div className="state">Loading admin dashboard...</div> : null}
