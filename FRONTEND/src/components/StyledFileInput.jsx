@@ -42,6 +42,11 @@ const StyledFileInput = ({
     onChange?.(event);
   };
 
+  const openFilePicker = () => {
+    if (disabled) return;
+    inputRef.current?.click();
+  };
+
   return (
     <div className={`styled-file-input ${className}`.trim()} style={style} data-disabled={disabled ? 'true' : 'false'}>
       <input
@@ -56,14 +61,15 @@ const StyledFileInput = ({
         disabled={disabled}
         onChange={handleChange}
       />
-      <div className="styled-file-input-shell" onClick={() => !disabled && inputRef.current?.click()} role="presentation">
+      <div className="styled-file-input-shell" onClick={openFilePicker} role="presentation">
         <button
           type="button"
           className="styled-file-input-button"
           disabled={disabled}
           onClick={(event) => {
             event.preventDefault();
-            inputRef.current?.click();
+            event.stopPropagation();
+            openFilePicker();
           }}
         >
           {buttonLabel || inferButtonLabel(accept)}
