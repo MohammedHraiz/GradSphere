@@ -192,25 +192,11 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpStep, setOtpStep] = useState(1);
   const [showOtpPass, setShowOtpPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  
+  // Ref لمعرفة مكان الروبوت على الشاشة بدقة
+  const mascotRef = useRef(null);
 
-  const passwordRules = [
-    { id: 'length', label: 'At least 8 characters', valid: newPassword.length >= 8 },
-    { id: 'upper', label: 'Uppercase letter', valid: /[A-Z]/.test(newPassword) },
-    { id: 'lower', label: 'Lowercase letter', valid: /[a-z]/.test(newPassword) },
-    { id: 'number', label: 'Number', valid: /\d/.test(newPassword) },
-    { id: 'symbol', label: 'Symbol', valid: /[^A-Za-z0-9]/.test(newPassword) },
-    {
-      id: 'match',
-      label: 'Passwords match',
-      valid: confirmPassword.length > 0 && confirmPassword === newPassword,
-      warning: confirmPassword.length > 0 && confirmPassword !== newPassword,
-    },
-  ];
-
-  const isPasswordValid = passwordRules.slice(0, 5).every((rule) => rule.valid);
-  const doPasswordsMatch = confirmPassword.length > 0 && confirmPassword === newPassword;
-  const canSubmitOtpPassword = /^\d{6}$/.test(otp.trim()) && isPasswordValid && doPasswordsMatch;
+  const { login } = useAuth();
 
   const loginAsRole = async (role) => {
     const demoCredentials = {
@@ -300,6 +286,14 @@ const Login = () => {
       }
 
       login({ token, user: userInfo, role: userInfo.role });
+
+      if (typeof refreshUserProfile === 'function') {
+        try {
+          await refreshUserProfile();
+        } catch {
+          // Keep the existing login flow intact if the profile sync request fails.
+        }
+      }
 
       const routeRole = normalizedRole.replace(/[^a-z]/g, '');
       if (routeRole === 'student') {
