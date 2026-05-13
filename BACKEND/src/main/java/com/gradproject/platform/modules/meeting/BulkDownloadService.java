@@ -34,7 +34,7 @@ public class BulkDownloadService {
                 .filter(meeting -> meeting.getStatus() == MeetingStatus.COMPLETED)
                 .toList();
         if (meetings.isEmpty()) {
-            throw new ResponseStatusException(NOT_FOUND, "No completed meeting reports found for project " + projectId);
+            throw new ResponseStatusException(NOT_FOUND, "No completed meeting reports found for this project.");
         }
 
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

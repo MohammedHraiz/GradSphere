@@ -29,7 +29,35 @@ class BulkDownloadServiceTest {
     @Mock PdfGeneratorService pdfGeneratorService;
 
     @Test
-    void downloadAllMeetingFormsIncludesOnlyCompletedMeetings() throws Exception {
+    void downloadAllMeetingFormsIncludesAllCompletedMeetings() throws Exception {
+        BulkDownloadService service = new BulkDownloadService(meetingRepository, pdfGeneratorService);
+        UUID projectId = UUID.randomUUID();
+        Meeting firstCompletedMeeting = meeting(MeetingStatus.COMPLETED);
+        Meeting secondCompletedMeeting = meeting(MeetingStatus.COMPLETED);
+        Authentication authentication = new UsernamePasswordAuthenticationToken("dean@demo.local", null);
+
+        when(meetingRepository.findAllByProjectId(projectId)).thenReturn(List.of(firstCompletedMeeting, secondCompletedMeeting));
+        when(pdfGeneratorService.generateMeetingForm(firstCompletedMeeting.getId(), authentication))
+                .thenReturn(new ByteArrayResource("pdf-1".getBytes()));
+        when(pdfGeneratorService.generateMeetingForm(secondCompletedMeeting.getId(), authentication))
+                .thenReturn(new ByteArrayResource("pdf-2".getBytes()));
+
+        byte[] zipBytes = service.downloadAllMeetingForms(projectId, authentication);
+
+        assertThat(zipBytes).isNotEmpty();
+
+        try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(zipBytes))) {
+            assertThat(zipInputStream.getNextEntry()).isNotNull();
+            assertThat(zipInputStream.getNextEntry()).isNotNull();
+            assertThat(zipInputStream.getNextEntry()).isNull();
+        }
+
+        verify(pdfGeneratorService).generateMeetingForm(firstCompletedMeeting.getId(), authentication);
+        verify(pdfGeneratorService).generateMeetingForm(secondCompletedMeeting.getId(), authentication);
+    }
+
+    @Test
+    void downloadAllMeetingFormsSkipsIncompleteMeetings() throws Exception {
         BulkDownloadService service = new BulkDownloadService(meetingRepository, pdfGeneratorService);
         UUID projectId = UUID.randomUUID();
         Meeting completedMeeting = meeting(MeetingStatus.COMPLETED);
@@ -64,7 +92,7 @@ class BulkDownloadServiceTest {
         assertThatThrownBy(() -> service.downloadAllMeetingForms(projectId, authentication))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404 NOT_FOUND")
-                .hasMessageContaining("No completed meeting reports found");
+                .hasMessageContaining("No completed meeting reports found for this project.");
     }
 
     private static Meeting meeting(MeetingStatus status) {
