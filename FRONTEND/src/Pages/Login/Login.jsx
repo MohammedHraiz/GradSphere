@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
@@ -171,7 +171,7 @@ const getReadableOtpSuccess = (message) => {
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+ 
 
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [isOtpMode, setIsOtpMode] = useState(false);
@@ -192,11 +192,39 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpStep, setOtpStep] = useState(1);
   const [showOtpPass, setShowOtpPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   
   // Ref لمعرفة مكان الروبوت على الشاشة بدقة
-  const mascotRef = useRef(null);
 
-  const { login } = useAuth();
+  const { login, refreshUserProfile } = useAuth();
+
+  const isPasswordValid = useMemo(() => (
+    newPassword.length >= 8
+    && /[A-Z]/.test(newPassword)
+    && /\d/.test(newPassword)
+    && /[^A-Za-z0-9]/.test(newPassword)
+  ), [newPassword]);
+
+  const doPasswordsMatch = useMemo(() => (
+    confirmPassword.length > 0 && newPassword === confirmPassword
+  ), [confirmPassword, newPassword]);
+
+  const passwordRules = useMemo(() => ([
+    { id: 'length', label: 'At least 8 characters', valid: newPassword.length >= 8 },
+    { id: 'uppercase', label: 'At least one uppercase letter', valid: /[A-Z]/.test(newPassword) },
+    { id: 'number', label: 'At least one number', valid: /\d/.test(newPassword) },
+    { id: 'symbol', label: 'At least one special character', valid: /[^A-Za-z0-9]/.test(newPassword) },
+    {
+      id: 'match',
+      label: 'Passwords match',
+      valid: doPasswordsMatch,
+      warning: confirmPassword.length > 0 && !doPasswordsMatch,
+    },
+  ]), [confirmPassword.length, doPasswordsMatch, newPassword]);
+
+  const canSubmitOtpPassword = useMemo(() => (
+    /^\d{6}$/.test(otp.trim()) && isPasswordValid && doPasswordsMatch
+  ), [doPasswordsMatch, isPasswordValid, otp]);
 
   const loginAsRole = async (role) => {
     const demoCredentials = {
