@@ -1,0 +1,50 @@
+.project-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.project-status-badge.submitted {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.project-status-badge.under-review {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #b45309;
+}
+
+.project-status-badge.needs-changes {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.project-status-badge.approved {
+  background: #dcfce7;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.project-status-badge.rejected {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.project-status-badge.archived {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
+}

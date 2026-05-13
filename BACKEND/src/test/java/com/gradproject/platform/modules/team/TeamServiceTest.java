@@ -1,11 +1,14 @@
 package com.gradproject.platform.modules.team;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.invitation.InvitationRepository;
+import com.gradproject.platform.modules.invitation.InvitationStatus;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectStatus;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestRepository;
 import com.gradproject.platform.modules.task.TaskRepository;
 import com.gradproject.platform.modules.task.TaskStatus;
 import com.gradproject.platform.modules.team.dto.CreateTeamRequest;
@@ -49,6 +52,12 @@ class TeamServiceTest {
     @Mock
     private TaskRepository taskRepository;
 
+    @Mock
+    private InvitationRepository invitationRepository;
+
+    @Mock
+    private SupervisorRequestRepository supervisorRequestRepository;
+
     private TeamService teamService;
     private User leader;
     private User member;
@@ -57,7 +66,15 @@ class TeamServiceTest {
 
     @BeforeEach
     void setUp() {
-        teamService = new TeamService(userRepository, teamRepository, teamMemberRepository, projectRepository, taskRepository);
+        teamService = new TeamService(
+                userRepository,
+                teamRepository,
+                teamMemberRepository,
+                projectRepository,
+                taskRepository,
+                invitationRepository,
+                supervisorRequestRepository
+        );
         leader = user(UUID.randomUUID(), "leader@example.com");
         member = user(UUID.randomUUID(), "member@example.com");
         team = team(UUID.randomUUID(), leader);
@@ -305,16 +322,18 @@ class TeamServiceTest {
         when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
         when(teamMemberRepository.findByTeamIdAndUserId(team.getId(), leader.getId())).thenReturn(Optional.of(leaderMembership));
         when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(1L);
+        when(invitationRepository.countByTeamIdAndStatus(team.getId(), InvitationStatus.PENDING)).thenReturn(0L);
         when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.empty());
 
         teamService.leaveMyTeam(leader.getEmail());
 
+        verify(supervisorRequestRepository).deleteByTeamId(team.getId());
         verify(teamMemberRepository).deleteByTeamId(team.getId());
         verify(teamRepository).delete(team);
     }
 
     @Test
-    void teamCannotBeDisbandedIfItHasNonArchivedProject() {
+    void soloLeaderCanDisbandTeamEvenIfProjectExists() {
         TeamMember leaderMembership = membership(team, leader, "LEADER");
         Project project = new Project();
         project.setId(UUID.randomUUID());
@@ -325,12 +344,33 @@ class TeamServiceTest {
         when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
         when(teamMemberRepository.findByTeamIdAndUserId(team.getId(), leader.getId())).thenReturn(Optional.of(leaderMembership));
         when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(1L);
+        when(invitationRepository.countByTeamIdAndStatus(team.getId(), InvitationStatus.PENDING)).thenReturn(0L);
         when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.of(project));
+        when(projectRepository.save(project)).thenReturn(project);
+
+        teamService.leaveMyTeam(leader.getEmail());
+
+        assertThat(project.getTeam()).isNull();
+        verify(supervisorRequestRepository).deleteByTeamId(team.getId());
+        verify(projectRepository).save(project);
+        verify(teamRepository).delete(team);
+    }
+
+    @Test
+    void teamCannotBeDisbandedWhilePendingInvitationsExist() {
+        TeamMember leaderMembership = membership(team, leader, "LEADER");
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(teamRepository.findById(team.getId())).thenReturn(Optional.of(team));
+        when(teamMemberRepository.findByTeamIdAndUserId(team.getId(), leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(1L);
+        when(invitationRepository.countByTeamIdAndStatus(team.getId(), InvitationStatus.PENDING)).thenReturn(2L);
 
         assertThatThrownBy(() -> teamService.leaveMyTeam(leader.getEmail()))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessage("Cannot disband a team with an active project. Archive or resolve the project first.");
+                .hasMessage("You can only disband the team after removing other members and cancelling pending invitations.");
 
+        verify(supervisorRequestRepository, never()).deleteByTeamId(team.getId());
         verify(teamRepository, never()).delete(team);
     }
 

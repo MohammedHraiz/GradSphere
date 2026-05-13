@@ -1,0 +1,42 @@
+.project-health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.project-health-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  min-width: 14px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.project-health-badge.excellent {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.project-health-badge.on-track {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.project-health-badge.at-risk {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.project-health-badge.delayed {
+  background: #fee2e2;
+  color: #dc2626;
+}
