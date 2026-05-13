@@ -8,8 +8,8 @@ const confirmStyles = `
 .confirm-eyebrow { margin: 0; color: #4f46e5; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
 .confirm-card h3 { margin: 0; font-size: 21px; font-weight: 900; letter-spacing: -0.02em; }
 .confirm-card p { margin: 0 0 22px; color: #64748b; font-size: 14px; line-height: 1.65; font-weight: 600; }
-.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-.confirm-btn { border: 1px solid #cbd5e1; background: white; color: #0f172a; border-radius: 14px; padding: 11px 15px; min-width: 104px; font-weight: 900; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease; }
+.confirm-actions { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; margin-top: 6px; }
+.confirm-btn { border: 1px solid #cbd5e1; background: white; color: #0f172a; border-radius: 14px; padding: 11px 18px; min-width: 118px; font-weight: 900; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease; }
 .confirm-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 14px 22px -18px rgba(15,23,42,.35); }
 .confirm-btn.primary { border-color: #0f172a; background: #0f172a; color: white; }
 .confirm-btn.primary:hover:not(:disabled) { background: #111827; }
