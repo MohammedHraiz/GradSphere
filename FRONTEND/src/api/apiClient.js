@@ -49,12 +49,34 @@ const extractFieldErrors = (payload) => {
   return {};
 };
 
-export const normalizeApiError = (error) => {
-  const responseData = error?.response?.data;
+const readErrorPayload = async (payload) => {
+  if (typeof Blob !== 'undefined' && payload instanceof Blob) {
+    const text = await payload.text();
+
+    if (!text) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: text };
+    }
+  }
+
+  return payload;
+};
+
+export const normalizeApiError = async (error) => {
+  const responseData = await readErrorPayload(error?.response?.data);
   const status = error?.response?.status;
   const fieldErrors = status === 400 ? extractFieldErrors(responseData) : {};
   const firstFieldError = Object.values(fieldErrors)[0];
   const fallbackMessage = responseData?.message || responseData?.error || error?.message || 'Request failed';
+
+  if (error?.response) {
+    error.response.data = responseData;
+  }
 
   error.status = status;
   error.fieldErrors = fieldErrors;
@@ -78,7 +100,7 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const requestUrl = String(error.config?.url ?? '');
     const isAuthRequest = requestUrl.includes('/auth/');
 
@@ -86,7 +108,7 @@ apiClient.interceptors.response.use(
       localStorage.clear(); 
       window.location.href = '/login';
     }
-    return Promise.reject(normalizeApiError(error));
+    return Promise.reject(await normalizeApiError(error));
   },
 );
 

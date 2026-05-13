@@ -30,9 +30,11 @@ public class BulkDownloadService {
     private final PdfGeneratorService pdfGeneratorService;
 
     public byte[] downloadAllMeetingForms(UUID projectId, Authentication authentication) {
-        List<Meeting> meetings = meetingRepository.findAllByProjectId(projectId);
+        List<Meeting> meetings = meetingRepository.findAllByProjectId(projectId).stream()
+                .filter(meeting -> meeting.getStatus() == MeetingStatus.COMPLETED)
+                .toList();
         if (meetings.isEmpty()) {
-            throw new ResponseStatusException(NOT_FOUND, "No meetings found for project " + projectId);
+            throw new ResponseStatusException(NOT_FOUND, "No completed meeting reports found for this project.");
         }
 
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
