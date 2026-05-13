@@ -20,6 +20,9 @@ public class Team extends BaseEntity {
     @Column(name = "max_size", nullable = false)
     private Integer maxSize = TeamRules.MAX_MEMBERS;
 
+    @Column(name = "project_domain")
+    private String projectDomain;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "leader_id", nullable = false)
     private User leader;
@@ -40,6 +43,9 @@ public class Team extends BaseEntity {
 
     public Integer getMaxSize() { return maxSize; }
     public void setMaxSize(Integer maxSize) { this.maxSize = TeamRules.normalizeRequestedMaxSize(maxSize); }
+
+    public String getProjectDomain() { return projectDomain; }
+    public void setProjectDomain(String projectDomain) { this.projectDomain = projectDomain; }
 
     // We keep this for JPA internal use
     public User getLeader() { return leader; }

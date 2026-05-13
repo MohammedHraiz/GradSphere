@@ -218,6 +218,9 @@ public class ProjectService {
 
         project.setTitle(projectName);
         project.setDescription(cleanDescription);
+        if (!StringUtils.hasText(project.getProjectDomain()) && StringUtils.hasText(membership.getTeam().getProjectDomain())) {
+            project.setProjectDomain(membership.getTeam().getProjectDomain().trim());
+        }
         project.setStatus(ProjectStatus.SUBMITTED);
         project.setProposalVersion(project.getProposalVersion() + 1);
 
@@ -391,6 +394,7 @@ public class ProjectService {
                 project.getId(),
                 project.getTitle(),
                 project.getDescription(),
+                resolveProjectDomain(project),
                 project.getDocumentPath(),
                 project.getProposalVersion(),
                 project.getStatus(),
@@ -415,6 +419,19 @@ public class ProjectService {
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );
+    }
+
+    private String resolveProjectDomain(Project project) {
+        if (project == null) {
+            return null;
+        }
+        if (StringUtils.hasText(project.getProjectDomain())) {
+            return project.getProjectDomain().trim();
+        }
+        if (project.getTeam() != null && StringUtils.hasText(project.getTeam().getProjectDomain())) {
+            return project.getTeam().getProjectDomain().trim();
+        }
+        return null;
     }
 
     private List<ProjectTeamMemberDTO> buildProjectTeamMembers(com.gradproject.platform.modules.team.Team team) {

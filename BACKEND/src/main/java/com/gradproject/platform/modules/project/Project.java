@@ -38,6 +38,9 @@ public class Project extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "project_domain")
+    private String projectDomain;
+
     @Column(name = "document_path")
     private String documentPath;
 
@@ -92,6 +95,14 @@ public class Project extends BaseEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getProjectDomain() {
+        return projectDomain;
+    }
+
+    public void setProjectDomain(String projectDomain) {
+        this.projectDomain = projectDomain;
     }
 
     public String getDocumentPath() {

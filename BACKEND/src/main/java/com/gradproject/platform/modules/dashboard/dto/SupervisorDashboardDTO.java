@@ -16,6 +16,7 @@ public record SupervisorDashboardDTO(
         List<DashboardProjectItemDTO> recentAssignedProjects,
         String latestFeedbackGiven,
         Map<String, Long> projectsByStatus,
+        Map<String, Long> projectsByCategory,
         DashboardTaskSummaryDTO taskSummary,
         DashboardMilestoneSummaryDTO milestoneSummary,
         List<DashboardTaskItemDTO> overdueTasks,

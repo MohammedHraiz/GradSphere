@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAdminDashboard } from '../../api/dashboardService';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { getSortedProjectDomainCounts } from '../../utils/projectDomain';
 
 const adminStyles = `
 .admin-dash-container { padding: 20px 30px 60px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #f8fafc; background: #0b1121; min-height: 100vh; text-align: left; }
@@ -30,6 +31,11 @@ const adminStyles = `
 .mini-pill { background: #111c31; border: 1px solid #1e293b; border-radius: 14px; padding: 13px; }
 .mini-pill span { display: block; color: #94a3b8; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
 .mini-pill strong { font-size: 22px; color: #f8fafc; }
+.category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.category-card { border: 1px solid rgba(34,211,238,0.22); background: linear-gradient(180deg, #111c31, #0f172a); border-radius: 18px; padding: 16px; box-shadow: 0 18px 32px -28px rgba(6,182,212,0.24); }
+.category-card span { display: block; color: #67e8f9; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.category-card strong { display: block; font-size: 24px; font-weight: 900; color: #f8fafc; margin-bottom: 6px; }
+.category-card p { margin: 0; color: #94a3b8; font-size: 13px; font-weight: 700; line-height: 1.5; }
 @media (max-width: 980px) { .ad-stats-bar { grid-template-columns: repeat(2, 1fr); } .ad-main-grid, .ad-header-box, .ad-workflow-grid { grid-template-columns: 1fr; display: grid; gap: 16px; } }
 `;
 
@@ -54,6 +60,11 @@ const AdminDashboard = () => {
     };
     void load();
   }, []);
+
+  const categoryEntries = useMemo(
+    () => getSortedProjectDomainCounts(data?.projectsByCategory),
+    [data?.projectsByCategory],
+  );
 
   return (
     <div className="admin-dash-container">
@@ -140,6 +151,21 @@ const AdminDashboard = () => {
                 <span>Pending Tasks: {project.pendingTasksCount} | Overdue: {project.overdueTasksCount} | Overall Progress: {project.overallCompletionPercentage}%</span>
               </div>
             )) : <div className="state">No workflow load data yet.</div>}
+          </section>
+
+          <section className="ad-card" style={{ marginTop: 24 }}>
+            <h3 className="ad-card-title">Project Category Distribution</h3>
+            {categoryEntries.length ? (
+              <div className="category-grid">
+                {categoryEntries.map(([category, count]) => (
+                  <div key={category} className="category-card">
+                    <span>Category</span>
+                    <strong>{count}</strong>
+                    <p>{category}</p>
+                  </div>
+                ))}
+              </div>
+            ) : <div className="state">No category data is available in the current project set yet.</div>}
           </section>
         </>
       ) : null}

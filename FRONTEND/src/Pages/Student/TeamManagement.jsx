@@ -8,6 +8,8 @@ import FeedbackToast from '../../components/FeedbackToast';
 import InviteModal from '../../components/InviteModal';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ClickableUser from '../../components/ClickableUser';
+import StyledSelect from '../../components/StyledSelect';
+import { PROJECT_DOMAIN_OPTIONS, getProjectDomainLabel } from '../../utils/projectDomain';
 import { openTeamsChat } from '../../utils/teamsLink';
 import { normalizeProjectStatus } from '../../utils/projectStatus';
 import { formatMajorLabel, getUserDepartment } from '../../utils/userMeta';
@@ -185,6 +187,9 @@ const styles = `
 .create-team-field { display: grid; gap: 8px; }
 .create-team-field label { display: inline-flex; align-items: center; gap: 8px; color: #475569; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
 .create-team-input, .create-team-number { width: 100%; border: 1px solid #cbd5e1; border-radius: 14px; background: #ffffff; color: #0f172a; padding: 14px 16px; font: inherit; font-size: 14px; outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease; }
+.create-team-field .styled-select-trigger { width: 100%; border: 1px solid #cbd5e1; border-radius: 14px; min-height: 52px; background: #ffffff; color: #0f172a; padding: 14px 16px; font: inherit; font-size: 14px; font-weight: 700; box-shadow: none; }
+.create-team-field .styled-select-trigger:hover:not(:disabled) { border-color: #cbd5e1; background: #ffffff; box-shadow: 0 10px 22px -18px rgba(79, 70, 229, 0.18); }
+.create-team-field .styled-select-trigger:focus-visible, .create-team-field .styled-select-trigger.is-open { border-color: rgba(79, 70, 229, 0.9); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.13); }
 .create-team-input::placeholder, .create-team-number::placeholder { color: #94a3b8; }
 .create-team-input:focus, .create-team-number:focus { border-color: rgba(79, 70, 229, 0.9); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.13); }
 .create-team-input:disabled, .create-team-number:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -267,6 +272,7 @@ const normalizeTeamData = (payload) => {
   return {
     ...rawTeam,
     teamName: rawTeam.teamName ?? rawTeam.name ?? 'My Team',
+    projectDomain: rawTeam.projectDomain ?? rawTeam.projectCategory ?? rawTeam.domain ?? rawTeam.category ?? '',
     createdOn: rawTeam.createdOn ?? rawTeam.createdAt ?? rawTeam.createdDate ?? '',
     teamLeader: rawTeam.teamLeader ?? rawTeam.leaderName ?? rawTeam.leader ?? '',
     maxMembers: TEAM_MAX_MEMBERS,
@@ -320,7 +326,7 @@ const TeamManagement = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-  const [teamForm, setTeamForm] = useState({ name: '' });
+  const [teamForm, setTeamForm] = useState({ name: '', projectDomain: '' });
   const [teamErrors, setTeamErrors] = useState({});
   const [rosterMembers, setRosterMembers] = useState([]);
   const [rosterLoading, setRosterLoading] = useState(false);
@@ -473,6 +479,7 @@ const TeamManagement = () => {
   useEffect(() => {
     if (!isCreateTeamOpen) {
       setTeamErrors({});
+      setTeamForm({ name: '', projectDomain: '' });
     }
   }, [isCreateTeamOpen]);
   const hasTeam = teamData !== null;
@@ -505,6 +512,7 @@ const TeamManagement = () => {
   const leaderLeaveMessage = 'Team leader cannot leave or disband the team while other members are still in the team.';
   const projectExists = Boolean(projectInfo);
   const projectArchived = normalizeProjectStatus(projectInfo?.status) === 'ARCHIVED';
+  const projectDomainLabel = getProjectDomainLabel(projectInfo?.projectDomain || teamData?.projectDomain, 'Not specified');
 
   const fetchPendingInvitations = useCallback(async () => {
     if (!hasAuthenticatedUser || !isLeader) {
@@ -551,12 +559,16 @@ const TeamManagement = () => {
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     const trimmedName = String(teamForm.name || '').trim();
+    const trimmedProjectDomain = String(teamForm.projectDomain || '').trim();
     const nextErrors = {};
 
     if (!trimmedName) {
       nextErrors.name = 'Team name is required.';
     } else if (trimmedName.length < 3) {
       nextErrors.name = 'Team name must be at least 3 characters.';
+    }
+    if (!trimmedProjectDomain) {
+      nextErrors.projectDomain = 'Project category is required.';
     }
 
     if (Object.keys(nextErrors).length) {
@@ -569,6 +581,7 @@ const TeamManagement = () => {
     try {
       const response = await apiClient.post('/v1/student/teams', {
         name: trimmedName,
+        projectDomain: trimmedProjectDomain,
       });
 
       if (refreshUserProfile) {
@@ -585,7 +598,7 @@ const TeamManagement = () => {
       setError('');
       setIsCreateTeamOpen(false);
       navigate('/my-team', { replace: true });
-      setTeamForm({ name: '' });
+      setTeamForm({ name: '', projectDomain: '' });
       showToast('Team created successfully.');
     } catch (requestError) {
       const message = getFriendlyError(requestError, 'Could not create team. Please try again.');
@@ -593,6 +606,7 @@ const TeamManagement = () => {
       setError(message);
       setTeamErrors({
         name: fieldErrors.name || fieldErrors.teamName || '',
+        projectDomain: fieldErrors.projectDomain || fieldErrors.projectCategory || fieldErrors.domain || fieldErrors.category || '',
       });
       showToast(message, 'error', 4000);
     } finally {
@@ -919,6 +933,10 @@ const TeamManagement = () => {
               <span className="label">Members Count:</span>
               <span className="value">{membersCount} / {teamMaxSize}</span>
             </div>
+            <div className="team-meta-row">
+              <span className="label">Project Category:</span>
+              <span className="value">{projectDomainLabel}</span>
+            </div>
           </div>
 
           <div className="team-stats-card" onClick={() => navigate('/student/tasks')} title="View All Project Tasks">
@@ -1135,9 +1153,32 @@ const TeamManagement = () => {
                   {teamErrors.name ? <p className="create-team-error">{teamErrors.name}</p> : <p className="create-team-help">Teams can have up to {TEAM_MAX_MEMBERS} members.</p>}
                 </div>
 
+                <div className="create-team-field">
+                  <label htmlFor="team-project-domain">Project Category</label>
+                  <StyledSelect
+                    id="team-project-domain"
+                    value={teamForm.projectDomain}
+                    onChange={(event) => {
+                      setTeamForm({ ...teamForm, projectDomain: event.target.value });
+                      if (teamErrors.projectDomain) {
+                        setTeamErrors((current) => ({ ...current, projectDomain: '' }));
+                      }
+                    }}
+                    disabled={isCreatingTeam}
+                    aria-invalid={Boolean(teamErrors.projectDomain)}
+                    className={teamErrors.projectDomain ? 'create-team-select-error' : ''}
+                  >
+                    <option value="">Select a project category</option>
+                    {PROJECT_DOMAIN_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </StyledSelect>
+                  {teamErrors.projectDomain ? <p className="create-team-error">{teamErrors.projectDomain}</p> : <p className="create-team-help">This category will be attached to your team and project statistics.</p>}
+                </div>
+
                 <div className="create-team-actions">
                   <button type="button" className="create-team-btn secondary" onClick={() => setIsCreateTeamOpen(false)} disabled={isCreatingTeam}>Cancel</button>
-                  <button type="submit" className="create-team-btn primary" disabled={isCreatingTeam || teamForm.name.trim().length < 3}>
+                  <button type="submit" className="create-team-btn primary" disabled={isCreatingTeam || teamForm.name.trim().length < 3 || !teamForm.projectDomain}>
                     {isCreatingTeam ? 'Creating...' : 'Create Team'}
                   </button>
                 </div>
