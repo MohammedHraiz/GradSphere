@@ -41,6 +41,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -99,7 +100,7 @@ public class DashboardService {
         if (membershipOptional.isEmpty()) {
             return new StudentDashboardDTO(
                     user.getName(), user.getRole().name(), false, null, null, false, 0,
-                    pendingReceived, 0, null, null, null, null, null, null, null,
+                    pendingReceived, 0, null, null, null, null, null, null, null, null,
                     null, null, false, false, 0, 0, emptyTaskSummary(), emptyMilestoneSummary(), List.of()
             );
         }
@@ -114,7 +115,7 @@ public class DashboardService {
         if (project == null) {
             return new StudentDashboardDTO(
                     user.getName(), user.getRole().name(), true, team.getId(), team.getName(), isLeader,
-                    teamMemberCount, pendingReceived, pendingSent, null, null, null, null, null,
+                    teamMemberCount, pendingReceived, pendingSent, null, null, normalizeProjectDomain(team.getProjectDomain()), null, null, null,
                     null, null, null, null, false, false, 0, 0, emptyTaskSummary(), emptyMilestoneSummary(), List.of()
             );
         }
@@ -146,6 +147,7 @@ public class DashboardService {
                 pendingSent,
                 project.getId(),
                 project.getTitle(),
+                normalizeProjectDomain(resolveProjectDomain(project)),
                 project.getStatus(),
                 project.getSupervisor() != null ? project.getSupervisor().getName() : null,
                 project.getSupervisor() != null ? project.getSupervisor().getEmail() : null,
@@ -189,6 +191,7 @@ public class DashboardService {
                 projectRepository.findTop5BySupervisorIdOrderByCreatedAtDesc(user.getId()).stream().map(this::toProjectItem).toList(),
                 latestFeedback,
                 statusMapForProjects(assignedProjects),
+                categoryMapForProjects(assignedProjects),
                 snapshot.taskSummary(),
                 snapshot.milestoneSummary(),
                 snapshot.overdueTasks().stream().limit(5).toList(),
@@ -221,6 +224,7 @@ public class DashboardService {
                 projectRepository.findTop5ByOrderByCreatedAtDesc().stream().map(this::toProjectItem).toList(),
                 supervisorRequestRepository.findTop5ByOrderByCreatedAtDesc().stream().map(this::toRequestItem).toList(),
                 statusMapForProjects(allProjects),
+                categoryMapForProjects(allProjects),
                 snapshot.taskSummary(),
                 snapshot.milestoneSummary(),
                 snapshot.taskSummary().overdue(),
@@ -250,6 +254,7 @@ public class DashboardService {
                 supervisorRequestRepository.countByStatus(SupervisorRequestStatus.PENDING),
                 projectRepository.countBySupervisorIsNull(),
                 statusMapForProjects(allProjects),
+                categoryMapForProjects(allProjects),
                 usersByRole,
                 userRepository.findTop5ByOrderByCreatedAtDesc().stream().map(this::toUserItem).toList(),
                 projectRepository.findTop5ByOrderByCreatedAtDesc().stream().map(this::toProjectItem).toList(),
@@ -402,6 +407,13 @@ public class DashboardService {
         return counts;
     }
 
+    private Map<String, Long> categoryMapForProjects(List<Project> projects) {
+        return projects.stream()
+                .map(this::resolveProjectDomain)
+                .map(this::normalizeProjectDomain)
+                .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()));
+    }
+
     private Optional<ProjectComment> latestComment(Project project) {
         if (project.getComments() == null) {
             return Optional.empty();
@@ -415,12 +427,30 @@ public class DashboardService {
         return new DashboardProjectItemDTO(
                 project.getId(),
                 project.getTitle(),
+                normalizeProjectDomain(resolveProjectDomain(project)),
                 project.getTeam() != null ? project.getTeam().getName() : null,
                 project.getStatus(),
                 project.getSupervisor() != null ? project.getSupervisor().getName() : null,
                 project.getCreatedAt(),
                 project.getUpdatedAt()
         );
+    }
+
+    private String resolveProjectDomain(Project project) {
+        if (project == null) {
+            return null;
+        }
+        if (StringUtils.hasText(project.getProjectDomain())) {
+            return project.getProjectDomain().trim();
+        }
+        if (project.getTeam() != null && StringUtils.hasText(project.getTeam().getProjectDomain())) {
+            return project.getTeam().getProjectDomain().trim();
+        }
+        return null;
+    }
+
+    private String normalizeProjectDomain(String value) {
+        return StringUtils.hasText(value) ? value.trim() : "Uncategorized";
     }
 
     private DashboardSupervisorRequestItemDTO toRequestItem(SupervisorRequest request) {

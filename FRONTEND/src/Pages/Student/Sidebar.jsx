@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import bauLogo from '../../assets/bau_logo.png';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -19,7 +20,9 @@ const Sidebar = () => {
   return (
     <aside className="student-sidebar">
       <div className="st-logo-container">
-        <div className="st-logo-icon">GP</div>
+        <div className="st-logo-icon">
+          <img src={bauLogo} alt="BAU logo" className="st-logo-image" />
+        </div>
         <div className="st-logo-text">
           <h2>STUDENT</h2>
           <p>DASHBOARD</p>

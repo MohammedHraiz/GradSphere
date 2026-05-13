@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStudentDashboard } from '../../api/dashboardService';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { getProjectDomainLabel } from '../../utils/projectDomain';
 import { formatProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
@@ -96,6 +97,7 @@ const Overview = () => {
               ) : (
                 <>
                   <div className="info-row"><span>Project</span><span>{data.projectTitle}</span></div>
+                  <div className="info-row"><span>Category</span><span>{getProjectDomainLabel(data.projectDomain, 'Not specified')}</span></div>
                   <div className="info-row"><span>Status</span><span><ProjectStatusBadge status={data.projectStatus} /></span></div>
                   <div className="info-row"><span>Supervisor</span><span>{data.assignedSupervisorName || 'Not assigned yet'}</span></div>
                   <div className="info-row"><span>Latest Feedback</span><span>{data.latestFeedback || 'No feedback yet'}</span></div>

@@ -16,6 +16,7 @@ public record AdminDashboardDTO(
         long pendingSupervisorRequestsCount,
         long unassignedProjectsCount,
         Map<String, Long> projectsByStatus,
+        Map<String, Long> projectsByCategory,
         Map<String, Long> usersByRole,
         List<DashboardUserItemDTO> recentUsers,
         List<DashboardProjectItemDTO> recentProjects,

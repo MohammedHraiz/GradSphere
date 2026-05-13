@@ -19,6 +19,7 @@ public record StudentDashboardDTO(
         long pendingSentInvitationsCount,
         UUID projectId,
         String projectTitle,
+        String projectDomain,
         ProjectStatus projectStatus,
         String assignedSupervisorName,
         String assignedSupervisorEmail,

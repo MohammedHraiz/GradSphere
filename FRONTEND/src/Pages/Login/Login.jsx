@@ -38,109 +38,6 @@ const AuthBrand = () => (
   </div>
 );
 
-const GraduateAvatar = ({ isCoveringEyes }) => (
-  <div className="graduate-avatar-wrap" aria-hidden="true" data-state={isCoveringEyes ? 'covered' : 'idle'}>
-    <svg className={`graduate-avatar ${isCoveringEyes ? 'is-covering' : ''}`} viewBox="0 0 260 230" role="img">
-      <defs>
-        <linearGradient id="graduateFace" x1="78" y1="48" x2="169" y2="166" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#f7bd8d" />
-          <stop offset=".52" stopColor="#ee996e" />
-          <stop offset="1" stopColor="#c66f50" />
-        </linearGradient>
-        <linearGradient id="graduateGown" x1="49" y1="150" x2="208" y2="226" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#18376e" />
-          <stop offset=".54" stopColor="#0b234d" />
-          <stop offset="1" stopColor="#06162f" />
-        </linearGradient>
-        <linearGradient id="graduateCap" x1="69" y1="20" x2="192" y2="116" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#213d78" />
-          <stop offset="1" stopColor="#081a3f" />
-        </linearGradient>
-        <linearGradient id="graduateHair" x1="71" y1="43" x2="176" y2="152" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5b3022" />
-          <stop offset="1" stopColor="#2b1713" />
-        </linearGradient>
-      </defs>
-
-      <ellipse cx="130" cy="219" rx="76" ry="9" fill="#020c16" opacity=".42" />
-
-      <g className="avatar-body">
-        <path d="M48 222c8-40 39-62 82-62s74 22 82 62H48Z" fill="url(#graduateGown)" />
-        <path d="M76 181 130 222l54-41" fill="none" stroke="#f6c14f" strokeWidth="8" strokeLinecap="round" />
-        <path d="M106 164h48l-24 43-24-43Z" fill="#f8fbff" />
-        <path d="M118 187h24l-12 25-12-25Z" fill="#16b884" />
-        <path d="M55 221c9-31 31-50 62-57" fill="none" stroke="#284b8e" strokeWidth="3" opacity=".35" />
-        <path d="M205 221c-9-31-31-50-62-57" fill="none" stroke="#020b18" strokeWidth="3" opacity=".28" />
-      </g>
-
-      <g className="avatar-neck">
-        <path d="M105 148h50v28c-11 14-39 14-50 0v-28Z" fill="#d77b59" />
-        <path d="M106 151c10 8 21 12 34 12 6 0 11-.8 15-2v10c-14 9-35 9-49-1v-19Z" fill="#b75d45" opacity=".34" />
-      </g>
-
-      <g className="avatar-head">
-        <path d="M71 103c-7 0-13 7-12 17 1 10 9 19 19 17l-1-32c-2-1-4-2-6-2Z" fill="#e88c66" />
-        <path d="M189 103c7 0 13 7 12 17-1 10-9 19-19 17l1-32c2-1 4-2 6-2Z" fill="#d67958" />
-        <path d="M68 94c0-38 24-63 62-63s62 25 62 63c0 43-27 71-62 71S68 137 68 94Z" fill="url(#graduateFace)" />
-        <path d="M77 79c5-31 28-50 58-50 28 0 48 17 56 44-17-12-36-16-55-10-17 5-37 1-54-14-6 8-8 18-5 30Z" fill="url(#graduateHair)" />
-        <path d="M78 82c7 8 17 12 30 11 10-1 18-7 25-19 11 13 28 16 50 10-3-32-25-53-56-53-31 0-52 19-58 51h9Z" fill="url(#graduateHair)" />
-        <path d="M88 48c-19 19-21 45-14 64" fill="none" stroke="#2b1713" strokeWidth="9" strokeLinecap="round" opacity=".3" />
-        <path d="M171 51c15 18 18 42 13 64" fill="none" stroke="#2b1713" strokeWidth="9" strokeLinecap="round" opacity=".28" />
-        <path d="M93 136c9 19 64 20 74-1-7 19-20 30-37 30s-30-11-37-29Z" fill="#4a241b" opacity=".28" />
-        <path d="M100 128c7 8 17 12 30 12s23-4 30-12" fill="none" stroke="#6e3528" strokeWidth="5" strokeLinecap="round" opacity=".22" />
-        <path d="M129 100c-3 9-7 16-10 23 5 4 14 4 19 0" fill="none" stroke="#a85743" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity=".72" />
-
-        <g className="avatar-eyes">
-          <path d="M92 88c9-6 20-6 29 0" fill="none" stroke="#3b211c" strokeWidth="5" strokeLinecap="round" />
-          <path d="M140 88c9-6 20-6 29 0" fill="none" stroke="#3b211c" strokeWidth="5" strokeLinecap="round" />
-          <circle cx="106" cy="102" r="4.4" fill="#152033" />
-          <circle cx="154" cy="102" r="4.4" fill="#152033" />
-          <circle cx="108" cy="100" r="1.5" fill="#f8fbff" opacity=".8" />
-          <circle cx="156" cy="100" r="1.5" fill="#f8fbff" opacity=".8" />
-        </g>
-
-        <g className="avatar-mouth">
-          <path className="avatar-smile" d="M109 132c12 12 30 12 42 0" fill="none" stroke="#7f3f2d" strokeWidth="4.5" strokeLinecap="round" />
-          <path className="avatar-smirk" d="M112 136c12 7 25 7 36-1" fill="none" stroke="#7f3f2d" strokeWidth="4.5" strokeLinecap="round" />
-        </g>
-
-        <g className="avatar-stubble" opacity=".38">
-          <circle cx="107" cy="124" r="1.3" fill="#583023" />
-          <circle cx="119" cy="130" r="1.2" fill="#583023" />
-          <circle cx="132" cy="132" r="1.2" fill="#583023" />
-          <circle cx="145" cy="129" r="1.2" fill="#583023" />
-          <circle cx="155" cy="122" r="1.2" fill="#583023" />
-        </g>
-      </g>
-
-      <g className="avatar-cap">
-        <path className="avatar-cap-top" d="M51 58 130 19l79 39-79 39-79-39Z" fill="url(#graduateCap)" stroke="#31518f" strokeWidth="3" strokeLinejoin="round" />
-        <path className="avatar-cap-band" d="M84 65c27 16 65 16 92 0v28c-26 18-66 18-92 0V65Z" fill="#18376e" stroke="#0c1e46" strokeWidth="2" />
-        <path d="M184 61c15 9 24 22 26 41" fill="none" stroke="#f6c14f" strokeWidth="4" strokeLinecap="round" />
-        <circle cx="211" cy="105" r="6" fill="#f6c14f" />
-        <path d="M204 110h14l-3 29h-8l-3-29Z" fill="#f2b93f" />
-      </g>
-
-      <g className="avatar-left-arm avatar-arm">
-        <path d="M66 212c-5-34 5-70 29-88 8-6 19 2 15 12-9 21-13 46-11 76H66Z" fill="url(#graduateGown)" />
-        <path className="avatar-left-sleeve-shadow" d="M91 141c-13 22-17 48-15 71" fill="none" stroke="#020b18" strokeWidth="5" opacity=".18" />
-        <path d="M91 128c2-13 8-24 19-31 7-4 15 1 14 9-1 17-7 35-18 54-9-4-14-15-15-32Z" fill="url(#graduateFace)" />
-        <path className="avatar-left-hand" d="M107 91c8-7 19-8 28-2 4 3 4 8 0 10-6 3-17 1-24 5-7 4-11-7-4-13Z" fill="#f0a278" />
-        <path d="M112 102c8-1 15 0 21 3" fill="none" stroke="#ba654a" strokeWidth="3" strokeLinecap="round" opacity=".55" />
-      </g>
-
-      <g className="avatar-right-arm avatar-arm">
-        <path d="M194 212c5-34-5-70-29-88-8-6-19 2-15 12 9 21 13 46 11 76h33Z" fill="url(#graduateGown)" />
-        <path className="avatar-right-sleeve-shadow" d="M169 141c13 22 17 48 15 71" fill="none" stroke="#020b18" strokeWidth="5" opacity=".18" />
-        <path d="M169 128c-2-13-8-24-19-31-7-4-15 1-14 9 1 17 7 35 18 54 9-4 14-15 15-32Z" fill="url(#graduateFace)" />
-        <path className="avatar-right-hand" d="M153 91c-8-7-19-8-28-2-4 3-4 8 0 10 6 3 17 1 24 5 7 4 11-7 4-13Z" fill="#f0a278" />
-        <path d="M148 102c-8-1-15 0-21 3" fill="none" stroke="#ba654a" strokeWidth="3" strokeLinecap="round" opacity=".55" />
-      </g>
-
-    </svg>
-  </div>
-);
-
 const PasswordRule = ({ label, valid, warning }) => (
   <li className={`password-rule ${valid ? 'is-valid' : ''} ${warning ? 'is-warning' : ''}`}>
     <span className="password-rule-mark" aria-hidden="true">{valid ? '\u2713' : ''}</span>
@@ -185,6 +82,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isPasswordFieldFocused, setIsPasswordFieldFocused] = useState(false);
 
   const [otpEmail, setOtpEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -507,8 +405,6 @@ const Login = () => {
       <main className={`auth-shell ${isOtpMode ? 'auth-shell-otp' : ''}`}>
         {!isOtpMode && !isForgotMode && (
           <section className="auth-card login-auth-card" aria-labelledby="login-title">
-            <GraduateAvatar isCoveringEyes={showPass} />
-
             <div className="auth-card-heading">
               <p className="auth-kicker">Secure university access</p>
               <h1 id="login-title" className="panel-title">Welcome Back</h1>
@@ -534,19 +430,7 @@ const Login = () => {
               </div>
 
               <div className="input-box">
-                <div className="label-row">
-                  <label className="input-label" htmlFor="login-password">Password</label>
-                  <button
-                    type="button"
-                    className="login-helper-link compact-link"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsForgotMode(true);
-                    }}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                <label className="input-label" htmlFor="login-password">Password</label>
                 <div className="password-input-wrap">
                   <input
                     id="login-password"
@@ -575,6 +459,16 @@ const Login = () => {
                     {showPass ? <EyeIcon /> : <EyeOffIcon />}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="login-helper-link"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsForgotMode(true);
+                  }}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               {loginError && (

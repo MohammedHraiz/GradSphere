@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import bauLogo from '../../assets/bau_logo.png';
 
 const adminSidebarStyles = `
   .admin-sidebar { width: 260px; height: 100vh; background: #020617; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
   .admin-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
-  .admin-logo-icon { font-size: 20px; background: linear-gradient(135deg, #06b6d4, #3b82f6); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); color: white; }
+  .admin-logo-icon { background: linear-gradient(135deg, #ecfeff, #ffffff); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 20px rgba(15, 23, 42, 0.32); overflow: hidden; padding: 6px; }
+  .admin-logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .admin-logo-text h2 { font-size: 16px; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; }
   .admin-logo-text p { font-size: 10px; font-weight: 700; margin: 0; color: #06b6d4; text-transform: uppercase; letter-spacing: 2px; }
   .admin-nav-menu { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; overflow-y: auto; }
@@ -34,12 +36,11 @@ const AdminSidebar = () => {
     { section: 'Data & Projects' },
     { name: 'All Projects', path: '/admin/projects', icon: '📑' },
     { name: 'Supervisor Requests', path: '/admin/supervisor-requests', icon: '📨' },
-    { name: 'Meetings', path: '/admin/meetings', icon: '📅' },
+    { name: 'Meetings', path: '/admin/meetings', icon: '🗓️' },
     { name: 'Project Approvals', path: '/admin/forms', icon: '📝' },
-     { name: 'Import / Export Data', path: '/admin/import', icon: '🗄️' },
+    { name: 'Import / Export Data', path: '/admin/import', icon: '🗄️' },
     { section: 'AI Engine' },
     { name: 'AI Allocation Engine', path: '/admin/ai-recommendations', icon: '🧠' },
-    
   ];
 
   return (
@@ -47,9 +48,7 @@ const AdminSidebar = () => {
       <style>{adminSidebarStyles}</style>
 
       <div className="admin-logo-container">
-        <div className="admin-logo-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2" /><rect x="2" y="14" width="20" height="8" rx="2" ry="2" /><line x1="6" y1="6" x2="6.01" y2="6" /><line x1="6" y1="18" x2="6.01" y2="18" /></svg>
-        </div>
+        <div className="admin-logo-icon"><img src={bauLogo} alt="BAU logo" /></div>
         <div className="admin-logo-text">
           <h2>SYSTEM ADMIN</h2>
           <p>Root Access</p>
