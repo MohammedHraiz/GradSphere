@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { getMyProject } from '../../api/projectService';
 import { getProjectTasks, updateTaskStatus } from '../../api/workflowService';
@@ -52,8 +52,6 @@ const styles = `
 .empty-state-icon { width: 44px; height: 44px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: #eef2ff; font-size: 22px; }
 .empty-state-card h3 { margin: 0; color: #0f172a; font-size: 20px; font-weight: 900; }
 .empty-state-card p { margin: 0; line-height: 1.6; font-weight: 600; }
-.empty-state-card button { width: fit-content; margin-top: 8px; border: none; border-radius: 12px; background: #4f46e5; color: white; padding: 11px 15px; font: inherit; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; }
-.empty-state-card button:hover { transform: translateY(-1px); box-shadow: 0 18px 30px -22px rgba(79,70,229,0.7); }
 .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.2s; padding: 24px; }
 .task-modal-card { background: white; width: 100%; max-width: 920px; max-height: 90vh; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
 .modal-shell { display: flex; flex-direction: column; min-height: 0; height: 100%; }
@@ -103,7 +101,6 @@ const truncateText = (value, fallback = 'No description was added for this task 
 
 const Tasks = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -259,10 +256,9 @@ const Tasks = () => {
       {error ? <div className="page-state error">{error}</div> : null}
       {!isLoading && !error && !project ? (
         <div className="empty-state-card">
-          <span className="empty-state-icon">Team</span>
-          <h3>You are not part of a team yet.</h3>
-          <p>Join or create a team before tasks can be assigned.</p>
-          <button type="button" onClick={() => navigate('/student/my-team')}>Go to My Team</button>
+          <span className="empty-state-icon">T</span>
+          <h3>No team tasks available yet.</h3>
+          <p>Tasks will appear here once your team or supervisor creates project tasks.</p>
         </div>
       ) : null}
 
@@ -308,7 +304,7 @@ const Tasks = () => {
           </table>
           {!filteredTasks.length ? (
             <div className="page-state" style={{ margin: 20 }}>
-              {tasks.length ? 'No team tasks match the current filters.' : 'No tasks are assigned to your team yet.'}
+              {tasks.length ? 'No team tasks match the current filters.' : 'No team tasks available yet.'}
             </div>
           ) : null}
         </div>

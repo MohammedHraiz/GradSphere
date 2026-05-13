@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearAllNotifications, clearReadNotifications, getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../../api/notificationService';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import { resolveNotificationLink } from '../../utils/appLinks';
 import { useAuth } from '../../auth/AuthContext';
@@ -16,7 +17,7 @@ const styles = `
   .notifications-btn { border: none; border-radius: 14px; padding: 12px 16px; font-weight: 800; cursor: pointer; background: linear-gradient(135deg, #4f46e5, #2563eb); color: white; box-shadow: 0 16px 30px -22px rgba(79,70,229,.8); }
   .notifications-btn.secondary { background: #eef2ff; color: #312e81; box-shadow: none; }
   .notifications-btn.danger { background: #fff1f2; color: #be123c; box-shadow: none; }
-  .notifications-list { overflow: hidden; }
+  .notifications-list { overflow: hidden; overflow: clip; overscroll-behavior: auto; }
   .notification-row { padding: 20px 22px; display: flex; gap: 16px; align-items: flex-start; border-top: 1px solid rgba(226,232,240,0.9); }
   .notification-row:first-child { border-top: none; }
   .notification-row.unread { background: linear-gradient(90deg, rgba(238,242,255,0.75), rgba(255,255,255,0.95)); }
@@ -46,6 +47,7 @@ const NotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyAction, setBusyAction] = useState('');
+  const [confirmAction, setConfirmAction] = useState('');
   const [toast, setToast] = useState(null);
 
   const loadNotifications = async () => {
@@ -81,6 +83,30 @@ const NotificationsPage = () => {
     }
   };
 
+  const handleMarkRead = async (event, notification) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (notification.read) {
+      return;
+    }
+
+    const optimisticReadAt = notification.readAt || new Date().toISOString();
+
+    setNotifications((current) => current.map((item) => (
+      item.id === notification.id ? { ...item, read: true, readAt: item.readAt || optimisticReadAt } : item
+    )));
+
+    try {
+      await markNotificationAsRead(notification.id);
+    } catch (err) {
+      setNotifications((current) => current.map((item) => (
+        item.id === notification.id ? notification : item
+      )));
+      setToast({ message: err?.message || 'Unable to mark notification as read.', type: 'error' });
+    }
+  };
+
   const handleMarkAll = async () => {
     setBusyAction('markAll');
     try {
@@ -95,7 +121,6 @@ const NotificationsPage = () => {
   };
 
   const handleClearRead = async () => {
-    if (!window.confirm('Clear all read notifications from your list?')) return;
     setBusyAction('clearRead');
     try {
       await clearReadNotifications();
@@ -104,12 +129,12 @@ const NotificationsPage = () => {
     } catch (err) {
       setToast({ message: err?.message || 'Unable to clear read notifications.', type: 'error' });
     } finally {
+      setConfirmAction('');
       setBusyAction('');
     }
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm('Clear all notifications for your account? This cannot be undone.')) return;
     setBusyAction('clearAll');
     try {
       await clearAllNotifications();
@@ -118,9 +143,22 @@ const NotificationsPage = () => {
     } catch (err) {
       setToast({ message: err?.message || 'Unable to clear notifications.', type: 'error' });
     } finally {
+      setConfirmAction('');
       setBusyAction('');
     }
   };
+
+  const confirmConfig = confirmAction === 'clearRead'
+    ? {
+        title: 'Clear Read Notifications',
+        message: 'Clear all read notifications from your list?',
+        confirmLabel: 'Clear Read',
+      }
+    : {
+        title: 'Clear All Notifications',
+        message: 'Clear all notifications from your account? This action cannot be undone.',
+        confirmLabel: 'Clear All',
+      };
 
   return (
     <div className="notifications-shell">
@@ -136,10 +174,10 @@ const NotificationsPage = () => {
           <button type="button" className="notifications-btn" onClick={handleMarkAll} disabled={busyAction || !notifications.some((item) => !item.read)}>
             {busyAction === 'markAll' ? 'Marking...' : 'Mark All Read'}
           </button>
-          <button type="button" className="notifications-btn secondary" onClick={handleClearRead} disabled={busyAction || !notifications.some((item) => item.read)}>
+          <button type="button" className="notifications-btn secondary" onClick={() => setConfirmAction('clearRead')} disabled={busyAction || !notifications.some((item) => item.read)}>
             {busyAction === 'clearRead' ? 'Clearing...' : 'Clear Read'}
           </button>
-          <button type="button" className="notifications-btn danger" onClick={handleClearAll} disabled={busyAction || notifications.length === 0}>
+          <button type="button" className="notifications-btn danger" onClick={() => setConfirmAction('clearAll')} disabled={busyAction || notifications.length === 0}>
             {busyAction === 'clearAll' ? 'Clearing...' : 'Clear All'}
           </button>
         </div>
@@ -181,7 +219,7 @@ const NotificationsPage = () => {
             </div>
             <div className="notification-actions">
               {!notification.read ? (
-                <button type="button" className="notification-btn" onClick={() => openNotification(notification)}>
+                <button type="button" className="notification-btn" onClick={(event) => handleMarkRead(event, notification)}>
                   Mark Read
                 </button>
               ) : null}
@@ -194,6 +232,23 @@ const NotificationsPage = () => {
           </article>
         ))}
       </section>
+
+      <ConfirmDialog
+        open={Boolean(confirmAction)}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        confirmLabel={confirmConfig.confirmLabel}
+        cancelLabel="Cancel"
+        tone="danger"
+        isLoading={busyAction === confirmAction}
+        loadingLabel="Clearing..."
+        onCancel={() => {
+          if (!busyAction) {
+            setConfirmAction('');
+          }
+        }}
+        onConfirm={confirmAction === 'clearRead' ? handleClearRead : handleClearAll}
+      />
 
       <FeedbackToast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </div>
