@@ -1,247 +1,178 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../auth/AuthContext';
-import { apiClient } from '../../api/apiClient';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../../api/apiClient';
+import { useAuth } from '../../auth/AuthContext';
+import bauLogo from '../../assets/bau_logo.png';
+import './Login.css';
 
-/**
- * 💡 Premium Master Master Master - Cyber Login
- * Features: 
- * - Relative Eye-tracking Mascot (Follows cursor relative to its own position)
- * - Mascot dynamically attached to the Login Panel (Moves with the card)
- * - Blindfold interaction (Covers eyes when password is shown)
- * - Standard Eye / Eye-slash toggle
- * - Layered Glassmorphism Panels
- * - Perfect Center Alignment
- */
-
-const loginStyles = `
-  .login-page-container {
-    width: 100vw;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: #020617;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    position: relative;
-    overflow-x: hidden;
-    color: white;
-  }
-
-  /* --- Ambient Background --- */
-  .bg-glow { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%); border-radius: 50%; filter: blur(60px); z-index: 0; animation: pulseGlow 8s infinite alternate; }
-  .glow-top { top: -200px; right: -100px; background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%); }
-  .glow-bottom { bottom: -200px; left: -100px; background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%); animation-delay: -4s; }
-
-  @keyframes pulseGlow {
-    0% { transform: scale(1); opacity: 0.8; }
-    100% { transform: scale(1.1); opacity: 1; }
-  }
-
-  /* --- Mascot Container --- */
-  .mascot-container {
-    position: absolute;
-    top: -110px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 150px;
-    height: 150px;
-    z-index: 30;
-    display: flex;
-    justify-content: center;
-  }
-
-  /* --- Layered Cards Logic --- */
-  .cards-stack {
-    position: relative;
-    width: 420px;
-    height: 520px;
-    z-index: 10;
-    margin-top: 80px; /* Space for the attached mascot */
-  }
-
-  .panel {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 32px;
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  }
-
-  .panel-front { transform: translate(0, 0) scale(1); z-index: 20; opacity: 1; pointer-events: auto; }
-  .panel-back-right { transform: translate(40px, 15px) scale(0.92); z-index: 5; opacity: 0.4; pointer-events: none; cursor: pointer; }
-  .panel-back-left { transform: translate(-40px, 15px) scale(0.92); z-index: 5; opacity: 0.4; pointer-events: none; cursor: pointer; }
-
-  .panel-back-right:hover, .panel-back-left:hover { opacity: 0.7; transform: translate(calc(var(--translate-x) * 1.1), 10px) scale(0.94); }
-
-  /* --- Form Styling --- */
-  .panel-title { font-size: 28px; font-weight: 900; margin: 10px 0 5px 0; text-align: center; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .panel-subtitle { font-size: 14px; color: #64748b; text-align: center; margin-bottom: 35px; font-weight: 500; }
-
-  .input-box { margin-bottom: 25px; position: relative; text-align: left; }
-  .input-label { display: block; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-left: 5px;}
-  .input-field { width: 100%; padding: 15px 18px; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; color: white; font-size: 14px; font-weight: 600; outline: none; transition: 0.3s; box-sizing: border-box; font-family: inherit;}
-  .input-field:focus { border-color: #06b6d4; background: rgba(30, 41, 59, 0.9); box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15); }
-  .input-field::placeholder { color: #475569; }
-
-  /* Standard Eye Icon Button */
-  .pass-toggle { position: absolute; right: 15px; top: 36px; background: none; border: none; color: #64748b; cursor: pointer; transition: 0.2s; z-index: 10; padding: 5px; display: flex; align-items: center; justify-content: center;}
-  .pass-toggle:hover { color: #06b6d4; }
-  .login-inline-action { margin: -12px 0 16px; text-align: left; }
-  .login-post-submit-action { margin-top: 20px; text-align: center; }
-  .login-post-submit-copy { color: #64748b; font-size: 13px; font-weight: 600; }
-  .login-helper-link {
-    border: none;
-    padding: 0;
-    background: transparent;
-    color: #06b6d4;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: color 0.2s ease, transform 0.2s ease;
-  }
-  .login-helper-link:hover { color: #67e8f9; }
-  .login-helper-link:focus-visible {
-    outline: none;
-    color: #67e8f9;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
-
-  .btn-submit { width: 100%; padding: 16px; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 10px 20px -5px rgba(6, 182, 212, 0.4); display: flex; align-items: center; justify-content: center;}
-  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(6, 182, 212, 0.6); }
-  .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-
-  /* --- Dev Quick Access --- */
-  .dev-pills { margin-top: 50px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; z-index: 20; max-width: 600px; padding: 0 20px; }
-  .pill { padding: 8px 18px; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 50px; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .pill:hover { background: rgba(255, 255, 255, 0.1); color: white; border-color: #06b6d4; transform: translateY(-2px); }
-  .pill span { font-size: 16px; }
-
-  .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-`;
-
-// ==========================================
-// 🤖 Smart Cyber Mascot (Relative Eye Tracking & Blindfold)
-// ==========================================
-const SmartMascot = ({ isHiding, mousePos }) => {
-  // 💡 التتبع صار مبني على الزاوية والمسافة بالنسبة لمركز الروبوت نفسه
-  const pupilOffsetX = isHiding ? 0 : mousePos.x * 8;
-  const pupilOffsetY = isHiding ? 0 : mousePos.y * 8;
-
-  return (
-    <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ overflow: 'visible', pointerEvents: 'none' }}>
-      {/* Antenna */}
-      <line x1="100" y1="30" x2="100" y2="50" stroke="#334155" strokeWidth="4" />
-      <circle cx="100" cy="30" r="6" fill={isHiding ? "#ef4444" : "#06b6d4"}>
-        <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
-      </circle>
-
-      {/* Main Head Base */}
-      <rect x="40" y="50" width="120" height="100" rx="24" fill="#1e293b" stroke="#334155" strokeWidth="3" />
-      
-      {/* Face Screen */}
-      <rect x="50" y="60" width="100" height="80" rx="16" fill="#0f172a" />
-
-      {/* Eye Sockets */}
-      <circle cx="75" cy="95" r="14" fill="#020617" />
-      <circle cx="125" cy="95" r="14" fill="#020617" />
-
-      {/* Pupils (Tracking Mouse Globally but mapped relative to Mascot) */}
-      <circle 
-        cx={75 + pupilOffsetX} 
-        cy={95 + pupilOffsetY} 
-        r="5" 
-        fill="#06b6d4" 
-        style={{ transition: 'cx 0.1s ease-out, cy 0.1s ease-out' }}
-      />
-      <circle 
-        cx={125 + pupilOffsetX} 
-        cy={95 + pupilOffsetY} 
-        r="5" 
-        fill="#06b6d4" 
-        style={{ transition: 'cx 0.1s ease-out, cy 0.1s ease-out' }}
-      />
-
-      {/* Robot Mouth / Status Line */}
-      <rect 
-        x="90" y="120" width="20" height="3" rx="1.5" 
-        fill={isHiding ? "#ef4444" : "#06b6d4"} 
-        opacity="0.6" 
-      />
-
-      {/* Hands / Blindfold Interaction */}
-      <g>
-        {/* Left Hand */}
-        <rect
-          x={isHiding ? 50 : 20}
-          y={isHiding ? 80 : 130}
-          width="45"
-          height="30"
-          rx="15"
-          fill="#3b82f6"
-          stroke="#2563eb"
-          strokeWidth="2"
-          style={{ 
-            transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            transformOrigin: '50px 130px',
-            transform: isHiding ? 'rotate(15deg)' : 'rotate(-20deg)'
-          }}
-        />
-        
-        {/* Right Hand */}
-        <rect
-          x={isHiding ? 105 : 135}
-          y={isHiding ? 80 : 130}
-          width="45"
-          height="30"
-          rx="15"
-          fill="#3b82f6"
-          stroke="#2563eb"
-          strokeWidth="2"
-          style={{ 
-            transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            transformOrigin: '150px 130px',
-            transform: isHiding ? 'rotate(-15deg)' : 'rotate(20deg)'
-          }}
-        />
-      </g>
-    </svg>
-  );
-};
-
-// ==========================================
-// 👁️ Standard Icons
-// ==========================================
 const EyeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
 const EyeOffIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-    <line x1="1" y1="1" x2="23" y2="23"></line>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
 
-// ==========================================
-// 🚀 Main Login Component
-// ==========================================
+const ArrowLeftIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="m12 19-7-7 7-7" />
+    <path d="M19 12H5" />
+  </svg>
+);
+
+const AuthBrand = () => (
+  <div className="auth-brand" aria-label="AL-BALQA APPLIED UNIVERSITY Graduation Project Portal">
+    <span className="auth-brand-logo">
+      <img src={bauLogo} alt="" />
+    </span>
+    <span className="auth-brand-copy">
+      <span>AL-BALQA APPLIED UNIVERSITY</span>
+      <strong>Graduation Project Portal</strong>
+    </span>
+  </div>
+);
+
+const GraduateAvatar = ({ isCoveringEyes }) => (
+  <div className="graduate-avatar-wrap" aria-hidden="true" data-state={isCoveringEyes ? 'covered' : 'idle'}>
+    <svg className={`graduate-avatar ${isCoveringEyes ? 'is-covering' : ''}`} viewBox="0 0 260 230" role="img">
+      <defs>
+        <linearGradient id="graduateFace" x1="78" y1="48" x2="169" y2="166" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#f7bd8d" />
+          <stop offset=".52" stopColor="#ee996e" />
+          <stop offset="1" stopColor="#c66f50" />
+        </linearGradient>
+        <linearGradient id="graduateGown" x1="49" y1="150" x2="208" y2="226" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#18376e" />
+          <stop offset=".54" stopColor="#0b234d" />
+          <stop offset="1" stopColor="#06162f" />
+        </linearGradient>
+        <linearGradient id="graduateCap" x1="69" y1="20" x2="192" y2="116" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#213d78" />
+          <stop offset="1" stopColor="#081a3f" />
+        </linearGradient>
+        <linearGradient id="graduateHair" x1="71" y1="43" x2="176" y2="152" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#5b3022" />
+          <stop offset="1" stopColor="#2b1713" />
+        </linearGradient>
+      </defs>
+
+      <ellipse cx="130" cy="219" rx="76" ry="9" fill="#020c16" opacity=".42" />
+
+      <g className="avatar-body">
+        <path d="M48 222c8-40 39-62 82-62s74 22 82 62H48Z" fill="url(#graduateGown)" />
+        <path d="M76 181 130 222l54-41" fill="none" stroke="#f6c14f" strokeWidth="8" strokeLinecap="round" />
+        <path d="M106 164h48l-24 43-24-43Z" fill="#f8fbff" />
+        <path d="M118 187h24l-12 25-12-25Z" fill="#16b884" />
+        <path d="M55 221c9-31 31-50 62-57" fill="none" stroke="#284b8e" strokeWidth="3" opacity=".35" />
+        <path d="M205 221c-9-31-31-50-62-57" fill="none" stroke="#020b18" strokeWidth="3" opacity=".28" />
+      </g>
+
+      <g className="avatar-neck">
+        <path d="M105 148h50v28c-11 14-39 14-50 0v-28Z" fill="#d77b59" />
+        <path d="M106 151c10 8 21 12 34 12 6 0 11-.8 15-2v10c-14 9-35 9-49-1v-19Z" fill="#b75d45" opacity=".34" />
+      </g>
+
+      <g className="avatar-head">
+        <path d="M71 103c-7 0-13 7-12 17 1 10 9 19 19 17l-1-32c-2-1-4-2-6-2Z" fill="#e88c66" />
+        <path d="M189 103c7 0 13 7 12 17-1 10-9 19-19 17l1-32c2-1 4-2 6-2Z" fill="#d67958" />
+        <path d="M68 94c0-38 24-63 62-63s62 25 62 63c0 43-27 71-62 71S68 137 68 94Z" fill="url(#graduateFace)" />
+        <path d="M77 79c5-31 28-50 58-50 28 0 48 17 56 44-17-12-36-16-55-10-17 5-37 1-54-14-6 8-8 18-5 30Z" fill="url(#graduateHair)" />
+        <path d="M78 82c7 8 17 12 30 11 10-1 18-7 25-19 11 13 28 16 50 10-3-32-25-53-56-53-31 0-52 19-58 51h9Z" fill="url(#graduateHair)" />
+        <path d="M88 48c-19 19-21 45-14 64" fill="none" stroke="#2b1713" strokeWidth="9" strokeLinecap="round" opacity=".3" />
+        <path d="M171 51c15 18 18 42 13 64" fill="none" stroke="#2b1713" strokeWidth="9" strokeLinecap="round" opacity=".28" />
+        <path d="M93 136c9 19 64 20 74-1-7 19-20 30-37 30s-30-11-37-29Z" fill="#4a241b" opacity=".28" />
+        <path d="M100 128c7 8 17 12 30 12s23-4 30-12" fill="none" stroke="#6e3528" strokeWidth="5" strokeLinecap="round" opacity=".22" />
+        <path d="M129 100c-3 9-7 16-10 23 5 4 14 4 19 0" fill="none" stroke="#a85743" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" opacity=".72" />
+
+        <g className="avatar-eyes">
+          <path d="M92 88c9-6 20-6 29 0" fill="none" stroke="#3b211c" strokeWidth="5" strokeLinecap="round" />
+          <path d="M140 88c9-6 20-6 29 0" fill="none" stroke="#3b211c" strokeWidth="5" strokeLinecap="round" />
+          <circle cx="106" cy="102" r="4.4" fill="#152033" />
+          <circle cx="154" cy="102" r="4.4" fill="#152033" />
+          <circle cx="108" cy="100" r="1.5" fill="#f8fbff" opacity=".8" />
+          <circle cx="156" cy="100" r="1.5" fill="#f8fbff" opacity=".8" />
+        </g>
+
+        <g className="avatar-mouth">
+          <path className="avatar-smile" d="M109 132c12 12 30 12 42 0" fill="none" stroke="#7f3f2d" strokeWidth="4.5" strokeLinecap="round" />
+          <path className="avatar-smirk" d="M112 136c12 7 25 7 36-1" fill="none" stroke="#7f3f2d" strokeWidth="4.5" strokeLinecap="round" />
+        </g>
+
+        <g className="avatar-stubble" opacity=".38">
+          <circle cx="107" cy="124" r="1.3" fill="#583023" />
+          <circle cx="119" cy="130" r="1.2" fill="#583023" />
+          <circle cx="132" cy="132" r="1.2" fill="#583023" />
+          <circle cx="145" cy="129" r="1.2" fill="#583023" />
+          <circle cx="155" cy="122" r="1.2" fill="#583023" />
+        </g>
+      </g>
+
+      <g className="avatar-cap">
+        <path className="avatar-cap-top" d="M51 58 130 19l79 39-79 39-79-39Z" fill="url(#graduateCap)" stroke="#31518f" strokeWidth="3" strokeLinejoin="round" />
+        <path className="avatar-cap-band" d="M84 65c27 16 65 16 92 0v28c-26 18-66 18-92 0V65Z" fill="#18376e" stroke="#0c1e46" strokeWidth="2" />
+        <path d="M184 61c15 9 24 22 26 41" fill="none" stroke="#f6c14f" strokeWidth="4" strokeLinecap="round" />
+        <circle cx="211" cy="105" r="6" fill="#f6c14f" />
+        <path d="M204 110h14l-3 29h-8l-3-29Z" fill="#f2b93f" />
+      </g>
+
+      <g className="avatar-left-arm avatar-arm">
+        <path d="M66 212c-5-34 5-70 29-88 8-6 19 2 15 12-9 21-13 46-11 76H66Z" fill="url(#graduateGown)" />
+        <path className="avatar-left-sleeve-shadow" d="M91 141c-13 22-17 48-15 71" fill="none" stroke="#020b18" strokeWidth="5" opacity=".18" />
+        <path d="M91 128c2-13 8-24 19-31 7-4 15 1 14 9-1 17-7 35-18 54-9-4-14-15-15-32Z" fill="url(#graduateFace)" />
+        <path className="avatar-left-hand" d="M107 91c8-7 19-8 28-2 4 3 4 8 0 10-6 3-17 1-24 5-7 4-11-7-4-13Z" fill="#f0a278" />
+        <path d="M112 102c8-1 15 0 21 3" fill="none" stroke="#ba654a" strokeWidth="3" strokeLinecap="round" opacity=".55" />
+      </g>
+
+      <g className="avatar-right-arm avatar-arm">
+        <path d="M194 212c5-34-5-70-29-88-8-6-19 2-15 12 9 21 13 46 11 76h33Z" fill="url(#graduateGown)" />
+        <path className="avatar-right-sleeve-shadow" d="M169 141c13 22 17 48 15 71" fill="none" stroke="#020b18" strokeWidth="5" opacity=".18" />
+        <path d="M169 128c-2-13-8-24-19-31-7-4-15 1-14 9 1 17 7 35 18 54 9-4 14-15 15-32Z" fill="url(#graduateFace)" />
+        <path className="avatar-right-hand" d="M153 91c-8-7-19-8-28-2-4 3-4 8 0 10 6 3 17 1 24 5 7 4 11-7 4-13Z" fill="#f0a278" />
+        <path d="M148 102c-8-1-15 0-21 3" fill="none" stroke="#ba654a" strokeWidth="3" strokeLinecap="round" opacity=".55" />
+      </g>
+
+    </svg>
+  </div>
+);
+
+const PasswordRule = ({ label, valid, warning }) => (
+  <li className={`password-rule ${valid ? 'is-valid' : ''} ${warning ? 'is-warning' : ''}`}>
+    <span className="password-rule-mark" aria-hidden="true">{valid ? '\u2713' : ''}</span>
+    <span>{label}</span>
+  </li>
+);
+
+const SHOW_DEV_ACCESS = false;
+
+const getReadableOtpSuccess = (message) => {
+  const fallback = 'A verification code has been sent to your email.';
+  const rawMessage = String(message || '').trim();
+
+  if (!rawMessage || rawMessage === 'OTP_SENT_SUCCESSFULLY') {
+    return fallback;
+  }
+
+  if (/^[A-Z0-9_]+$/.test(rawMessage)) {
+    return rawMessage
+      .toLowerCase()
+      .split('_')
+      .map((part, index) => (index === 0 ? part.charAt(0).toUpperCase() + part.slice(1) : part))
+      .join(' ');
+  }
+
+  return rawMessage;
+};
+
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [isForgotMode, setIsForgotMode] = useState(false);
   const [isOtpMode, setIsOtpMode] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -250,25 +181,22 @@ const Login = () => {
   const [otpSuccess, setOtpSuccess] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
-  
-  // Mouse tracking state for the Mascot
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
-  
-  // OTP flow states
+
   const [otpEmail, setOtpEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otpStep, setOtpStep] = useState(1); // 1: request OTP, 2: verify and set password
+  const [otpStep, setOtpStep] = useState(1);
   const [showOtpPass, setShowOtpPass] = useState(false);
   
   // Ref لمعرفة مكان الروبوت على الشاشة بدقة
   const mascotRef = useRef(null);
 
-  const { login, refreshUserProfile } = useAuth();
+  const { login } = useAuth();
 
   const loginAsRole = async (role) => {
     const demoCredentials = {
@@ -312,36 +240,6 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
-  // 💡 السحر الفعلي: تتبع الماوس بناءً على موقع الروبوت نفسه
-  useEffect(() => {
-    const handleGlobalMouseMove = (e) => {
-      if (!mascotRef.current) return;
-      
-      const rect = mascotRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-
-      const deltaX = e.clientX - centerX;
-      const deltaY = e.clientY - centerY;
-
-      // حساب المسافة عشان الحركة تكون طبيعية ومش مبالغ فيها
-      const maxDist = Math.max(window.innerWidth, window.innerHeight) / 2;
-      const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), maxDist);
-      const ratio = distance / maxDist;
-
-      // حساب الزاوية اللي بتوجه الماوس
-      const angle = Math.atan2(deltaY, deltaX);
-
-      setMousePos({ 
-        x: Math.cos(angle) * ratio, 
-        y: Math.sin(angle) * ratio 
-      });
-    };
-
-    window.addEventListener('mousemove', handleGlobalMouseMove);
-    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
-  }, []);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -431,7 +329,6 @@ const Login = () => {
     }, 1500);
   };
 
-  // OTP FLOW HANDLERS
   const handleRequestOtp = async (e) => {
     e.preventDefault();
     setOtpError('');
@@ -447,7 +344,7 @@ const Login = () => {
     try {
       const { data: payload } = await apiClient.post('/v1/auth/request-otp', { email: otpEmail.trim() });
 
-      setOtpSuccess(payload.message || 'OTP sent successfully. Please check your email.');
+      setOtpSuccess(getReadableOtpSuccess(payload?.message));
       setOtpStep(2);
     } catch (err) {
       setOtpError(err?.message || 'Could not connect to the server. Please try again.');
@@ -471,13 +368,13 @@ const Login = () => {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setOtpError('Passwords do not match.');
+    if (!isPasswordValid) {
+      setOtpError('Password must satisfy all password rules.');
       return;
     }
 
-    if (newPassword.length < 8) {
-      setOtpError('Password must be at least 8 characters.');
+    if (!doPasswordsMatch) {
+      setOtpError('Passwords do not match.');
       return;
     }
 
@@ -490,8 +387,7 @@ const Login = () => {
         password: newPassword,
       });
 
-      // Success: show modal and start countdown
-      setOtpSuccess('Password has been set successfully!');
+      setOtpSuccess('Password has been set successfully.');
       setShowSuccessModal(true);
       setRedirectCountdown(3);
     } catch (err) {
@@ -516,9 +412,8 @@ const Login = () => {
     }
   };
 
-  // Auto-redirect after successful password setup
   useEffect(() => {
-    if (!showSuccessModal) return;
+    if (!showSuccessModal) return undefined;
 
     const interval = setInterval(() => {
       setRedirectCountdown((prev) => prev - 1);
@@ -534,6 +429,7 @@ const Login = () => {
       setNewPassword('');
       setConfirmPassword('');
       setShowOtpPass(false);
+      setShowConfirmPass(false);
       setOtpError('');
       setOtpSuccess('');
     }, 3000);
@@ -555,342 +451,351 @@ const Login = () => {
     setNewPassword('');
     setConfirmPassword('');
     setShowOtpPass(false);
+    setShowConfirmPass(false);
     setShowSuccessModal(false);
     setOtpEmail('');
   };
 
+  const openOtpMode = (e) => {
+    e.stopPropagation();
+    setOtpError('');
+    setOtpSuccess('');
+    setOtpStep(1);
+    setIsForgotMode(false);
+    setIsOtpMode(true);
+  };
+
+  const handleOtpChange = (e) => {
+    setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+    if (otpError) setOtpError('');
+  };
+
   return (
     <div className="login-page-container">
-      <style>{loginStyles}</style>
+      <div className="auth-bg-glow auth-bg-glow-top" />
+      <div className="auth-bg-glow auth-bg-glow-bottom" />
+      <AuthBrand />
 
-      {/* Ambient Glow */}
-      <div className="bg-glow glow-top"></div>
-      <div className="bg-glow glow-bottom"></div>
+      <main className={`auth-shell ${isOtpMode ? 'auth-shell-otp' : ''}`}>
+        {!isOtpMode && !isForgotMode && (
+          <section className="auth-card login-auth-card" aria-labelledby="login-title">
+            <GraduateAvatar isCoveringEyes={showPass} />
 
-      <div className="cards-stack">
-        {!isOtpMode && (
-        <>
-        {/* ================================================= */}
-        {/* PANEL 1: LOGIN (Front by default)                 */}
-        {/* ================================================= */}
-        <div 
-          className={`panel ${!isForgotMode ? 'panel-front' : 'panel-back-right'}`} 
-          style={{ '--translate-x': '40px' }}
-          onClick={() => isForgotMode && setIsForgotMode(false)}
-        >
-          {/* 🤖 The Smart Mascot - Tracks globally, hides eyes on showPass */}
-          <div className="mascot-container" ref={mascotRef}>
-            <SmartMascot isHiding={showPass} mousePos={mousePos} />
-          </div>
-
-          <h1 className="panel-title" style={{marginTop: '30px'}}>Welcome Back</h1>
-          <p className="panel-subtitle">Sign in to your secure workspace</p>
-
-          <form onSubmit={handleLoginSubmit} style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-            <div className="input-box">
-              <label className="input-label">University Email</label>
-              <input 
-                type="email" className="input-field" placeholder="id@student.bau.edu" 
-                value={email} onChange={(e) => { setEmail(e.target.value); if (loginError) setLoginError(''); }} required 
-                disabled={isForgotMode || isOtpMode} tabIndex={!isForgotMode && !isOtpMode ? 1 : -1}
-              />
+            <div className="auth-card-heading">
+              <p className="auth-kicker">Secure university access</p>
+              <h1 id="login-title" className="panel-title">Welcome Back</h1>
+              <p className="panel-subtitle">Sign in to continue to your graduation project workspace.</p>
             </div>
 
-            <div className="input-box">
-              <label className="input-label">Password</label>
-              <input 
-                type={showPass ? "text" : "password"} className="input-field" placeholder="••••••••" 
-                value={password} onChange={(e) => { setPassword(e.target.value); if (loginError) setLoginError(''); }} required 
-                disabled={isForgotMode || isOtpMode} tabIndex={!isForgotMode && !isOtpMode ? 2 : -1}
-              />
-              <button 
-                type="button" className="pass-toggle" 
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPass(!showPass); }}
-                tabIndex={!isForgotMode && !isOtpMode ? 3 : -1}
-                title={showPass ? "Hide Password" : "Show Password"}
-              >
-                {showPass ? <EyeIcon /> : <EyeOffIcon />}
-              </button>
-            </div>
-
-            <div className="login-inline-action">
-              <button
-                type="button"
-                className="login-helper-link"
-                onClick={(e) => { e.stopPropagation(); setIsForgotMode(true); }}
-                tabIndex={!isForgotMode && !isOtpMode ? 4 : -1}
-              >
-                Forgot Security Key?
-              </button>
-            </div>
-
-            {loginError && (
-              <div style={{
-                marginTop: '-6px',
-                marginBottom: '12px',
-                borderRadius: '12px',
-                border: '1px solid rgba(248, 113, 113, 0.35)',
-                background: 'rgba(239, 68, 68, 0.12)',
-                color: '#fca5a5',
-                padding: '10px 12px',
-                fontSize: '13px',
-                fontWeight: 700,
-              }}>
-                {loginError}
+            <form onSubmit={handleLoginSubmit} className="auth-form">
+              <div className="input-box">
+                <label className="input-label" htmlFor="login-email">University Email</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  className="input-field"
+                  placeholder="id@student.bau.edu"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (loginError) setLoginError('');
+                  }}
+                  autoComplete="email"
+                  required
+                />
               </div>
-            )}
 
-            <div style={{marginTop: 'auto'}}>
-              <button type="submit" className="btn-submit" disabled={isLoading || isForgotMode || isOtpMode} tabIndex={!isForgotMode && !isOtpMode ? 5 : -1}>
-                {isLoading ? <div className="spinner"></div> : "ACCESS PORTAL"}
+              <div className="input-box">
+                <div className="label-row">
+                  <label className="input-label" htmlFor="login-password">Password</label>
+                  <button
+                    type="button"
+                    className="login-helper-link compact-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsForgotMode(true);
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="password-input-wrap">
+                  <input
+                    id="login-password"
+                    type={showPass ? 'text' : 'password'}
+                    className="input-field"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (loginError) setLoginError('');
+                    }}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="pass-toggle"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowPass(!showPass);
+                    }}
+                    aria-label={showPass ? 'Hide password' : 'Show password'}
+                    title={showPass ? 'Hide password' : 'Show password'}
+                  >
+                    {showPass ? <EyeIcon /> : <EyeOffIcon />}
+                  </button>
+                </div>
+              </div>
+
+              {loginError && (
+                <div className="auth-alert auth-alert-error" role="alert">
+                  {loginError}
+                </div>
+              )}
+
+              <button type="submit" className="btn-submit" disabled={isLoading}>
+                {isLoading ? <span className="spinner" aria-label="Signing in" /> : 'Access Portal'}
               </button>
 
               <div className="login-post-submit-action">
-                <span className="login-post-submit-copy">First time logging in? </span>
-                <button
-                  type="button"
-                  className="login-helper-link"
-                  onClick={(e) => { e.stopPropagation(); setOtpError(''); setOtpSuccess(''); setOtpStep(1); setIsOtpMode(true); }}
-                  tabIndex={!isForgotMode && !isOtpMode ? 6 : -1}
-                >
+                <span className="login-post-submit-copy">First time logging in?</span>
+                <button type="button" className="login-helper-link" onClick={openOtpMode}>
                   Set Password via OTP
                 </button>
               </div>
-            </div>
-          </form>
-        </div>
-
-        {/* ================================================= */}
-        {/* PANEL 2: FORGOT PASSWORD (Back by default)        */}
-        {/* ================================================= */}
-        <div 
-          className={`panel ${isForgotMode ? 'panel-front' : 'panel-back-left'}`}
-          style={{ '--translate-x': '-40px' }}
-          onClick={() => !isForgotMode && setIsForgotMode(true)}
-        >
-          <h1 className="panel-title" style={{background: 'linear-gradient(to right, #fff, #c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginTop: '30px'}}>Reset Access</h1>
-          <p className="panel-subtitle">We'll send recovery instructions</p>
-
-          <form onSubmit={handleResetSubmit} style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-            <div className="input-box">
-              <label className="input-label">Registered Email</label>
-              <input 
-                type="email" className="input-field" placeholder="Enter your university email" 
-                required disabled={!isForgotMode} tabIndex={isForgotMode && !isOtpMode ? 1 : -1} 
-              />
-            </div>
-
-            <div style={{background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '15px', borderRadius: '12px', margin: 'auto 0'}}>
-               <p style={{margin: 0, fontSize: '12px', color: '#93c5fd', lineHeight: 1.5}}>
-                 If you lost access to your university email, please contact the IT Support Desk directly for manual verification.
-               </p>
-            </div>
-
-            <div style={{marginTop: 'auto'}}>
-              <button type="submit" className="btn-submit" style={{background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', boxShadow: '0 10px 20px -5px rgba(236, 72, 153, 0.4)'}} disabled={isLoading || !isForgotMode} tabIndex={isForgotMode && !isOtpMode ? 2 : -1}>
-                {isLoading ? <div className="spinner"></div> : 'SEND RECOVERY LINK'}
-              </button>
-
-              <div style={{textAlign: 'center', marginTop: '20px'}}>
-                <span 
-                  style={{color: '#c084fc', fontSize: '13px', fontWeight: 700, cursor: 'pointer'}}
-                  onClick={(e) => { e.stopPropagation(); setIsForgotMode(false); }}
-                  tabIndex={isForgotMode && !isOtpMode ? 3 : -1}
-                >
-                  ← Back to Sign In
-                </span>
-              </div>
-            </div>
-          </form>
-        </div>
-        </>
+            </form>
+          </section>
         )}
 
-        {/* ================================================= */}
-        {/* PANEL 3: OTP FLOW                                 */}
-        {/* ================================================= */}
+        {!isOtpMode && isForgotMode && (
+          <section className="auth-card" aria-labelledby="reset-title">
+            <div className="auth-card-heading auth-card-heading-spacious">
+              <p className="auth-kicker">Account recovery</p>
+              <h1 id="reset-title" className="panel-title">Reset Access</h1>
+              <p className="panel-subtitle">We will send recovery instructions to your university email.</p>
+            </div>
+
+            <form onSubmit={handleResetSubmit} className="auth-form">
+              <div className="input-box">
+                <label className="input-label" htmlFor="reset-email">Registered Email</label>
+                <input
+                  id="reset-email"
+                  type="email"
+                  className="input-field"
+                  placeholder="Enter your university email"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="auth-note">
+                If you lost access to your university email, please contact the IT Support Desk directly for manual verification.
+              </div>
+
+              <button type="submit" className="btn-submit" disabled={isLoading}>
+                {isLoading ? <span className="spinner" aria-label="Sending recovery link" /> : 'Send Recovery Link'}
+              </button>
+
+              <button type="button" className="auth-back-link" onClick={(e) => {
+                e.stopPropagation();
+                setIsForgotMode(false);
+              }}>
+                <ArrowLeftIcon />
+                Back to Login
+              </button>
+            </form>
+          </section>
+        )}
+
         {isOtpMode && (
-        <div className="panel panel-front" style={{ '--translate-x': '0px' }}>
-          <h1 className="panel-title" style={{background: 'linear-gradient(to right, #fff, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginTop: '30px'}}>Set Password</h1>
-          <p className="panel-subtitle">{otpStep === 1 ? 'Request OTP to your university email' : 'Verify OTP and set your password'}</p>
-
-          {otpError && (
-            <div className="mb-4 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {otpError}
+          <section className="auth-card otp-auth-card" aria-labelledby="otp-title">
+            <div className="auth-card-heading">
+              <p className="auth-kicker">First-time access</p>
+              <h1 id="otp-title" className="panel-title">Set Password</h1>
+              <p className="panel-subtitle">
+                {otpStep === 1 ? 'Request an OTP to your university email.' : 'Verify your OTP and create a new password.'}
+              </p>
             </div>
-          )}
 
-          {otpSuccess && (
-            <div className="mb-4 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-              {otpSuccess}
-            </div>
-          )}
-
-          {otpStep === 1 ? (
-            // STEP 1: Request OTP
-            <form onSubmit={handleRequestOtp} style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-              <div className="input-box">
-                <label className="input-label">University Email</label>
-                <input 
-                  type="email" className="input-field" placeholder="id@student.bau.edu"
-                  value={otpEmail} onChange={(e) => setOtpEmail(e.target.value)} required 
-                  disabled={isLoading} tabIndex={1}
-                />
+            {otpError && (
+              <div className="auth-alert auth-alert-error" role="alert">
+                {otpError}
               </div>
+            )}
 
-              <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-xs leading-relaxed text-emerald-200" style={{margin: 'auto 0'}}>
-                <p style={{margin: 0, fontSize: '12px', color: '#86efac', lineHeight: 1.5}}>
-                  📧 We'll send a one-time password to your email. Admin has already assigned your role.
-                </p>
+            {otpSuccess && (
+              <div className="auth-alert auth-alert-success" role="status">
+                {otpSuccess}
               </div>
+            )}
 
-              <div style={{marginTop: 'auto'}}>
-                <button type="submit" className="btn-submit" style={{background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 10px 20px -5px rgba(16, 185, 129, 0.4)'}} disabled={isLoading} tabIndex={2}>
-                  {isLoading ? <div className="spinner"></div> : 'SEND OTP'}
-                </button>
-
-                <div style={{textAlign: 'center', marginTop: '20px'}}>
-                  <span 
-                    style={{color: '#34d399', fontSize: '13px', fontWeight: 700, cursor: 'pointer'}}
-                    onClick={goBackToLogin}
-                    tabIndex={3}
-                  >
-                    ← Back to Login
-                  </span>
+            {otpStep === 1 ? (
+              <form onSubmit={handleRequestOtp} className="auth-form">
+                <div className="input-box">
+                  <label className="input-label" htmlFor="otp-email">University Email</label>
+                  <input
+                    id="otp-email"
+                    type="email"
+                    className="input-field"
+                    placeholder="id@student.bau.edu"
+                    value={otpEmail}
+                    onChange={(e) => {
+                      setOtpEmail(e.target.value);
+                      if (otpError) setOtpError('');
+                    }}
+                    autoComplete="email"
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
-              </div>
-            </form>
-          ) : (
-            // STEP 2: Verify OTP and Set Password
-            <form onSubmit={handleVerifyOtpAndSetPassword} style={{flexGrow: 1, display: 'flex', flexDirection: 'column'}}>
-              <div className="input-box">
-                <label className="input-label">One-Time Password</label>
-                <input 
-                  type="text" className="input-field" placeholder="Enter 6-digit OTP" 
-                  value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength="6"
-                  disabled={isLoading} tabIndex={1}
-                />
-              </div>
 
-              <div className="input-box">
-                <label className="input-label">New Password</label>
-                <input 
-                  type={showOtpPass ? "text" : "password"} className="input-field" placeholder="••••••••" 
-                  value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required 
-                  disabled={isLoading} tabIndex={2}
-                />
-                <button 
-                  type="button" className="pass-toggle" 
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowOtpPass(!showOtpPass); }}
-                  tabIndex={3}
-                  title={showOtpPass ? "Hide Password" : "Show Password"}
-                >
-                  {showOtpPass ? <EyeIcon /> : <EyeOffIcon />}
+                <div className="auth-note auth-note-success">
+                  We will send a 6-digit code to your email. Your role must already be assigned by an administrator.
+                </div>
+
+                <button type="submit" className="btn-submit" disabled={isLoading}>
+                  {isLoading ? <span className="spinner" aria-label="Sending OTP" /> : 'Send OTP'}
                 </button>
-              </div>
 
-              <div className="input-box">
-                <label className="input-label">Confirm Password</label>
-                <input 
-                  type={showOtpPass ? "text" : "password"} className="input-field" placeholder="••••••••" 
-                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required 
-                  disabled={isLoading} tabIndex={4}
-                />
-              </div>
+                <button type="button" className="auth-back-link" onClick={goBackToLogin}>
+                  <ArrowLeftIcon />
+                  Back to Login
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyOtpAndSetPassword} className="auth-form">
+                <div className="input-box">
+                  <label className="input-label" htmlFor="otp-code">One-Time Password</label>
+                  <input
+                    id="otp-code"
+                    type="text"
+                    className="input-field otp-field"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={handleOtpChange}
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength="6"
+                    autoComplete="one-time-code"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
 
-              <div style={{fontSize: '11px', color: '#94a3b8', padding: '12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px', marginBottom: '15px', marginTop: 'auto'}}>
-                <p style={{margin: 0}}>✓ Min 8 characters</p>
-                <p style={{margin: '4px 0 0 0'}}>✓ Use uppercase, numbers & symbols</p>
-              </div>
+                <div className="input-box">
+                  <label className="input-label" htmlFor="new-password">New Password</label>
+                  <div className="password-input-wrap">
+                    <input
+                      id="new-password"
+                      type={showOtpPass ? 'text' : 'password'}
+                      className="input-field"
+                      placeholder="Create a strong password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (otpError) setOtpError('');
+                      }}
+                      autoComplete="new-password"
+                      required
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      className="pass-toggle"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowOtpPass(!showOtpPass);
+                      }}
+                      aria-label={showOtpPass ? 'Hide new password' : 'Show new password'}
+                      title={showOtpPass ? 'Hide new password' : 'Show new password'}
+                    >
+                      {showOtpPass ? <EyeIcon /> : <EyeOffIcon />}
+                    </button>
+                  </div>
+                </div>
 
-              <button type="submit" className="btn-submit" style={{background: 'linear-gradient(135deg, #10b981, #34d399)', boxShadow: '0 10px 20px -5px rgba(16, 185, 129, 0.4)'}} disabled={isLoading} tabIndex={5}>
-                {isLoading ? <div className="spinner"></div> : 'VERIFY & SET PASSWORD'}
-              </button>
+                <div className="input-box">
+                  <label className="input-label" htmlFor="confirm-password">Confirm Password</label>
+                  <div className="password-input-wrap">
+                    <input
+                      id="confirm-password"
+                      type={showConfirmPass ? 'text' : 'password'}
+                      className="input-field"
+                      placeholder="Repeat your password"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (otpError) setOtpError('');
+                      }}
+                      autoComplete="new-password"
+                      required
+                      disabled={isLoading}
+                      aria-invalid={confirmPassword.length > 0 && confirmPassword !== newPassword}
+                    />
+                    <button
+                      type="button"
+                      className="pass-toggle"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowConfirmPass(!showConfirmPass);
+                      }}
+                      aria-label={showConfirmPass ? 'Hide confirmed password' : 'Show confirmed password'}
+                      title={showConfirmPass ? 'Hide confirmed password' : 'Show confirmed password'}
+                    >
+                      {showConfirmPass ? <EyeIcon /> : <EyeOffIcon />}
+                    </button>
+                  </div>
+                </div>
 
-              <div style={{textAlign: 'center', marginTop: '20px'}}>
-                <span 
-                  style={{color: '#34d399', fontSize: '13px', fontWeight: 700, cursor: 'pointer'}}
-                  onClick={goBackToLogin}
-                  tabIndex={6}
-                >
-                  ← Back to Login
-                </span>
-              </div>
-            </form>
-          )}
-        </div>
+                <div className="password-rules-panel" aria-label="Password requirements">
+                  <p>Password requirements</p>
+                  <ul>
+                    {passwordRules.map((rule) => (
+                      <PasswordRule key={rule.id} label={rule.label} valid={rule.valid} warning={rule.warning} />
+                    ))}
+                  </ul>
+                </div>
+
+                <button type="submit" className="btn-submit" disabled={isLoading || !canSubmitOtpPassword}>
+                  {isLoading ? <span className="spinner" aria-label="Verifying OTP" /> : 'Verify & Set Password'}
+                </button>
+
+                <button type="button" className="auth-back-link" onClick={goBackToLogin}>
+                  <ArrowLeftIcon />
+                  Back to Login
+                </button>
+              </form>
+            )}
+          </section>
         )}
+      </main>
 
-      </div>
-
-      {/* ================================================= */}
-      {/* SUCCESS MODAL - Shows after password setup        */}
-      {/* ================================================= */}
       {showSuccessModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(2, 6, 23, 0.9)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-        }}>
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
-            borderRadius: '28px',
-            padding: '40px',
-            textAlign: 'center',
-            maxWidth: '400px',
-            backdropFilter: 'blur(24px)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          }}>
-            <div style={{fontSize: '64px', marginBottom: '20px'}}>✅</div>
-            <h2 style={{
-              fontSize: '24px',
-              fontWeight: 900,
-              color: '#10b981',
-              margin: '0 0 10px 0',
-              background: 'linear-gradient(to right, #fff, #34d399)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              Success!
-            </h2>
-            <p style={{
-              fontSize: '14px',
-              color: '#86efac',
-              margin: '0 0 25px 0',
-              lineHeight: '1.6',
-            }}>
-              Your password has been set successfully. You can now sign in with your email and password.
-            </p>
-            <p style={{
-              fontSize: '12px',
-              color: '#64748b',
-              margin: 0,
-            }}>
-              Redirecting to login in <span style={{fontWeight: 800, color: '#34d399'}}>{redirectCountdown}</span> seconds...
+        <div className="success-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="password-success-title">
+          <div className="success-modal-card">
+            <div className="success-modal-icon" aria-hidden="true">✓</div>
+            <h2 id="password-success-title">Password Set</h2>
+            <p>Your password has been set successfully. You can now sign in with your email and password.</p>
+            <p className="success-modal-countdown">
+              Redirecting to login in <strong>{redirectCountdown}</strong> seconds...
             </p>
           </div>
         </div>
       )}
 
-      {/* ================================================= */}
-      {/* DEV QUICK ACCESS (Backend Team Pills)               */}
-      {/* ================================================= */}
-      {false ? <div className="dev-pills">
-        <div style={{width: '100%', fontSize: '10px', color: '#475569', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', margin: '15px 0 5px 0', textAlign: 'center'}}>
-          Developer Fast-Track Access
+      {SHOW_DEV_ACCESS ? (
+        <div className="dev-pills">
+          <div className="dev-pills-label">Developer Fast-Track Access</div>
+          <button className="pill" onClick={() => loginAsRole('admin')} title="Login as Root Admin">Admin</button>
+          <button className="pill" onClick={() => loginAsRole('dean')} title="Login as Dean Office">Dean</button>
+          <button className="pill" onClick={() => loginAsRole('supervisor')} title="Login as Faculty Supervisor">Supervisor</button>
+          <button className="pill" onClick={() => loginAsRole('student')} title="Login as Graduate Student">Student</button>
         </div>
-        <button className="pill" onClick={() => loginAsRole('admin')} title="Login as Root Admin"><span>⚙️</span> Admin</button>
-        <button className="pill" onClick={() => loginAsRole('dean')} title="Login as Dean Office"><span>🎓</span> Dean</button>
-        <button className="pill" onClick={() => loginAsRole('supervisor')} title="Login as Faculty Supervisor"><span>👨‍🏫</span> Supervisor</button>
-        <button className="pill" onClick={() => loginAsRole('student')} title="Login as Graduate Student"><span>💻</span> Student</button>
-      </div> : null}
-
+      ) : null}
     </div>
   );
 };

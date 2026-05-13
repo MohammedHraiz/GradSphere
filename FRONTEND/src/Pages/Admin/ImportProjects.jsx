@@ -1,11 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StyledSelect from '../../components/StyledSelect';
+import StyledFileInput from '../../components/StyledFileInput';
+import FeedbackToast from '../../components/FeedbackToast';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import { DEPARTMENT_OPTIONS, formatDepartmentLabel } from '../../utils/userMeta';
+import { confirmStudentPdfImport, previewStudentPdfImport } from '../../api/userService';
 
 /**
- * 💡 Import / Export Data - System Admin
- * Premium Master Edition - Dark Mode
- * Includes Drag & Drop, Upload Progress Simulation, and PDF Export.
+ * Import / Export Data - System Admin
+ * BAU PDF student import flow with preview + confirm steps.
  */
 
 const importStyles = `
@@ -21,170 +25,250 @@ const importStyles = `
 
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* --- Premium Header --- */
   .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
   .ad-kicker { color: #06b6d4; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
   .ad-kicker::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; box-shadow: 0 0 8px #06b6d4;}
   .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
-  
+
   .ad-header-actions { display: flex; gap: 12px; }
   .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
   .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
 
-  /* --- Stats Pill --- */
-  .ad-stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-  .ad-stat-pill { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
-  .ad-icon-wrapper { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #1e293b; }
-  .icon-cyan { color: #22d3ee; } .icon-emerald { color: #34d399; } .icon-purple { color: #c084fc; }
-  .ad-stat-info h4 { margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 800; }
-  .ad-stat-info p { margin: 5px 0 0 0; font-size: 22px; font-weight: 900; color: #f8fafc; }
+  .ad-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; margin-bottom: 28px; }
+  @media (max-width: 1100px) { .ad-grid { grid-template-columns: 1fr; } }
 
-  /* --- Grid Layout --- */
-  .ad-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; margin-bottom: 30px; }
   .ad-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
-  .ad-card-title { font-size: 16px; font-weight: 900; color: #f8fafc; margin: 0 0 20px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-card-title { font-size: 16px; font-weight: 900; color: #f8fafc; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px;}
 
-  /* --- Drag & Drop Zone --- */
-  .drag-zone { 
-    border: 2px dashed #334155; border-radius: 16px; padding: 40px 20px; text-align: center; 
-    transition: 0.3s; background: #1e293b; cursor: pointer; position: relative; overflow: hidden;
-  }
-  .drag-zone:hover, .drag-zone.active { border-color: #06b6d4; background: rgba(6, 182, 212, 0.05); }
-  .drag-icon { font-size: 40px; margin-bottom: 15px; color: #94a3b8; transition: 0.3s; }
-  .drag-zone:hover .drag-icon, .drag-zone.active .drag-icon { color: #06b6d4; transform: translateY(-5px); }
-  .drag-title { font-size: 16px; font-weight: 800; color: #f8fafc; margin: 0 0 5px 0; }
-  .drag-subtitle { font-size: 13px; color: #64748b; margin: 0; }
-  .hidden-input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-
-  /* --- Form Elements --- */
-  .form-group { margin-bottom: 20px; }
-  .form-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-  .ad-select { width: 100%; padding: 12px 15px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: 0.2s; cursor: pointer; font-family: inherit;}
-  .ad-select:focus { border-color: #06b6d4; box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15); }
+  .ad-helper { margin: 0 0 18px; font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .ad-upload-actions { display: grid; gap: 12px; }
 
   .btn-upload { width: 100%; padding: 14px; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3); }
   .btn-upload:hover { box-shadow: 0 8px 25px rgba(6, 182, 212, 0.5); transform: translateY(-2px); }
   .btn-upload:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
 
-  /* --- Progress Bar --- */
-  .progress-container { margin-top: 20px; background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; }
-  .progress-text { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: #cbd5e1; margin-bottom: 8px; }
-  .progress-track { width: 100%; height: 8px; background: #0f172a; border-radius: 4px; overflow: hidden; }
-  .progress-fill { height: 100%; background: #06b6d4; border-radius: 4px; transition: width 0.3s ease; }
+  .ad-alert { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.28); color: #fecaca; font-size: 12px; font-weight: 700; }
+  .ad-preview-meta { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: #94a3b8; }
 
-  /* --- Export Buttons --- */
-  .export-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; font-weight: 800; color: #f8fafc; }
-  .export-btn:hover { background: #334155; border-color: #06b6d4; transform: translateX(5px); }
+  .ad-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .ad-summary-card { background: #111c33; border: 1px solid #1e293b; border-radius: 18px; padding: 16px; }
+  .ad-summary-card span { display: block; color: #94a3b8; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ad-summary-card strong { display: block; margin-top: 8px; color: #f8fafc; font-size: 24px; font-weight: 900; }
+  .ad-summary-sub { margin-top: 6px; font-size: 11px; color: #64748b; font-weight: 700; }
 
-  /* --- History Table --- */
+  .ad-override { margin-top: 18px; display: grid; gap: 10px; }
+  .ad-override label { color: #94a3b8; font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+  .ad-table-head { padding: 18px 24px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .ad-table-head h3 { margin: 0; font-size: 18px; font-weight: 900; color: #f8fafc; }
+  .ad-table-head p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; font-weight: 700; }
   .ad-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .ad-table th { padding: 15px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
-  .ad-table td { padding: 15px; border-bottom: 1px solid #1e293b; font-size: 13px; font-weight: 600; color: #cbd5e1; }
-  .ad-table tr:hover td { background: #172033; color: white; }
+  .ad-table th { padding: 15px 20px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
+  .ad-table td { padding: 14px 20px; border-bottom: 1px solid #1e293b; font-size: 13px; font-weight: 600; color: #cbd5e1; vertical-align: top; }
+  .ad-table tr:hover td { background: #172033; color: #f8fafc; }
   .ad-table tr:last-child td { border-bottom: none; }
 
-  .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-  .status-success { background: rgba(52, 211, 153, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.2); }
-  .status-fail { background: rgba(244, 63, 94, 0.1); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.2); }
+  .status-pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid transparent; }
+  .status-valid { background: rgba(52, 211, 153, 0.12); color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
+  .status-invalid { background: rgba(248, 113, 113, 0.12); color: #f87171; border-color: rgba(248, 113, 113, 0.3); }
+  .status-duplicate { background: rgba(250, 204, 21, 0.14); color: #facc15; border-color: rgba(250, 204, 21, 0.3); }
+  .status-exists { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
 
-  /* 💡 Print Media Magic */
+  .ad-empty { margin-top: 18px; padding: 18px; border-radius: 18px; border: 1px dashed #1e293b; color: #94a3b8; font-size: 13px; font-weight: 700; }
+
+  .ad-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .ad-result-card { background: #111c33; border: 1px solid #1e293b; border-radius: 18px; padding: 14px; }
+  .ad-result-card span { display: block; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+  .ad-result-card strong { display: block; margin-top: 8px; color: #f8fafc; font-size: 22px; font-weight: 900; }
+  .ad-result-errors { margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; color: #e2e8f0; font-size: 12px; font-weight: 600; }
+
+  .ad-file-input .styled-file-input-shell { background: #0b1121; border-color: #334155; }
+  .ad-file-input .styled-file-input-name { color: #cbd5e1; }
+  .ad-file-input .styled-file-input-name.is-placeholder { color: #64748b; }
+  .ad-file-input .styled-file-input-button { background: #1e293b; border: 1px solid #334155; color: #f8fafc; }
+  .ad-file-input .styled-file-input-shell:hover { border-color: #22d3ee; }
+
+  .ad-select .styled-select-trigger { background: #0b1121; border-color: #334155; color: #f8fafc; }
+  .ad-select .styled-select-trigger:hover { border-color: #22d3ee; }
+
   @media print {
-    .sidebar-wrapper, .top-header, .ad-header-actions, .drag-zone, .btn-upload, .export-btn { display: none !important; }
+    .sidebar-wrapper, .top-header, .ad-header-actions, .btn-upload { display: none !important; }
     .ad-import-container { background: white !important; color: black !important; padding: 0; min-height: auto; }
-    .ad-header-box, .ad-card, .ad-stat-pill { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; color: black !important; break-inside: avoid; }
-    .ad-title, .ad-card-title, .ad-stat-info p, .ad-table td { color: black !important; }
+    .ad-header-box, .ad-card, .ad-table-card { background: white !important; border: 1px solid #ccc !important; box-shadow: none !important; color: black !important; }
+    .ad-title, .ad-card-title, .ad-table td { color: black !important; }
     .ad-table th { background: #f1f5f9 !important; color: black !important; border-bottom: 2px solid #ccc !important;}
-    .ad-kicker::before { box-shadow: none; background: #000; }
     body { background: white !important; -webkit-print-color-adjust: exact; }
   }
 `;
 
+const STATUS_META = {
+  VALID: { label: 'Valid', className: 'status-valid' },
+  INVALID: { label: 'Invalid', className: 'status-invalid' },
+  DUPLICATE_IN_FILE: { label: 'Duplicate', className: 'status-duplicate' },
+  ALREADY_EXISTS: { label: 'Already exists', className: 'status-exists' },
+};
+
 const ImportProjects = () => {
   const navigate = useNavigate();
-  const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [importType, setImportType] = useState('students');
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [departmentOverride, setDepartmentOverride] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const [history, setHistory] = useState([
-    { id: 1, file: 'students_fall_2025.csv', type: 'Students Data', date: 'Oct 15, 2025 09:30 AM', status: 'Success', records: 452 },
-    { id: 2, file: 'faculty_directory.xlsx', type: 'Supervisors Data', date: 'Oct 14, 2025 02:15 PM', status: 'Success', records: 45 },
-    { id: 3, file: 'projects_list_v1.csv', type: 'Projects Data', date: 'Oct 10, 2025 11:00 AM', status: 'Failed', records: 0 },
-  ]);
+  const rows = previewData?.rows ?? [];
 
-  // Drag & Drop Handlers
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
-    else if (e.type === "dragleave") setDragActive(false);
-  };
+  const resolveDepartment = (row) => departmentOverride || row.department || previewData?.detectedDepartment || '';
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+  const effectiveRows = useMemo(() => rows.map((row) => {
+    const department = resolveDepartment(row);
+    const errors = [];
+
+    if (!String(row.name || '').trim()) {
+      errors.push('Name is required.');
     }
-  };
-
-  const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    if (!String(row.universityId || '').trim()) {
+      errors.push('University ID is required.');
     }
+    if (!department) {
+      errors.push('Department is required.');
+    }
+
+    const originalErrors = Array.isArray(row.errors) ? row.errors : [];
+    originalErrors
+      .filter((error) => error !== 'Name is required.' && error !== 'University ID is required.' && error !== 'Department is required.')
+      .forEach((error) => errors.push(error));
+
+    let status = row.status;
+    if (row.status === 'DUPLICATE_IN_FILE' || row.status === 'ALREADY_EXISTS') {
+      status = row.status;
+    } else {
+      status = errors.length ? 'INVALID' : 'VALID';
+    }
+
+    return {
+      ...row,
+      department,
+      status,
+      errors,
+    };
+  }), [departmentOverride, previewData?.detectedDepartment, rows]);
+
+  const summary = useMemo(() => ({
+    total: effectiveRows.length || previewData?.totalRows || 0,
+    valid: effectiveRows.filter((row) => row.status === 'VALID').length,
+    invalid: effectiveRows.filter((row) => row.status === 'INVALID').length,
+    existing: effectiveRows.filter((row) => row.status === 'ALREADY_EXISTS').length,
+    duplicates: effectiveRows.filter((row) => row.status === 'DUPLICATE_IN_FILE').length,
+  }), [effectiveRows, previewData?.totalRows]);
+
+  const needsDepartmentOverride = Boolean(previewData && !previewData.detectedDepartment);
+
+  const eligibleCount = useMemo(() => {
+    if (!effectiveRows.length) return 0;
+    return effectiveRows.filter((row) => row.status === 'VALID').length;
+  }, [effectiveRows]);
+
+  const handleFileChange = (event) => {
+    const nextFile = event.target.files?.[0] ?? null;
+    setSelectedFile(nextFile);
+    setPreviewData(null);
+    setPreviewError('');
+    setResult(null);
+    setDepartmentOverride('');
   };
 
-  // Upload Simulation (No Dead Buttons)
-  const handleUpload = () => {
+  const handlePreview = async () => {
     if (!selectedFile) {
-      alert("Please select a file first.");
+      setPreviewError('Please choose a PDF file to preview.');
       return;
     }
-    setUploading(true);
-    setProgress(0);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          // Add to history
-          setHistory([{
-            id: Date.now(),
-            file: selectedFile.name,
-            type: importType === 'students' ? 'Students Data' : importType === 'supervisors' ? 'Supervisors Data' : 'Projects Data',
-            date: new Date().toLocaleString(),
-            status: 'Success',
-            records: Math.floor(Math.random() * 200) + 10
-          }, ...history]);
-          setSelectedFile(null);
-          setTimeout(() => alert('✅ Data Imported Successfully! Database has been updated.'), 100);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+
+    setPreviewLoading(true);
+    setPreviewError('');
+    setResult(null);
+
+    try {
+      const response = await previewStudentPdfImport(selectedFile);
+      setPreviewData(response);
+      setToast({ message: 'Preview ready. Review the rows before confirming.' });
+    } catch (error) {
+      console.error('Preview import failed', error);
+      setPreviewError(error?.message || 'Unable to preview the PDF.');
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
-  const handleBackupExport = (type) => {
-    alert(`⬇️ Generating Backup: ${type}...\nThe download will start automatically.`);
+  const handleConfirm = async () => {
+    if (!previewData) {
+      return;
+    }
+
+    setConfirmOpen(false);
+    setConfirmLoading(true);
+    try {
+      const payload = {
+        rows: effectiveRows.map((row) => ({
+          rowNumber: row.rowNumber,
+          name: row.name,
+          universityId: row.universityId,
+          department: row.department,
+          role: row.role,
+        })),
+        departmentOverride: departmentOverride || null,
+        skipInvalid: true,
+      };
+
+      const response = await confirmStudentPdfImport(payload);
+      setResult(response);
+
+      if (response?.createdCount > 0) {
+        setToast({ message: `Imported ${response.createdCount} students.`, type: 'success' });
+      } else {
+        setToast({ message: 'No new accounts were created.', type: 'warning' });
+      }
+    } catch (error) {
+      console.error('Confirm import failed', error);
+      setToast({ message: error?.message || 'Import failed. Please try again.', type: 'error' });
+    } finally {
+      setConfirmLoading(false);
+    }
   };
+
+  const detectedDepartmentLabel = previewData?.detectedDepartmentLabel
+    || formatDepartmentLabel(previewData?.detectedDepartment, 'Not detected');
+
+  const renderDepartment = (row) => formatDepartmentLabel(row.department, 'Not detected');
 
   return (
     <div className="ad-import-container">
       <style>{importStyles}</style>
+      <FeedbackToast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
 
-      {/* Header */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Confirm student import"
+        message={`This will create ${eligibleCount} new student accounts from the previewed PDF.`}
+        confirmLabel="Import students"
+        loadingLabel="Importing..."
+        isLoading={confirmLoading}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
       <div className="ad-header-box">
         <div>
           <p className="ad-kicker">Database Management</p>
-          <h1 className="ad-title">Import & Export Data 🗄️</h1>
+          <h1 className="ad-title">Import & Export Data</h1>
         </div>
         <div className="ad-header-actions">
-          <button className="btn-ad-outline" onClick={() => navigate('/admin/dashboard')}>← Back</button>
+          <button className="btn-ad-outline" onClick={() => navigate('/admin/dashboard')}>Back</button>
           <button className="btn-ad-outline" onClick={() => window.print()}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Print Log
@@ -192,145 +276,166 @@ const ImportProjects = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="ad-stats-bar">
-        <div className="ad-stat-pill">
-          <div className="ad-icon-wrapper icon-cyan">📁</div>
-          <div className="ad-stat-info"><h4>Total DB Size</h4><p>84.2 GB</p></div>
-        </div>
-        <div className="ad-stat-pill">
-          <div className="ad-icon-wrapper icon-emerald">✅</div>
-          <div className="ad-stat-info"><h4>Successful Imports</h4><p>{history.filter(h => h.status === 'Success').length}</p></div>
-        </div>
-        <div className="ad-stat-pill">
-          <div className="ad-icon-wrapper icon-purple">🔄</div>
-          <div className="ad-stat-info"><h4>Last Backup</h4><p>2 Hrs Ago</p></div>
-        </div>
-      </div>
-
       <div className="ad-grid">
-        
-        {/* Left Column: Import Zone */}
         <div className="ad-card">
-          <h3 className="ad-card-title">📥 Bulk Data Import</h3>
-          
-          <div className="form-group">
-            <label className="form-label">Select Data Type to Import</label>
-            <StyledSelect className="ad-select" value={importType} onChange={(e) => setImportType(e.target.value)} disabled={uploading}>
-              <option value="students">Students Registry (CSV/Excel)</option>
-              <option value="supervisors">Supervisors Directory (CSV/Excel)</option>
-              <option value="projects">Previous Projects Archive (CSV)</option>
+          <h3 className="ad-card-title">Import Students from BAU PDF</h3>
+          <p className="ad-helper">
+            Upload a BAU course PDF. The system will extract student names and IDs, generate emails,
+            and let you review before creating accounts. Only text-based PDFs are supported.
+          </p>
+
+          <div className="ad-upload-actions">
+            <StyledFileInput
+              className="ad-file-input"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              disabled={previewLoading || confirmLoading}
+              placeholder="Select a BAU course PDF"
+              buttonLabel="Choose PDF"
+            />
+
+            <button
+              type="button"
+              className="btn-upload"
+              onClick={handlePreview}
+              disabled={!selectedFile || previewLoading || confirmLoading}
+            >
+              {previewLoading ? 'Extracting Students...' : 'Preview Students'}
+            </button>
+          </div>
+
+          {previewError ? <div className="ad-alert">{previewError}</div> : null}
+
+          <div className="ad-preview-meta">
+            <span>Detected Department: {detectedDepartmentLabel}</span>
+            <span>Eligible rows: {eligibleCount}</span>
+          </div>
+        </div>
+
+        <div className="ad-card">
+          <h3 className="ad-card-title">Preview Summary</h3>
+          <div className="ad-summary-grid">
+            <div className="ad-summary-card">
+              <span>Total Rows</span>
+              <strong>{summary.total}</strong>
+              <div className="ad-summary-sub">Duplicates: {summary.duplicates}</div>
+            </div>
+            <div className="ad-summary-card">
+              <span>Valid Rows</span>
+              <strong>{summary.valid}</strong>
+              <div className="ad-summary-sub">Eligible after override: {eligibleCount}</div>
+            </div>
+            <div className="ad-summary-card">
+              <span>Already Exists</span>
+              <strong>{summary.existing}</strong>
+            </div>
+            <div className="ad-summary-card">
+              <span>Invalid Rows</span>
+              <strong>{summary.invalid}</strong>
+            </div>
+          </div>
+
+          <div className="ad-override">
+            <label htmlFor="department-override">Department Override (Optional)</label>
+            <StyledSelect
+              id="department-override"
+              className="ad-select"
+              value={departmentOverride}
+              onChange={(event) => setDepartmentOverride(event.target.value)}
+              disabled={!previewData || previewLoading || confirmLoading}
+            >
+              <option value="">{previewData?.detectedDepartment ? 'Use detected department' : 'Select department'}</option>
+              {DEPARTMENT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </StyledSelect>
           </div>
 
-          <div 
-            className={`drag-zone ${dragActive ? 'active' : ''}`} 
-            onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
+          <button
+            type="button"
+            className="btn-upload"
+            style={{ marginTop: '18px' }}
+            onClick={() => setConfirmOpen(true)}
+            disabled={!previewData || eligibleCount === 0 || (needsDepartmentOverride && !departmentOverride) || confirmLoading}
           >
-            <input type="file" className="hidden-input" accept=".csv, .xlsx, .xls" onChange={handleFileSelect} disabled={uploading} />
-            <div className="drag-icon">📁</div>
-            {selectedFile ? (
-              <>
-                <h4 className="drag-title" style={{color: '#06b6d4'}}>{selectedFile.name}</h4>
-                <p className="drag-subtitle">Ready to upload ({(selectedFile.size / 1024).toFixed(1)} KB)</p>
-              </>
-            ) : (
-              <>
-                <h4 className="drag-title">Drag & Drop your file here</h4>
-                <p className="drag-subtitle">or click to browse from your computer</p>
-                <p className="drag-subtitle" style={{marginTop:'10px', fontSize:'11px', opacity:0.6}}>Supported files: .CSV, .XLSX (Max 50MB)</p>
-              </>
-            )}
-          </div>
-
-          {uploading && (
-            <div className="progress-container">
-              <div className="progress-text">
-                <span>Validating & Uploading...</span>
-                <span style={{color: '#06b6d4'}}>{progress}%</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{width: `${progress}%`}}></div>
-              </div>
-            </div>
-          )}
-
-          <button 
-            className="btn-upload" 
-            style={{marginTop: '20px'}} 
-            onClick={handleUpload}
-            disabled={!selectedFile || uploading}
-          >
-            {uploading ? 'Processing Data...' : 'Begin Secure Import'}
+            {confirmLoading ? 'Importing...' : 'Confirm Import'}
           </button>
         </div>
-
-        {/* Right Column: Export & Backups */}
-        <div className="ad-card">
-          <h3 className="ad-card-title">📤 System Backups & Exports</h3>
-          
-          <div style={{marginBottom: '20px'}}>
-            <p style={{fontSize: '13px', color: '#94a3b8', lineHeight: 1.5, marginBottom: '15px'}}>
-              Generate and download secure copies of the system database. Ensure you comply with the university's data privacy policies.
-            </p>
-            
-            <button className="export-btn" onClick={() => handleBackupExport('Complete Database Backup')}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <span style={{fontSize:'18px', color: '#06b6d4'}}>📦</span> Full System Backup (.SQL)
-              </div>
-              <span>↓</span>
-            </button>
-
-            <button className="export-btn" onClick={() => handleBackupExport('All Users Directory')}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <span style={{fontSize:'18px', color: '#c084fc'}}>👥</span> Export All Users (.CSV)
-              </div>
-              <span>↓</span>
-            </button>
-
-            <button className="export-btn" onClick={() => handleBackupExport('Projects Master List')}>
-              <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <span style={{fontSize:'18px', color: '#34d399'}}>📁</span> Export All Projects (.CSV)
-              </div>
-              <span>↓</span>
-            </button>
-          </div>
-          
-          <div style={{background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)', padding: '15px', borderRadius: '12px'}}>
-            <h4 style={{margin: '0 0 5px 0', fontSize: '13px', color: '#22d3ee'}}>Auto-Backup is Active</h4>
-            <p style={{margin: 0, fontSize: '12px', color: '#cbd5e1'}}>The system automatically backs up data every 24 hours at 00:00 GMT.</p>
-          </div>
-        </div>
-
       </div>
 
-      {/* History Table */}
-      <div className="ad-card" style={{padding: 0, overflow: 'hidden'}}>
-        <div style={{padding: '20px 25px', borderBottom: '1px solid #1e293b'}}>
-          <h3 className="ad-card-title" style={{margin: 0}}>📜 Import / Export Activity Log</h3>
+      {previewData ? (
+        <div className="ad-table-card">
+          <div className="ad-table-head">
+            <div>
+              <h3>Preview Students</h3>
+              <p>Review extracted names and IDs before creating accounts.</p>
+            </div>
+            <div className="ad-preview-meta">
+              <span>Total: {summary.total}</span>
+              <span>Valid: {summary.valid}</span>
+              <span>Invalid: {summary.invalid}</span>
+            </div>
+          </div>
+          {effectiveRows.length === 0 ? (
+            <div className="ad-empty">No rows were extracted from this PDF.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>University ID</th>
+                    <th>Generated Email</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Errors</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {effectiveRows.map((row) => {
+                    const statusMeta = STATUS_META[row.status] ?? { label: 'Unknown', className: 'status-invalid' };
+                    return (
+                      <tr key={`${row.rowNumber}-${row.universityId || row.name}`}>
+                        <td style={{ fontWeight: 800, color: '#f8fafc' }}>{row.name || '-'}</td>
+                        <td>{row.universityId || '-'}</td>
+                        <td>{row.generatedEmail || '-'}</td>
+                        <td>{renderDepartment(row)}</td>
+                        <td><span className={`status-pill ${statusMeta.className}`}>{statusMeta.label}</span></td>
+                        <td>{Array.isArray(row.errors) && row.errors.length ? row.errors.join('; ') : '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        <table className="ad-table">
-          <thead>
-            <tr><th>File Name</th><th>Data Type</th><th>Timestamp</th><th>Records Added</th><th>Status</th></tr>
-          </thead>
-          <tbody>
-            {history.map(log => (
-              <tr key={log.id}>
-                <td style={{fontWeight: 800, color: '#f8fafc'}}>{log.file}</td>
-                <td>{log.type}</td>
-                <td>{log.date}</td>
-                <td>{log.records > 0 ? `+${log.records} Rows` : '-'}</td>
-                <td>
-                  <span className={`status-badge ${log.status === 'Success' ? 'status-success' : 'status-fail'}`}>
-                    {log.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      ) : (
+        <div className="ad-empty">Upload a PDF to generate a preview.</div>
+      )}
 
+      {result ? (
+        <div className="ad-card" style={{ marginTop: '24px' }}>
+          <h3 className="ad-card-title">Import Result</h3>
+          <div className="ad-result-grid">
+            <div className="ad-result-card">
+              <span>Created</span>
+              <strong>{result.createdCount ?? 0}</strong>
+            </div>
+            <div className="ad-result-card">
+              <span>Skipped</span>
+              <strong>{result.skippedCount ?? 0}</strong>
+            </div>
+            <div className="ad-result-card">
+              <span>Failed</span>
+              <strong>{result.failedCount ?? 0}</strong>
+            </div>
+          </div>
+          {Array.isArray(result.errors) && result.errors.length ? (
+            <div className="ad-result-errors">{result.errors.join(' | ')}</div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 };
