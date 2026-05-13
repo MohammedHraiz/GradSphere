@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import bauLogo from '../../assets/bau_logo.png';
 
 const sidebarStyles = `
   .sidebar { width: 260px; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 25px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid #1e293b; text-align: left; }
   .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
-  .logo-icon { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 16px; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4); }
+  .logo-icon { background: linear-gradient(135deg, #ffffff, #e0f2fe); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.26); overflow: hidden; padding: 5px; }
+  .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .sidebar-header h2 { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: white; }
   .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;}
   .sidebar-nav::-webkit-scrollbar { width: 4px; }
@@ -22,7 +24,7 @@ const SupervisorSidebar = () => {
     <aside className="sidebar">
       <style>{sidebarStyles}</style>
       <div className="sidebar-header">
-        <div className="logo-icon">GP</div>
+        <div className="logo-icon"><img src={bauLogo} alt="BAU logo" /></div>
         <h2>GP Portal</h2>
       </div>
       <nav className="sidebar-nav">

@@ -20,6 +20,7 @@ public record DeanDashboardDTO(
         List<DashboardProjectItemDTO> recentProjects,
         List<DashboardSupervisorRequestItemDTO> recentSupervisorRequests,
         Map<String, Long> projectsByStatus,
+        Map<String, Long> projectsByCategory,
         DashboardTaskSummaryDTO taskSummary,
         DashboardMilestoneSummaryDTO milestoneSummary,
         long overdueTasksCount,

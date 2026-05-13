@@ -141,117 +141,11 @@
 }
 
 .login-auth-card {
-  padding-top: 24px;
+  padding-top: 34px;
 }
 
 .otp-auth-card {
   padding-bottom: 30px;
-}
-
-.graduate-avatar-wrap {
-  display: flex;
-  justify-content: center;
-  height: 178px;
-  margin: -10px 0 8px;
-}
-
-.graduate-avatar {
-  width: 218px;
-  max-width: 44vw;
-  overflow: visible;
-  filter: drop-shadow(0 20px 24px rgba(0, 0, 0, 0.32));
-}
-
-.graduate-avatar .avatar-head,
-.graduate-avatar .avatar-cap,
-.graduate-avatar .avatar-arm,
-.graduate-avatar .avatar-eyes,
-.graduate-avatar .avatar-mouth,
-.graduate-avatar .avatar-smile,
-.graduate-avatar .avatar-smirk {
-  transform-box: fill-box;
-}
-
-.graduate-avatar .avatar-cap {
-  transform-origin: 50% 18%;
-  transform: translateY(-18px);
-  transition: transform 620ms cubic-bezier(0.2, 0.88, 0.22, 1.12);
-}
-
-.graduate-avatar .avatar-arm {
-  opacity: 0;
-  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
-}
-
-.graduate-avatar .avatar-left-arm {
-  transform-origin: 32% 94%;
-  transform: translate(-42px, 78px) rotate(-28deg) scale(0.92);
-}
-
-.graduate-avatar .avatar-right-arm {
-  transform-origin: 68% 94%;
-  transform: translate(42px, 78px) rotate(28deg) scale(0.92);
-}
-
-.graduate-avatar .avatar-head {
-  transform-origin: 50% 72%;
-  transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.graduate-avatar .avatar-eyes {
-  transition: opacity 260ms ease, transform 360ms ease;
-}
-
-.graduate-avatar .avatar-smile,
-.graduate-avatar .avatar-smirk {
-  transition: opacity 240ms ease, transform 360ms ease;
-}
-
-.graduate-avatar .avatar-smirk {
-  opacity: 0;
-  transform: translateY(5px);
-}
-
-.graduate-avatar .avatar-left-hand,
-.graduate-avatar .avatar-right-hand {
-  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.graduate-avatar.is-covering .avatar-cap {
-  transform: translateY(40px) rotate(-1.5deg);
-}
-
-.graduate-avatar.is-covering .avatar-left-arm,
-.graduate-avatar.is-covering .avatar-right-arm {
-  opacity: 1;
-  transform: translate(0, 0) rotate(0) scale(1);
-}
-
-.graduate-avatar.is-covering .avatar-head {
-  transform: translateY(3px);
-}
-
-.graduate-avatar.is-covering .avatar-eyes {
-  opacity: 0;
-  transform: translateY(9px) scaleY(0.72);
-}
-
-.graduate-avatar.is-covering .avatar-smile {
-  opacity: 0;
-  transform: translateY(5px);
-}
-
-.graduate-avatar.is-covering .avatar-smirk {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.graduate-avatar.is-covering .avatar-left-hand {
-  transform: translate(0, 2px) rotate(-3deg);
-}
-
-.graduate-avatar.is-covering .avatar-right-hand {
-  transform: translate(0, 2px) rotate(3deg);
 }
 
 .auth-card-heading {
@@ -416,6 +310,12 @@
 
 .login-helper-link:hover {
   color: #a2f5d0;
+}
+
+.input-box .login-helper-link {
+  display: block;
+  margin-top: 10px;
+  padding-left: 0;
 }
 
 .compact-link {

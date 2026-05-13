@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SupervisorDashboard.css';
 import { getSupervisorDashboard } from '../../api/dashboardService';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { getSortedProjectDomainCounts } from '../../utils/projectDomain';
 
 const extraStyles = `
 .sup-live-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; margin-top: 28px; }
@@ -25,6 +26,11 @@ const extraStyles = `
 .sup-progress-meta { font-size: 12px; color: #64748b; font-weight: 700; margin-bottom: 10px; }
 .sup-progress-bar { height: 10px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
 .sup-progress-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); }
+.sup-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.sup-category-card { border: 1px solid #bfdbfe; background: linear-gradient(180deg, #eff6ff, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(59,130,246,0.28); }
+.sup-category-card span { display: block; font-size: 11px; font-weight: 900; color: #1d4ed8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.sup-category-card strong { display: block; font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+.sup-category-card p { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
 @media (max-width: 900px) { .sup-live-grid, .sup-workflow-grid { grid-template-columns: 1fr; } }
 `;
 
@@ -49,6 +55,11 @@ const SupervisorDashboard = () => {
     };
     void load();
   }, []);
+
+  const categoryEntries = useMemo(
+    () => getSortedProjectDomainCounts(data?.projectsByCategory),
+    [data?.projectsByCategory],
+  );
 
   return (
     <div className="sup-dashboard-wrapper">
@@ -177,6 +188,21 @@ const SupervisorDashboard = () => {
                 ))}
               </div>
             ) : <div className="sup-state">Progress bars will appear once tasks or milestones exist.</div>}
+          </section>
+
+          <section className="sup-live-card" style={{ marginTop: 24 }}>
+            <h3>Project Category Distribution</h3>
+            {categoryEntries.length ? (
+              <div className="sup-category-grid">
+                {categoryEntries.map(([category, count]) => (
+                  <div key={category} className="sup-category-card">
+                    <span>Category</span>
+                    <strong>{count}</strong>
+                    <p>{category}</p>
+                  </div>
+                ))}
+              </div>
+            ) : <div className="sup-state">No category data is available for your assigned projects yet.</div>}
           </section>
         </>
       ) : null}

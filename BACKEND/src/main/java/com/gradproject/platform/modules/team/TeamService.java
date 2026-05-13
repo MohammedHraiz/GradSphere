@@ -58,9 +58,14 @@ public class TeamService {
         if (teamName.length() < 3) {
             throw new BadRequestException("Team name must be at least 3 characters.");
         }
+        String projectDomain = request == null || request.projectDomain() == null ? "" : request.projectDomain().trim();
+        if (!StringUtils.hasText(projectDomain)) {
+            throw new BadRequestException("Project category is required");
+        }
 
         Team team = new Team();
         team.setName(teamName);
+        team.setProjectDomain(projectDomain);
         team.setMaxSize(TeamRules.normalizeRequestedMaxSize(request != null ? request.maxSize() : null));
         team.setLeader(leader);
 
@@ -231,6 +236,7 @@ public class TeamService {
         return new TeamResponseDTO(
                 team.getId(),
                 team.getName(),
+                team.getProjectDomain(),
                 team.getEstablishedOn(),
                 membersCount,
                 TeamRules.MAX_MEMBERS,

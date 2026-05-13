@@ -1,9 +1,7 @@
-/* Sidebar.css - Student Premium SaaS Theme */
-
 .student-sidebar {
   width: 260px;
   height: 100vh;
-  background: #0f172a; /* اللون الداكن الأساسي */
+  background: #0f172a;
   color: white;
   display: flex;
   flex-direction: column;
@@ -13,7 +11,6 @@
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* --- Logo Section --- */
 .st-logo-container {
   display: flex;
   align-items: center;
@@ -23,15 +20,23 @@
 }
 
 .st-logo-icon {
-  font-size: 24px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6); /* تدرج لوني خاص بالطالب */
+  background: linear-gradient(135deg, #ffffff, #e0f2fe);
   width: 45px;
   height: 45px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+  padding: 6px;
+}
+
+.st-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .st-logo-text h2 {
@@ -52,7 +57,6 @@
   text-align: left;
 }
 
-/* --- Navigation Menu --- */
 .st-nav-menu {
   display: flex;
   flex-direction: column;
@@ -100,7 +104,6 @@
   box-shadow: 0 0 10px white;
 }
 
-/* --- Footer --- */
 .st-sidebar-footer {
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);

@@ -8,6 +8,7 @@ import java.util.UUID;
 public record DashboardProjectItemDTO(
         UUID projectId,
         String projectTitle,
+        String projectDomain,
         String teamName,
         ProjectStatus status,
         String supervisorName,

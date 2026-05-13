@@ -11,6 +11,11 @@ public record CreateTeamRequest(
         @Size(min = 3, max = 100)
         String name,
 
+        @JsonAlias({"projectCategory", "projectDomain", "domain", "category"})
+        @NotBlank(message = "Project category is required")
+        @Size(max = 100, message = "Project category must be 100 characters or fewer.")
+        String projectDomain,
+
         @JsonAlias({"maxMembers", "teamSize", "maximumSize"})
         @Max(value = TeamRules.MAX_MEMBERS, message = "Team maximum size is 5 members.")
         Integer maxSize
