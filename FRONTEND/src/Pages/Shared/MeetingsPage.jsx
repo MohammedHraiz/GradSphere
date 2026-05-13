@@ -383,8 +383,10 @@ const MeetingTypeSelector = ({ value, onChange }) => (
         onClick={() => onChange(option.value)}
       >
         <span className="meetings-type-icon" aria-hidden="true">{getMeetingTypeIcon(option.value)}</span>
-        <strong>{option.label}</strong>
-        <span>{option.helper}</span>
+        <div className="meetings-type-content">
+          <strong className="meetings-type-title">{option.label}</strong>
+          <span className="meetings-type-description">{option.helper}</span>
+        </div>
       </button>
     ))}
   </div>
@@ -433,54 +435,52 @@ const MeetingDateTimePicker = ({
           />
         </div>
 
-        <div className="meetings-datetime-time" role="group" aria-label="Meeting time">
-          <div className="meetings-datetime-segment">
-            <span className="meetings-datetime-mini-label">Hour</span>
-            <StyledSelect
-              id={`${id}-hour`}
-              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
-              value={draftParts.hour}
-              onChange={(event) => updateParts('hour', event.target.value)}
-              aria-label="Hour"
-            >
-              <option value="">Hour</option>
-              {MEETING_HOUR_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </StyledSelect>
-          </div>
+        <div className="meetings-datetime-segment">
+          <span className="meetings-datetime-mini-label">Hour</span>
+          <StyledSelect
+            id={`${id}-hour`}
+            className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+            value={draftParts.hour}
+            onChange={(event) => updateParts('hour', event.target.value)}
+            aria-label="Hour"
+          >
+            <option value="">Hour</option>
+            {MEETING_HOUR_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </StyledSelect>
+        </div>
 
-          <div className="meetings-datetime-segment">
-            <span className="meetings-datetime-mini-label">Minute</span>
-            <StyledSelect
-              id={`${id}-minute`}
-              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
-              value={draftParts.minute}
-              onChange={(event) => updateParts('minute', event.target.value)}
-              aria-label="Minute"
-            >
-              <option value="">Minute</option>
-              {MEETING_MINUTE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </StyledSelect>
-          </div>
+        <div className="meetings-datetime-segment">
+          <span className="meetings-datetime-mini-label">Minute</span>
+          <StyledSelect
+            id={`${id}-minute`}
+            className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+            value={draftParts.minute}
+            onChange={(event) => updateParts('minute', event.target.value)}
+            aria-label="Minute"
+          >
+            <option value="">Minute</option>
+            {MEETING_MINUTE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </StyledSelect>
+        </div>
 
-          <div className="meetings-datetime-segment meetings-datetime-period">
-            <span className="meetings-datetime-mini-label">AM / PM</span>
-            <StyledSelect
-              id={`${id}-period`}
-              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
-              value={draftParts.period}
-              onChange={(event) => updateParts('period', event.target.value)}
-              aria-label="AM or PM"
-            >
-              <option value="">AM / PM</option>
-              {MEETING_PERIOD_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </StyledSelect>
-          </div>
+        <div className="meetings-datetime-segment meetings-datetime-period">
+          <span className="meetings-datetime-mini-label">AM / PM</span>
+          <StyledSelect
+            id={`${id}-period`}
+            className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+            value={draftParts.period}
+            onChange={(event) => updateParts('period', event.target.value)}
+            aria-label="AM or PM"
+          >
+            <option value="">AM / PM</option>
+            {MEETING_PERIOD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </StyledSelect>
         </div>
       </div>
 
@@ -1492,7 +1492,7 @@ const MeetingsPage = () => {
                       {formErrors.title ? <p id="meeting-title-error" className="meetings-field-error">{formErrors.title}</p> : null}
                     </div>
 
-                    <div className="meetings-field">
+                    <div className="meetings-field full">
                       <label htmlFor="meeting-date">Meeting Date &amp; Time <span className="meetings-required">*</span></label>
                       <MeetingDateTimePicker
                         id="meeting-date"
@@ -1752,7 +1752,7 @@ const MeetingsPage = () => {
                       {formErrors.title ? <p className="meetings-field-error">{formErrors.title}</p> : null}
                     </div>
 
-                    <div className="meetings-field">
+                    <div className="meetings-field full">
                       <label htmlFor="request-meeting-date">Preferred Date &amp; Time <span className="meetings-required">*</span></label>
                       <MeetingDateTimePicker
                         id="request-meeting-date"
