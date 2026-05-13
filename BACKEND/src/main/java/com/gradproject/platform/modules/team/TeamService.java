@@ -1,6 +1,8 @@
 package com.gradproject.platform.modules.team;
 
 import com.gradproject.platform.exception.BadRequestException;
+import com.gradproject.platform.modules.invitation.InvitationRepository;
+import com.gradproject.platform.modules.invitation.InvitationStatus;
 import com.gradproject.platform.modules.project.Project;
 import com.gradproject.platform.modules.project.ProjectStatus;
 import com.gradproject.platform.modules.team.dto.CreateTeamRequest;
@@ -10,6 +12,7 @@ import com.gradproject.platform.modules.team.dto.TeamUpdateDTO;
 import com.gradproject.platform.modules.project.ProjectRepository;
 import com.gradproject.platform.modules.project.member.TeamMember;
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.supervisorrequest.SupervisorRequestRepository;
 import com.gradproject.platform.modules.task.TaskRepository;
 import com.gradproject.platform.modules.task.TaskStatus;
 import com.gradproject.platform.modules.user.User;
@@ -33,13 +36,25 @@ public class TeamService {
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final InvitationRepository invitationRepository;
+    private final SupervisorRequestRepository supervisorRequestRepository;
 
-    public TeamService(UserRepository userRepository, TeamRepository teamRepository, TeamMemberRepository teamMemberRepository, ProjectRepository projectRepository, TaskRepository taskRepository) {
+    public TeamService(
+            UserRepository userRepository,
+            TeamRepository teamRepository,
+            TeamMemberRepository teamMemberRepository,
+            ProjectRepository projectRepository,
+            TaskRepository taskRepository,
+            InvitationRepository invitationRepository,
+            SupervisorRequestRepository supervisorRequestRepository
+    ) {
         this.userRepository = userRepository;
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.projectRepository = projectRepository;
         this.taskRepository = taskRepository;
+        this.invitationRepository = invitationRepository;
+        this.supervisorRequestRepository = supervisorRequestRepository;
     }
 
     @Transactional
@@ -185,14 +200,17 @@ public class TeamService {
         boolean isLeader = hasLeaderRole || ownsTeam;
 
         if (isLeader) {
-            if (membersCount > 1) {
-                throw new BadRequestException("Team leader cannot leave or disband the team while other members are still in the team.");
+            boolean hasOtherMembers = membersCount > 1;
+            boolean hasPendingInvitations = invitationRepository.countByTeamIdAndStatus(teamId, InvitationStatus.PENDING) > 0;
+
+            if (hasOtherMembers || hasPendingInvitations) {
+                throw new BadRequestException("You can only disband the team after removing other members and cancelling pending invitations.");
             }
+
+            supervisorRequestRepository.deleteByTeamId(teamId);
+            supervisorRequestRepository.flush();
             projectRepository.findByTeamId(teamId)
                     .ifPresent(project -> {
-                        if (project.getStatus() != ProjectStatus.ARCHIVED) {
-                            throw new BadRequestException("Cannot disband a team with an active project. Archive or resolve the project first.");
-                        }
                         project.setTeam(null);
                         projectRepository.save(project);
                     });
