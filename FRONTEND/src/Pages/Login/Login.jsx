@@ -268,7 +268,7 @@ const Login = () => {
   // Ref لمعرفة مكان الروبوت على الشاشة بدقة
   const mascotRef = useRef(null);
 
-  const { login } = useAuth();
+  const { login, refreshUserProfile } = useAuth();
 
   const loginAsRole = async (role) => {
     const demoCredentials = {
@@ -388,6 +388,14 @@ const Login = () => {
       }
 
       login({ token, user: userInfo, role: userInfo.role });
+
+      if (typeof refreshUserProfile === 'function') {
+        try {
+          await refreshUserProfile();
+        } catch {
+          // Keep the existing login flow intact if the profile sync request fails.
+        }
+      }
 
       const routeRole = normalizedRole.replace(/[^a-z]/g, '');
       if (routeRole === 'student') {
