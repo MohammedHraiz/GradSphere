@@ -95,6 +95,27 @@ const loginStyles = `
   /* Standard Eye Icon Button */
   .pass-toggle { position: absolute; right: 15px; top: 36px; background: none; border: none; color: #64748b; cursor: pointer; transition: 0.2s; z-index: 10; padding: 5px; display: flex; align-items: center; justify-content: center;}
   .pass-toggle:hover { color: #06b6d4; }
+  .login-inline-action { margin: -12px 0 16px; text-align: left; }
+  .login-post-submit-action { margin-top: 20px; text-align: center; }
+  .login-post-submit-copy { color: #64748b; font-size: 13px; font-weight: 600; }
+  .login-helper-link {
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: #06b6d4;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .login-helper-link:hover { color: #67e8f9; }
+  .login-helper-link:focus-visible {
+    outline: none;
+    color: #67e8f9;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 
   .btn-submit { width: 100%; padding: 16px; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; border: none; border-radius: 16px; font-weight: 800; font-size: 15px; cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 10px 20px -5px rgba(6, 182, 212, 0.4); display: flex; align-items: center; justify-content: center;}
   .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 15px 30px -5px rgba(6, 182, 212, 0.6); }
@@ -584,6 +605,17 @@ const Login = () => {
               </button>
             </div>
 
+            <div className="login-inline-action">
+              <button
+                type="button"
+                className="login-helper-link"
+                onClick={(e) => { e.stopPropagation(); setIsForgotMode(true); }}
+                tabIndex={!isForgotMode && !isOtpMode ? 4 : -1}
+              >
+                Forgot Security Key?
+              </button>
+            </div>
+
             {loginError && (
               <div style={{
                 marginTop: '-6px',
@@ -601,26 +633,20 @@ const Login = () => {
             )}
 
             <div style={{marginTop: 'auto'}}>
-              <button type="submit" className="btn-submit" disabled={isLoading || isForgotMode || isOtpMode} tabIndex={!isForgotMode && !isOtpMode ? 4 : -1}>
+              <button type="submit" className="btn-submit" disabled={isLoading || isForgotMode || isOtpMode} tabIndex={!isForgotMode && !isOtpMode ? 5 : -1}>
                 {isLoading ? <div className="spinner"></div> : "ACCESS PORTAL"}
               </button>
 
-              <div style={{textAlign: 'center', marginTop: '20px'}}>
-                <span 
-                  style={{color: '#06b6d4', fontSize: '13px', fontWeight: 700, cursor: 'pointer'}}
-                  onClick={(e) => { e.stopPropagation(); setIsForgotMode(true); }}
-                  tabIndex={!isForgotMode ? 5 : -1}
-                >
-                  Forgot Password?
-                </span>
-                <span style={{color: '#64748b', margin: '0 10px'}}>|</span>
-                <span 
-                  style={{color: '#06b6d4', fontSize: '13px', fontWeight: 700, cursor: 'pointer'}}
+              <div className="login-post-submit-action">
+                <span className="login-post-submit-copy">First time logging in? </span>
+                <button
+                  type="button"
+                  className="login-helper-link"
                   onClick={(e) => { e.stopPropagation(); setOtpError(''); setOtpSuccess(''); setOtpStep(1); setIsOtpMode(true); }}
-                  tabIndex={!isForgotMode ? 6 : -1}
+                  tabIndex={!isForgotMode && !isOtpMode ? 6 : -1}
                 >
                   Set Password via OTP
-                </span>
+                </button>
               </div>
             </div>
           </form>
@@ -847,7 +873,7 @@ const Login = () => {
       {/* ================================================= */}
       {/* DEV QUICK ACCESS (Backend Team Pills)               */}
       {/* ================================================= */}
-      <div className="dev-pills">
+      {false ? <div className="dev-pills">
         <div style={{width: '100%', fontSize: '10px', color: '#475569', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '2px', margin: '15px 0 5px 0', textAlign: 'center'}}>
           Developer Fast-Track Access
         </div>
@@ -855,7 +881,7 @@ const Login = () => {
         <button className="pill" onClick={() => loginAsRole('dean')} title="Login as Dean Office"><span>🎓</span> Dean</button>
         <button className="pill" onClick={() => loginAsRole('supervisor')} title="Login as Faculty Supervisor"><span>👨‍🏫</span> Supervisor</button>
         <button className="pill" onClick={() => loginAsRole('student')} title="Login as Graduate Student"><span>💻</span> Student</button>
-      </div>
+      </div> : null}
 
     </div>
   );
