@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDeanDashboard } from '../../api/dashboardService';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
+import { getSortedProjectDomainCounts } from '../../utils/projectDomain';
 
 const styles = `
 .dean-viewport { padding: 30px; font-family: 'Plus Jakarta Sans', sans-serif; text-align: left; color: #0f172a; }
@@ -27,6 +28,11 @@ const styles = `
 .mini-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 14px; }
 .mini-card span { display: block; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
 .mini-card strong { font-size: 24px; color: #0f172a; }
+.category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.category-card { border: 1px solid #fde68a; background: linear-gradient(180deg, #fffaf0, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(217,119,6,0.28); }
+.category-card span { display: block; font-size: 11px; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.category-card strong { display: block; font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
+.category-card p { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
 @media (max-width: 980px) { .dean-stats-grid { grid-template-columns: repeat(2, 1fr); } .dean-grid, .dean-header-row, .workflow-grid { grid-template-columns: 1fr; display: grid; gap: 16px; } }
 `;
 
@@ -51,6 +57,11 @@ const DeanDashboard = () => {
     };
     void load();
   }, []);
+
+  const categoryEntries = useMemo(
+    () => getSortedProjectDomainCounts(data?.projectsByCategory),
+    [data?.projectsByCategory],
+  );
 
   return (
     <div className="dean-viewport">
@@ -122,6 +133,21 @@ const DeanDashboard = () => {
               </div>
             </section>
           </div>
+
+          <section className="dean-panel" style={{ marginTop: 22 }}>
+            <h3>Project Category Distribution</h3>
+            {categoryEntries.length ? (
+              <div className="category-grid">
+                {categoryEntries.map(([category, count]) => (
+                  <div key={category} className="category-card">
+                    <span>Category</span>
+                    <strong>{count}</strong>
+                    <p>{category}</p>
+                  </div>
+                ))}
+              </div>
+            ) : <div className="state">No category data is available for the projects visible to you yet.</div>}
+          </section>
 
           <div className="dean-grid" style={{ marginTop: 22 }}>
             <section className="dean-panel">

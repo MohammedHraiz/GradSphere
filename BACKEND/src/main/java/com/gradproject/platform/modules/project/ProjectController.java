@@ -105,6 +105,7 @@ public class ProjectController {
         Project project = new Project();
         project.setTitle(team.getName().trim());
         project.setDescription(description.trim());
+        project.setProjectDomain(team.getProjectDomain());
         project.setStudent(student);
         project.setTeam(team);
         project.setStatus(ProjectStatus.SUBMITTED);

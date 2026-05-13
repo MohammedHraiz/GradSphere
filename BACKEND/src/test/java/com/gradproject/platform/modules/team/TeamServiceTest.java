@@ -78,10 +78,11 @@ class TeamServiceTest {
         when(teamMemberRepository.findAllByTeamId(newTeamId)).thenReturn(List.of(membership(team(newTeamId, leader), leader, "LEADER")));
         when(projectRepository.findByTeamId(newTeamId)).thenReturn(Optional.empty());
 
-        var response = teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", null));
+        var response = teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", "AI / Machine Learning", null));
 
         assertThat(response.maxMembers()).isEqualTo(5);
         assertThat(response.membersCount()).isEqualTo(1);
+        assertThat(response.projectDomain()).isEqualTo("AI / Machine Learning");
         assertThat(response.totalTasks()).isZero();
         assertThat(response.completionRate()).isZero();
     }
@@ -91,7 +92,7 @@ class TeamServiceTest {
         when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
         when(teamMemberRepository.existsByUserId(leader.getId())).thenReturn(false);
 
-        assertThatThrownBy(() -> teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", 6)))
+        assertThatThrownBy(() -> teamService.createTeam(leader.getEmail(), new CreateTeamRequest("Research Team", "Web", 6)))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Team maximum size is 5 members.");
 

@@ -16,9 +16,18 @@ const styles = `
 .kicker { color: #4f46e5; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
 .hero-subtitle { max-width: 760px; margin: 10px 0 0; color: #475569; font-size: 14px; font-weight: 600; line-height: 1.65; }
 .stats-glass-container { display: flex; gap: 14px; flex-wrap: wrap; }
-.glass-stat { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; padding: 16px 22px; border-radius: 20px; display: flex; flex-direction: column; gap: 5px; min-width: 132px; box-shadow: 0 16px 32px -28px rgba(15,23,42,0.28); }
+.glass-stat { --card-border: #e2e8f0; --card-bg: linear-gradient(180deg, #ffffff, #f8fafc); --card-shadow: 0 16px 32px -28px rgba(15,23,42,0.28); --card-accent: #4f46e5; --card-text: #0f172a; width: min(100%, 180px); background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px 18px; border-radius: 20px; display: flex; flex-direction: column; gap: 6px; min-width: 132px; box-shadow: var(--card-shadow); cursor: pointer; transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, background 220ms ease; text-align: left; position: relative; overflow: hidden; appearance: none; font: inherit; }
+.glass-stat::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--card-accent); opacity: 0.92; }
+.glass-stat:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -26px rgba(15,23,42,0.34); }
+.glass-stat.is-active { transform: translateY(-2px); border-color: color-mix(in srgb, var(--card-accent) 35%, white); box-shadow: 0 24px 44px -28px color-mix(in srgb, var(--card-accent) 25%, rgba(15,23,42,0.3)); }
+.glass-stat.team { --card-border: #dbeafe; --card-bg: linear-gradient(180deg, #eff6ff, #ffffff); --card-shadow: 0 18px 34px -28px rgba(37,99,235,0.28); --card-accent: #2563eb; }
+.glass-stat.assigned { --card-border: #bfdbfe; --card-bg: linear-gradient(180deg, #eff6ff, #f8fafc); --card-shadow: 0 18px 34px -28px rgba(59,130,246,0.28); --card-accent: #3b82f6; }
+.glass-stat.completed { --card-border: #bbf7d0; --card-bg: linear-gradient(180deg, #f0fdf4, #ffffff); --card-shadow: 0 18px 34px -28px rgba(22,163,74,0.25); --card-accent: #16a34a; }
+.glass-stat.overdue { --card-border: #fed7aa; --card-bg: linear-gradient(180deg, #fff7ed, #ffffff); --card-shadow: 0 18px 34px -28px rgba(234,88,12,0.24); --card-accent: #ea580c; }
 .s-label { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; }
-.s-value { font-size: 24px; font-weight: 900; color: #0f172a; }
+.s-value { font-size: 24px; font-weight: 900; color: var(--card-text); }
+.s-helper { font-size: 12px; color: #64748b; font-weight: 700; line-height: 1.45; }
+.active-filter-note { margin-bottom: 18px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 999px; background: #eef2ff; border: 1px solid #c7d2fe; color: #3730a3; font-size: 12px; font-weight: 800; }
 .search-filter-bar { display: flex; gap: 15px; background: white; padding: 15px; border-radius: 18px; border: 1px solid #E2E8F0; margin-bottom: 24px; box-shadow: 0 14px 32px -28px rgba(15,23,42,0.28); flex-wrap: wrap; }
 .search-wrapper { flex: 1; min-width: 260px; }
 .search-filter-bar .styled-select-trigger { border: 1px solid #E2E8F0; border-radius: 14px; background: #F8FAFC; padding: 12px 14px; font: inherit; color: #0F172A; min-width: 200px; }
@@ -90,6 +99,12 @@ const styles = `
 `;
 
 const TASK_STATUSES = ['NOT_STARTED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED'];
+const SUMMARY_FILTERS = [
+  { key: 'ALL', label: 'Team Tasks', helper: 'Show every team task', style: 'team' },
+  { key: 'ASSIGNED', label: 'Assigned To You', helper: 'Only tasks assigned to you', style: 'assigned' },
+  { key: 'COMPLETED', label: 'Completed', helper: 'Tasks already finished', style: 'completed' },
+  { key: 'OVERDUE', label: 'Overdue', helper: 'Tasks past their due date', style: 'overdue' },
+];
 const statusLabel = (status) => String(status || '').replaceAll('_', ' ');
 const getCurrentUserId = (user) => user?.id ?? user?.userId ?? user?.sub ?? user?.uuid ?? '';
 const canStudentActOnTask = (task, currentUserId) => !task?.assignedToId || String(task.assignedToId) === String(currentUserId);
@@ -111,6 +126,7 @@ const Tasks = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [summaryFilter, setSummaryFilter] = useState('ALL');
   const [toast, setToast] = useState(null);
 
   const currentUserId = getCurrentUserId(currentUser);
@@ -172,8 +188,14 @@ const Tasks = () => {
       || task.status?.toLowerCase().includes(query);
     const matchesStatus = statusFilter === 'ALL'
       || (statusFilter === 'OVERDUE' ? task.overdue : task.status === statusFilter);
-    return matchesSearch && matchesStatus;
-  }), [tasks, searchTerm, statusFilter]);
+    const matchesSummary = summaryFilter === 'ALL'
+      || (summaryFilter === 'ASSIGNED' ? String(task.assignedToId || '') === String(currentUserId) : false)
+      || (summaryFilter === 'COMPLETED' ? task.status === 'COMPLETED' : false)
+      || (summaryFilter === 'OVERDUE' ? task.overdue : false);
+    return matchesSearch && matchesStatus && matchesSummary;
+  }), [tasks, searchTerm, statusFilter, summaryFilter, currentUserId]);
+
+  const activeSummaryFilter = SUMMARY_FILTERS.find((filter) => filter.key === summaryFilter) ?? SUMMARY_FILTERS[0];
 
   const canUpdateStatus = useMemo(
     () => canStudentActOnTask(selectedTask, currentUserId),
@@ -224,23 +246,35 @@ const Tasks = () => {
         </div>
 
         <div className="stats-glass-container">
-          <div className="glass-stat">
-            <span className="s-label">Team Tasks</span>
-            <span className="s-value">{stats.total}</span>
-          </div>
-          <div className="glass-stat">
-            <span className="s-label">Assigned To You</span>
-            <span className="s-value">{stats.assignedToYou}</span>
-          </div>
-          <div className="glass-stat">
-            <span className="s-label">Completed</span>
-            <span className="s-value">{stats.completed}</span>
-          </div>
-          <div className="glass-stat">
-            <span className="s-label">Overdue</span>
-            <span className="s-value">{stats.overdue}</span>
-          </div>
+          {SUMMARY_FILTERS.map((filter) => {
+            const value = filter.key === 'ALL'
+              ? stats.total
+              : filter.key === 'ASSIGNED'
+                ? stats.assignedToYou
+                : filter.key === 'COMPLETED'
+                  ? stats.completed
+                  : stats.overdue;
+
+            return (
+              <button
+                key={filter.key}
+                type="button"
+                className={`glass-stat ${filter.style} ${summaryFilter === filter.key ? 'is-active' : ''}`}
+                onClick={() => setSummaryFilter(filter.key)}
+                aria-pressed={summaryFilter === filter.key}
+              >
+                <span className="s-label">{filter.label}</span>
+                <span className="s-value">{value}</span>
+                <span className="s-helper">{filter.helper}</span>
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      <div className="active-filter-note">
+        <span>Active summary filter:</span>
+        <strong>{activeSummaryFilter.label}</strong>
       </div>
 
       <div className="search-filter-bar">

@@ -5,57 +5,66 @@ import { useAuth } from '../../auth/AuthContext';
 import FeedbackToast from '../../components/FeedbackToast';
 
 const styles = `
-.inv-page { min-height: 100vh; background: radial-gradient(circle at top, rgba(79,70,229,0.10), transparent 34%), linear-gradient(180deg, #020617 0%, #0f172a 100%); color: #e2e8f0; }
-.inv-shell { max-width: 1360px; margin: 0 auto; padding: 32px 24px 56px; }
-.inv-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 26px 28px; border-radius: 28px; border: 1px solid rgba(148,163,184,0.14); background: rgba(15,23,42,0.88); box-shadow: 0 30px 70px -28px rgba(2,6,23,0.8); backdrop-filter: blur(14px); }
-.inv-kicker { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.32em; text-transform: uppercase; color: #94a3b8; }
-.inv-title { margin: 10px 0 0; font-size: clamp(2.1rem, 4vw, 4rem); line-height: 1; font-weight: 900; letter-spacing: -0.05em; color: #f8fafc; }
-.inv-desc { margin: 14px 0 0; max-width: 820px; font-size: 15px; line-height: 1.8; color: #94a3b8; }
-.inv-refresh { width: 46px; height: 46px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; border: 1px solid rgba(139,92,246,0.22); background: rgba(99,102,241,0.10); color: #c4b5fd; box-shadow: 0 18px 36px -26px rgba(99,102,241,0.8); cursor: pointer; transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease; }
-.inv-refresh:hover { transform: translateY(-1px); background: rgba(99,102,241,0.16); border-color: rgba(167,139,250,0.38); color: #ddd6fe; }
-.inv-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; margin-top: 22px; align-items: start; }
+.inv-page { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; }
+.inv-shell { width: min(100%, 1180px); margin: 0 auto; display: grid; gap: 22px; }
+.inv-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 28px; border-radius: 28px; border: 1px solid #e2e8f0; background: linear-gradient(135deg, rgba(79,70,229,0.08), rgba(59,130,246,0.05)), #ffffff; box-shadow: 0 18px 42px -30px rgba(15,23,42,0.34); }
+.inv-kicker { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #4f46e5; }
+.inv-title { margin: 10px 0 0; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.05; font-weight: 900; letter-spacing: -0.05em; color: #0f172a; }
+.inv-desc { margin: 14px 0 0; max-width: 760px; font-size: 14px; line-height: 1.75; color: #64748b; font-weight: 600; }
+.inv-refresh { width: 46px; height: 46px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; border: 1px solid #dbeafe; background: #eef2ff; color: #4f46e5; box-shadow: 0 16px 30px -24px rgba(79,102,241,0.45); cursor: pointer; transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.inv-refresh:hover { transform: translateY(-1px); background: #e0e7ff; border-color: #c7d2fe; box-shadow: 0 20px 32px -24px rgba(79,102,241,0.5); }
+.inv-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
 .inv-list { display: grid; gap: 16px; }
-.inv-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 20px; border-radius: 26px; border: 1px solid rgba(148,163,184,0.12); background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.92)); box-shadow: 0 24px 56px -38px rgba(2,6,23,0.9); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease; }
-.inv-card:hover { transform: translateY(-2px); border-color: rgba(129,140,248,0.30); box-shadow: 0 32px 60px -36px rgba(2,6,23,0.95); }
-.inv-avatar { width: 64px; height: 64px; border-radius: 22px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(124,58,237,0.18)); border: 1px solid rgba(129,140,248,0.18); color: #c4b5fd; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.12em; }
+.inv-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 20px; border-radius: 26px; border: 1px solid #e2e8f0; background: linear-gradient(180deg, #ffffff, #f8fafc); box-shadow: 0 20px 44px -34px rgba(15,23,42,0.28); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.inv-card:hover { transform: translateY(-2px); border-color: #c7d2fe; box-shadow: 0 26px 48px -34px rgba(79,70,229,0.22); }
+.inv-avatar { width: 64px; height: 64px; border-radius: 22px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #eef2ff, #dbeafe); border: 1px solid #c7d2fe; color: #4338ca; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.12em; }
 .inv-meta { min-width: 0; }
-.inv-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; color: #64748b; }
-.inv-heading { margin: 10px 0 0; font-size: 1.3rem; line-height: 1.2; font-weight: 900; letter-spacing: -0.04em; color: #f8fafc; }
-.inv-sender { margin: 8px 0 0; font-size: 14px; color: #cbd5e1; }
+.inv-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #64748b; }
+.inv-heading { margin: 10px 0 0; font-size: 1.3rem; line-height: 1.2; font-weight: 900; letter-spacing: -0.04em; color: #0f172a; }
+.inv-sender { margin: 8px 0 0; font-size: 14px; color: #475569; }
 .inv-time { margin: 6px 0 0; font-size: 12px; color: #64748b; }
-.inv-note { margin-top: 14px; padding: 14px 16px; border-radius: 18px; background: rgba(2,6,23,0.55); border: 1px solid rgba(148,163,184,0.10); color: #cbd5e1; line-height: 1.7; font-size: 14px; }
+.inv-note { margin-top: 14px; padding: 14px 16px; border-radius: 18px; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; line-height: 1.7; font-size: 14px; }
 .inv-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .inv-btn { min-width: 122px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 18px; border-radius: 9999px; font-size: 14px; font-weight: 800; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, opacity 160ms ease; }
 .inv-btn:disabled { cursor: not-allowed; opacity: 0.72; }
 .inv-btn-accept { border: 1px solid rgba(139,92,246,0.15); background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; box-shadow: 0 18px 34px -24px rgba(124,58,237,0.95); }
 .inv-btn-accept:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 24px 40px -26px rgba(124,58,237,0.95); }
-.inv-btn-reject { border: 1px solid rgba(248,113,113,0.25); background: rgba(248,113,113,0.06); color: #fca5a5; }
-.inv-btn-reject:hover:not(:disabled) { transform: translateY(-1px); background: rgba(248,113,113,0.10); border-color: rgba(248,113,113,0.35); color: #fecaca; }
+.inv-btn-reject { border: 1px solid rgba(248,113,113,0.25); background: #fff1f2; color: #be123c; }
+.inv-btn-reject:hover:not(:disabled) { transform: translateY(-1px); background: #ffe4e6; border-color: rgba(248,113,113,0.35); color: #9f1239; }
 .inv-btn-icon { width: 16px; height: 16px; }
-.inv-sent { background: rgba(34,197,94,0.12); color: #4ade80; border-color: rgba(34,197,94,0.15); }
 .inv-spinner { width: 14px; height: 14px; border-radius: 9999px; border: 2px solid rgba(255,255,255,0.25); border-top-color: currentColor; animation: invSpin 0.8s linear infinite; }
+.inv-reject-spin { color: #be123c; }
 @keyframes invSpin { to { transform: rotate(360deg); } }
 .inv-panel { position: sticky; top: 22px; display: grid; gap: 14px; }
-.inv-panel-card { padding: 20px; border-radius: 24px; border: 1px solid rgba(148,163,184,0.12); background: rgba(15,23,42,0.9); box-shadow: 0 24px 50px -34px rgba(2,6,23,0.9); }
-.inv-panel-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; color: #64748b; }
-.inv-panel-title { margin: 10px 0 0; font-size: 1rem; font-weight: 800; color: #f8fafc; }
-.inv-panel-text { margin: 10px 0 0; font-size: 14px; line-height: 1.8; color: #94a3b8; }
-.inv-count { margin-top: 14px; font-size: 2.5rem; font-weight: 900; letter-spacing: -0.06em; color: #f8fafc; }
-.inv-loader, .inv-empty, .inv-error { min-height: 320px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 28px; border: 1px solid rgba(148,163,184,0.12); background: rgba(15,23,42,0.86); box-shadow: 0 24px 56px -38px rgba(2,6,23,0.9); }
-.inv-card-shell { padding: 18px; }
+.inv-panel-card { padding: 20px; border-radius: 24px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 18px 40px -34px rgba(15,23,42,0.26); }
+.inv-panel-label { margin: 0; font-size: 11px; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #64748b; }
+.inv-panel-title { margin: 10px 0 0; font-size: 1rem; font-weight: 800; color: #0f172a; }
+.inv-panel-text { margin: 10px 0 0; font-size: 14px; line-height: 1.8; color: #64748b; }
+.inv-count { margin-top: 14px; font-size: 2.5rem; font-weight: 900; letter-spacing: -0.06em; color: #0f172a; }
+.inv-loader, .inv-empty, .inv-error { min-height: 320px; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 28px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 20px 46px -34px rgba(15,23,42,0.28); }
 .inv-empty-wrap, .inv-error-wrap, .inv-loader-wrap { max-width: 520px; padding: 0 12px; }
-.inv-empty-ico, .inv-error-ico { width: 66px; height: 66px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; border-radius: 22px; background: rgba(148,163,184,0.08); font-size: 1.8rem; }
-.inv-empty-title, .inv-error-title { margin: 0; color: #f8fafc; font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; }
-.inv-empty-copy, .inv-error-copy { margin: 10px 0 0; color: #94a3b8; font-size: 14px; line-height: 1.8; }
-.inv-error { border-color: rgba(239,68,68,0.20); background: rgba(127,29,29,0.14); }
-.inv-error-ico { background: rgba(239,68,68,0.12); }
-.inv-error-title { color: #fecaca; }
-.inv-error-copy { color: #fecaca; }
+.inv-empty-ico, .inv-error-ico { width: 66px; height: 66px; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center; border-radius: 22px; background: #eef2ff; color: #4338ca; font-size: 1.8rem; font-weight: 900; }
+.inv-empty-title, .inv-error-title { margin: 0; color: #0f172a; font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; }
+.inv-empty-copy, .inv-error-copy { margin: 10px 0 0; color: #64748b; font-size: 14px; line-height: 1.8; }
+.inv-error { border-color: #fecaca; background: #fff1f2; }
+.inv-error-ico { background: #fee2e2; color: #b91c1c; }
+.inv-error-title { color: #9f1239; }
+.inv-error-copy { color: #be123c; }
 .inv-action { margin-top: 20px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 9999px; padding: 12px 18px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 18px 32px -24px rgba(124,58,237,0.95); transition: transform 160ms ease, box-shadow 160ms ease; }
 .inv-action:hover { transform: translateY(-1px); box-shadow: 0 24px 38px -26px rgba(124,58,237,0.95); }
-.inv-reject-spin { color: #fca5a5; }
+.inv-skeleton-grid { margin-top: 24px; display: grid; gap: 14px; }
+.inv-skeleton-card { padding: 18px; border-radius: 24px; border: 1px solid #e2e8f0; background: linear-gradient(180deg, #ffffff, #f8fafc); }
+.inv-skeleton-row { display: flex; align-items: flex-start; gap: 16px; }
+.inv-skeleton-avatar { width: 56px; height: 56px; border-radius: 18px; background: #e2e8f0; }
+.inv-skeleton-meta { flex: 1; display: grid; gap: 10px; }
+.inv-skeleton-line { height: 12px; border-radius: 999px; background: #e2e8f0; }
+.inv-skeleton-line.title { height: 18px; width: 75%; }
+.inv-skeleton-line.short { width: 32%; }
+.inv-skeleton-line.medium { width: 55%; }
+.inv-skeleton-actions { display: flex; gap: 12px; margin-top: 18px; }
+.inv-skeleton-button { flex: 1; height: 44px; border-radius: 999px; background: #e2e8f0; }
 @media (max-width: 1024px) { .inv-layout { grid-template-columns: 1fr; } .inv-panel { position: static; } }
-@media (max-width: 700px) { .inv-shell { padding: 18px 16px 40px; } .inv-hero { padding: 20px 18px; align-items: flex-start; } .inv-card { grid-template-columns: 1fr; } .inv-actions { justify-content: stretch; } .inv-btn { width: 100%; } }
+@media (max-width: 700px) { .inv-page { padding: 10px 16px 34px; } .inv-hero { padding: 22px 20px; align-items: flex-start; flex-direction: column; } .inv-card { grid-template-columns: 1fr; } .inv-actions { justify-content: stretch; } .inv-btn { width: 100%; } }
 `;
 
 const getInitials = (value = '') => {
@@ -224,9 +233,9 @@ const InvitationsInbox = () => {
       <div className="inv-shell">
         <section className="inv-hero">
           <div>
-            <p className="inv-kicker">Collaboration</p>
+            <p className="inv-kicker">Student Portal / Collaboration</p>
             <h1 className="inv-title">Invitations Inbox</h1>
-            <p className="inv-desc">Review pending team invitations, accept the one you want, or decline the rest.</p>
+            <p className="inv-desc">Review pending team invitations, accept the one you want, or decline the rest without leaving the student dashboard flow.</p>
           </div>
 
           <button type="button" onClick={() => void loadInvitations()} aria-label="Refresh invitations" className="inv-refresh">
@@ -242,24 +251,24 @@ const InvitationsInbox = () => {
             {isLoading ? (
               <div className="inv-loader">
                 <div className="inv-loader-wrap">
-                  <div className="flex items-center justify-center gap-3 text-slate-300">
-                    <span className="inv-spinner" />
-                    <span className="text-sm font-semibold text-slate-300">Loading invitations...</span>
+                  <div className="flex items-center justify-center gap-3 text-slate-500">
+                    <span className="inv-spinner" style={{ borderColor: 'rgba(79,70,229,0.15)', borderTopColor: '#4f46e5' }} />
+                    <span className="text-sm font-semibold text-slate-500">Loading invitations...</span>
                   </div>
-                  <div className="mt-6 grid gap-4 xl:grid-cols-2">
+                  <div className="inv-skeleton-grid">
                     {Array.from({ length: 4 }).map((_, index) => (
-                      <div key={index} className="inv-card-shell rounded-[24px] border border-slate-800 bg-slate-950/70">
-                        <div className="flex items-start gap-4">
-                          <div className="h-14 w-14 rounded-2xl bg-slate-800" />
-                          <div className="flex-1 space-y-3">
-                            <div className="h-3 w-24 rounded bg-slate-800" />
-                            <div className="h-5 w-3/4 rounded bg-slate-800" />
-                            <div className="h-4 w-1/2 rounded bg-slate-800" />
+                      <div key={index} className="inv-skeleton-card">
+                        <div className="inv-skeleton-row">
+                          <div className="inv-skeleton-avatar" />
+                          <div className="inv-skeleton-meta">
+                            <div className="inv-skeleton-line short" />
+                            <div className="inv-skeleton-line title" />
+                            <div className="inv-skeleton-line medium" />
                           </div>
                         </div>
-                        <div className="mt-5 flex gap-3">
-                          <div className="h-11 flex-1 rounded-full bg-slate-800" />
-                          <div className="h-11 flex-1 rounded-full bg-slate-800" />
+                        <div className="inv-skeleton-actions">
+                          <div className="inv-skeleton-button" />
+                          <div className="inv-skeleton-button" />
                         </div>
                       </div>
                     ))}
@@ -269,7 +278,7 @@ const InvitationsInbox = () => {
             ) : error ? (
               <div className="inv-error">
                 <div className="inv-error-wrap">
-                  <div className="inv-error-ico">⚠️</div>
+                  <div className="inv-error-ico">!</div>
                   <h2 className="inv-error-title">Unable to load invitations</h2>
                   <p className="inv-error-copy">{error}</p>
                   <button type="button" onClick={() => void loadInvitations()} className="inv-action">Try Again</button>
@@ -278,7 +287,7 @@ const InvitationsInbox = () => {
             ) : invitationCount === 0 ? (
               <div className="inv-empty">
                 <div className="inv-empty-wrap">
-                  <div className="inv-empty-ico">🧘</div>
+                  <div className="inv-empty-ico">0</div>
                   <h2 className="inv-empty-title">You have no pending team invitations</h2>
                   <p className="inv-empty-copy">When a team invites you, it will appear here so you can join or decline instantly.</p>
                 </div>
@@ -296,7 +305,10 @@ const InvitationsInbox = () => {
                     <div className="inv-meta">
                       <p className="inv-label">Invitation</p>
                       <h2 className="inv-heading">Team {invitation.teamName} invited you</h2>
-                      <p className="inv-sender">Sent by <span className="font-semibold text-slate-100">{invitation.senderName}</span>{invitation.senderRole ? <span className="text-slate-500"> • {invitation.senderRole}</span> : null}</p>
+                      <p className="inv-sender">
+                        Sent by <span className="font-semibold text-slate-900">{invitation.senderName}</span>
+                        {invitation.senderRole ? <span className="text-slate-500"> | {invitation.senderRole}</span> : null}
+                      </p>
                       <p className="inv-time">{invitation.receivedLabel}</p>
                       {invitation.message ? <div className="inv-note">{invitation.message}</div> : null}
                     </div>
@@ -306,7 +318,7 @@ const InvitationsInbox = () => {
                         type="button"
                         disabled={Boolean(loading)}
                         onClick={() => void handleAccept(invitation.id)}
-                        className={`inv-btn inv-btn-accept ${loading === 'sent' ? 'inv-sent' : ''}`}
+                        className="inv-btn inv-btn-accept"
                       >
                         {isAccepting ? <span className="inv-spinner" /> : <CheckIcon />}
                         <span>{isAccepting ? 'Accepting' : 'Accept'}</span>
@@ -318,7 +330,7 @@ const InvitationsInbox = () => {
                         onClick={() => void handleReject(invitation.id)}
                         className="inv-btn inv-btn-reject"
                       >
-                        {isRejecting ? <span className="inv-spinner inv-reject-spin" /> : <CloseIcon />}
+                        {isRejecting ? <span className="inv-spinner inv-reject-spin" style={{ borderColor: 'rgba(190,24,93,0.2)', borderTopColor: '#be123c' }} /> : <CloseIcon />}
                         <span>{isRejecting ? 'Rejecting' : 'Reject'}</span>
                       </button>
                     </div>
@@ -339,7 +351,7 @@ const InvitationsInbox = () => {
             <div className="inv-panel-card">
               <p className="inv-panel-label">Tip</p>
               <p className="inv-panel-title">Fast accept flow</p>
-              <p className="inv-panel-text">If you are already in a team, the backend returns a conflict and we surface that message immediately.</p>
+              <p className="inv-panel-text">If you are already in a team, the backend returns a conflict and the same message is shown here immediately.</p>
             </div>
           </aside>
         </div>

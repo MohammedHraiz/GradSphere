@@ -12,6 +12,7 @@ public record ProjectResponseDTO(
         UUID id,
         String title,
         String description,
+        String projectDomain,
         String documentPath,
         Integer proposalVersion,
         ProjectStatus status,
