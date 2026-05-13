@@ -7,7 +7,7 @@ const sidebarStyles = `
   .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
   .logo-icon { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent; border-radius: 0; padding: 0; flex: 0 0 auto; }
   .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .sidebar-header h2 { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: white; }
+  .sidebar-header h2 { font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.03em; line-height: 1.1; color: white; }
   .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;}
   .sidebar-nav::-webkit-scrollbar { width: 4px; }
   .sidebar-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }

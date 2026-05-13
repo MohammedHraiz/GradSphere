@@ -130,20 +130,51 @@ public class TeamService {
         }
 
         Team team = currentMembership.getTeam();
-        String newName = request == null || request.name() == null ? "" : request.name().trim();
-        if (newName.isEmpty()) {
-            throw new BadRequestException("Team name is required");
+        Project project = projectRepository.findByTeamId(team.getId()).orElse(null);
+        boolean hasChanges = false;
+
+        if (request != null && request.name() != null) {
+            String newName = request.name().trim();
+            if (!StringUtils.hasText(newName)) {
+                throw new BadRequestException("Team name is required");
+            }
+            if (newName.length() < 3) {
+                throw new BadRequestException("Team name must be at least 3 characters.");
+            }
+            if (project != null && project.getStatus() == ProjectStatus.ARCHIVED) {
+                throw new BadRequestException("Project name cannot be changed after archive.");
+            }
+
+            team.setName(newName);
+            if (project != null) {
+                project.setTitle(newName);
+            }
+            hasChanges = true;
         }
 
-        projectRepository.findByTeamId(team.getId())
-                .ifPresent(project -> {
-                    if (project.getStatus() == ProjectStatus.ARCHIVED) {
-                        throw new BadRequestException("Project name cannot be changed after archive.");
-                    }
-                    project.setTitle(newName);
-                    projectRepository.save(project);
-                });
-        team.setName(newName);
+        if (request != null && request.projectDomain() != null) {
+            String newProjectDomain = request.projectDomain().trim();
+            if (!StringUtils.hasText(newProjectDomain)) {
+                throw new BadRequestException("Project category is required");
+            }
+            if (project != null && project.getStatus() == ProjectStatus.ARCHIVED) {
+                throw new BadRequestException("Project category cannot be changed after archive.");
+            }
+
+            team.setProjectDomain(newProjectDomain);
+            if (project != null) {
+                project.setProjectDomain(newProjectDomain);
+            }
+            hasChanges = true;
+        }
+
+        if (!hasChanges) {
+            throw new BadRequestException("At least one team field must be provided.");
+        }
+
+        if (project != null) {
+            projectRepository.save(project);
+        }
 
         Team savedTeam = teamRepository.save(team);
         return buildTeamResponse(savedTeam);
