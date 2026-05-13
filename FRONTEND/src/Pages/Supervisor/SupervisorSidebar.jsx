@@ -4,10 +4,10 @@ import bauLogo from '../../assets/bau_logo.png';
 
 const sidebarStyles = `
   .sidebar { width: 260px; height: 100vh; background: #0f172a; color: white; display: flex; flex-direction: column; padding: 25px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid #1e293b; text-align: left; }
-  .sidebar-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
-  .logo-icon { background: linear-gradient(135deg, #ffffff, #e0f2fe); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.26); overflow: hidden; padding: 5px; }
+  .sidebar-header { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; padding-left: 10px; }
+  .logo-icon { background: linear-gradient(135deg, #ffffff, #e0f2fe); width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 18px 28px -18px rgba(15, 23, 42, 0.42); overflow: hidden; padding: 3px; flex: 0 0 auto; }
   .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .sidebar-header h2 { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: white; }
+  .sidebar-header h2 { font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.03em; line-height: 1.1; color: white; }
   .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;}
   .sidebar-nav::-webkit-scrollbar { width: 4px; }
   .sidebar-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }

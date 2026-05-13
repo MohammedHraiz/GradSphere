@@ -260,6 +260,29 @@ class TeamServiceTest {
     }
 
     @Test
+    void leaderCanEditProjectCategoryAndProjectKeepsItAfterRefresh() {
+        TeamMember leaderMembership = membership(team, leader, "LEADER");
+        Project project = new Project();
+        project.setId(UUID.randomUUID());
+        project.setTeam(team);
+        project.setStatus(ProjectStatus.SUBMITTED);
+        project.setProjectDomain("Web");
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.of(project));
+        when(projectRepository.save(project)).thenReturn(project);
+        when(teamRepository.save(team)).thenReturn(team);
+        when(teamMemberRepository.countByTeamId(team.getId())).thenReturn(1L);
+        when(teamMemberRepository.findAllByTeamId(team.getId())).thenReturn(List.of(leaderMembership));
+
+        var response = teamService.updateMyTeam(leader.getEmail(), new com.gradproject.platform.modules.team.dto.TeamUpdateDTO(null, "Mobile"));
+
+        assertThat(response.projectDomain()).isEqualTo("Mobile");
+        assertThat(team.getProjectDomain()).isEqualTo("Mobile");
+        assertThat(project.getProjectDomain()).isEqualTo("Mobile");
+    }
+
+    @Test
     void normalMemberCannotEditTeamProjectName() {
         TeamMember memberRole = membership(team, member, "MEMBER");
         when(userRepository.findByEmail(member.getEmail())).thenReturn(Optional.of(member));
@@ -284,6 +307,22 @@ class TeamServiceTest {
         assertThatThrownBy(() -> teamService.updateMyTeam(leader.getEmail(), new com.gradproject.platform.modules.team.dto.TeamUpdateDTO("Updated Team")))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessage("Project name cannot be changed after archive.");
+    }
+
+    @Test
+    void cannotEditProjectCategoryIfProjectIsArchived() {
+        TeamMember leaderMembership = membership(team, leader, "LEADER");
+        Project project = new Project();
+        project.setId(UUID.randomUUID());
+        project.setTeam(team);
+        project.setStatus(ProjectStatus.ARCHIVED);
+        when(userRepository.findByEmail(leader.getEmail())).thenReturn(Optional.of(leader));
+        when(teamMemberRepository.findByUserId(leader.getId())).thenReturn(Optional.of(leaderMembership));
+        when(projectRepository.findByTeamId(team.getId())).thenReturn(Optional.of(project));
+
+        assertThatThrownBy(() -> teamService.updateMyTeam(leader.getEmail(), new com.gradproject.platform.modules.team.dto.TeamUpdateDTO(null, "Mobile")))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Project category cannot be changed after archive.");
     }
 
     @Test
@@ -348,6 +387,7 @@ class TeamServiceTest {
         Team team = new Team();
         ReflectionTestUtils.setField(team, "id", id);
         team.setName("Team A");
+        team.setProjectDomain("Web");
         team.setMaxSize(5);
         team.setLeader(leader);
         return team;

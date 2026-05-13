@@ -4,11 +4,12 @@ import bauLogo from '../../assets/bau_logo.png';
 
 const adminSidebarStyles = `
   .admin-sidebar { width: 260px; height: 100vh; background: #020617; color: white; display: flex; flex-direction: column; padding: 30px 15px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; border-right: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
-  .admin-logo-container { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; padding-left: 10px; }
-  .admin-logo-icon { background: linear-gradient(135deg, #ecfeff, #ffffff); width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 20px rgba(15, 23, 42, 0.32); overflow: hidden; padding: 6px; }
+  .admin-logo-container { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; padding-left: 10px; }
+  .admin-logo-icon { background: linear-gradient(135deg, #ecfeff, #ffffff); width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 18px; box-shadow: 0 18px 28px -18px rgba(15, 23, 42, 0.44); overflow: hidden; padding: 3px; flex: 0 0 auto; }
   .admin-logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .admin-logo-text h2 { font-size: 16px; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; }
-  .admin-logo-text p { font-size: 10px; font-weight: 700; margin: 0; color: #06b6d4; text-transform: uppercase; letter-spacing: 2px; }
+  .admin-logo-text { display: grid; gap: 4px; min-width: 0; }
+  .admin-logo-text h2 { font-size: 18px; font-weight: 900; margin: 0; letter-spacing: 0.08em; line-height: 1.1; color: white; }
+  .admin-logo-text p { font-size: 11px; font-weight: 700; margin: 0; color: #06b6d4; text-transform: uppercase; letter-spacing: 0.18em; line-height: 1.1; }
   .admin-nav-menu { display: flex; flex-direction: column; gap: 6px; flex-grow: 1; overflow-y: auto; }
   .admin-nav-menu::-webkit-scrollbar { width: 4px; }
   .admin-nav-menu::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
