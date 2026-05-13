@@ -459,7 +459,7 @@ const Login = () => {
                     {showPass ? <EyeIcon /> : <EyeOffIcon />}
                   </button>
                 </div>
-                <button
+                {/* <button
                   type="button"
                   className="login-helper-link"
                   onClick={(e) => {
@@ -468,7 +468,7 @@ const Login = () => {
                   }}
                 >
                   Forgot password?
-                </button>
+                </button> */}
               </div>
 
               {loginError && (

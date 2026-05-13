@@ -54,6 +54,20 @@ const styles = `
 .team-meta-row:last-child { border-bottom: none; }
 .team-meta-row .label { color: #64748b; font-weight: 700; }
 .team-meta-row .value { color: #0f172a; font-weight: 800; }
+.team-meta-value-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; min-width: 0; text-align: right; }
+.team-inline-edit { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.team-inline-input { min-width: 260px; padding: 10px 12px; border-radius: 12px; border: 1px solid #dbe2ea; font-family: inherit; font-size: 14px; font-weight: 700; color: #0f172a; }
+.team-inline-select { min-width: 230px; }
+.team-inline-select .styled-select-trigger { min-height: 44px; border-radius: 12px; border: 1px solid #dbe2ea; background: #ffffff; font-size: 14px; font-weight: 700; color: #0f172a; }
+.team-inline-select .styled-select-trigger:hover:not(:disabled) { border-color: #cbd5e1; background: #ffffff; box-shadow: 0 12px 22px -20px rgba(79, 70, 229, 0.2); }
+.team-inline-select .styled-select-trigger:focus-visible, .team-inline-select .styled-select-trigger.is-open { border-color: rgba(79, 70, 229, 0.9); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.13); }
+.team-inline-btn { border: none; padding: 10px 14px; border-radius: 12px; font-weight: 900; font-family: inherit; cursor: pointer; transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease; }
+.team-inline-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.team-inline-btn:disabled { cursor: not-allowed; opacity: 0.68; transform: none; }
+.team-inline-btn.primary { background: #4f46e5; color: white; }
+.team-inline-btn.secondary { background: #e2e8f0; color: #334155; }
+.team-inline-edit-trigger { border: none; background: transparent; color: #4f46e5; font-weight: 900; font-size: 12px; cursor: pointer; padding: 0; }
+.team-inline-note { color: #64748b; font-size: 13px; font-weight: 600; text-align: right; max-width: 320px; }
 
 .supervisor-pill {
   display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 8px 16px; border-radius: 14px;
@@ -129,6 +143,10 @@ const styles = `
 .pending-cancel:disabled, .roster-remove:disabled { cursor: not-allowed; opacity: 0.65; transform: none; }
 
 @media (max-width: 720px) {
+  .team-meta-row { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .team-meta-value-wrap, .team-inline-edit { width: 100%; justify-content: flex-start; text-align: left; }
+  .team-inline-input, .team-inline-select { width: 100%; min-width: 0; }
+  .team-inline-note { text-align: left; max-width: none; }
   .roster-header { align-items: flex-start; flex-direction: column; }
   .roster-card { grid-template-columns: 1fr; }
   .roster-right { justify-content: flex-start; }
@@ -323,6 +341,8 @@ const TeamManagement = () => {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameEditValue, setNameEditValue] = useState('');
+  const [isEditingProjectDomain, setIsEditingProjectDomain] = useState(false);
+  const [projectDomainEditValue, setProjectDomainEditValue] = useState('');
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
   const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
@@ -332,6 +352,7 @@ const TeamManagement = () => {
   const [rosterLoading, setRosterLoading] = useState(false);
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
   const [isSavingTeamName, setIsSavingTeamName] = useState(false);
+  const [isSavingProjectDomain, setIsSavingProjectDomain] = useState(false);
   const [isLeavingTeam, setIsLeavingTeam] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [pendingInvitationsLoading, setPendingInvitationsLoading] = useState(false);
@@ -475,6 +496,10 @@ const TeamManagement = () => {
   useEffect(() => {
     setNameEditValue(teamData?.teamName ?? '');
   }, [teamData]);
+
+  useEffect(() => {
+    setProjectDomainEditValue(projectInfo?.projectDomain || teamData?.projectDomain || '');
+  }, [projectInfo?.projectDomain, teamData?.projectDomain]);
 
   useEffect(() => {
     if (!isCreateTeamOpen) {
@@ -757,6 +782,44 @@ const TeamManagement = () => {
     }
   };
 
+  const saveProjectDomain = async () => {
+    if (!isLeader) {
+      setToastType('error');
+      setToastMessage('Only team leaders can update the project category');
+      setIsEditingProjectDomain(false);
+      return;
+    }
+
+    const nextProjectDomain = String(projectDomainEditValue || '').trim();
+    if (!nextProjectDomain) {
+      setToastType('error');
+      setToastMessage('Project category is required');
+      return;
+    }
+
+    try {
+      setIsSavingProjectDomain(true);
+      const response = await apiClient.put('/v1/teams/my', { projectDomain: nextProjectDomain });
+      const updatedTeam = normalizeTeamData(response?.data);
+      setTeamData(prev => updatedTeam ?? (prev ? { ...prev, projectDomain: nextProjectDomain } : prev));
+      if (updatedTeam?.members) {
+        setRosterMembers(updatedTeam.members);
+      }
+      try {
+        const projectResponse = await getMyProject();
+        setProjectInfo(projectResponse?.data ?? null);
+      } catch {
+        setProjectInfo(prev => prev ? { ...prev, projectDomain: nextProjectDomain } : prev);
+      }
+      setIsEditingProjectDomain(false);
+      showToast('Project category updated successfully.');
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Could not update project category', 'error', 4000);
+    } finally {
+      setIsSavingProjectDomain(false);
+    }
+  };
+
   if (isLoading && !teamData) {
     return (
       <div className="team-page-container">
@@ -851,17 +914,17 @@ const TeamManagement = () => {
           <div className="team-card-main">
             <div className="card-header-row">
                   {!isEditingName || !isLeader || projectArchived ? (
-                    <div style={{display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap'}}>
+                    <div className="team-meta-value-wrap" style={{ justifyContent: 'flex-start', textAlign: 'left' }}>
                       <h2>{teamData?.teamName ?? 'My Team'}</h2>
                       {isLeader && !projectArchived && (
                         <button type="button" aria-label="Edit team name" title="Edit team name" onClick={() => setIsEditingName(true)} style={{background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16, color: '#4f46e5', fontWeight: 900}}>✎</button>
                       )}
                     </div>
                   ) : (
-                    <div style={{display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap'}}>
-                      <input type="text" value={nameEditValue} onChange={(e) => setNameEditValue(e.target.value)} disabled={isSavingTeamName} style={{padding: '10px 12px', borderRadius: 12, border: '1px solid #dbe2ea', minWidth: 260, fontFamily: 'inherit', fontWeight: 700}} />
-                      <button type="button" onClick={saveTeamName} disabled={isSavingTeamName || !nameEditValue.trim()} style={{background: '#4f46e5', color: 'white', border: 'none', padding: '10px 14px', borderRadius: 12, fontWeight: 900, cursor: isSavingTeamName || !nameEditValue.trim() ? 'not-allowed' : 'pointer'}}>{isSavingTeamName ? 'Saving...' : 'Save'}</button>
-                      <button type="button" onClick={() => { setIsEditingName(false); setNameEditValue(teamData?.teamName ?? ''); }} disabled={isSavingTeamName} style={{background: '#e2e8f0', border: 'none', padding: '10px 14px', borderRadius: 12, fontWeight: 900, cursor: isSavingTeamName ? 'not-allowed' : 'pointer'}}>Cancel</button>
+                    <div className="team-inline-edit">
+                      <input type="text" value={nameEditValue} onChange={(e) => setNameEditValue(e.target.value)} disabled={isSavingTeamName} className="team-inline-input" />
+                      <button type="button" onClick={saveTeamName} disabled={isSavingTeamName || !nameEditValue.trim()} className="team-inline-btn primary">{isSavingTeamName ? 'Saving...' : 'Save'}</button>
+                      <button type="button" onClick={() => { setIsEditingName(false); setNameEditValue(teamData?.teamName ?? ''); }} disabled={isSavingTeamName} className="team-inline-btn secondary">Cancel</button>
                     </div>
                   )}
                   <span className="badge-active">Active</span>
@@ -935,7 +998,59 @@ const TeamManagement = () => {
             </div>
             <div className="team-meta-row">
               <span className="label">Project Category:</span>
-              <span className="value">{projectDomainLabel}</span>
+              {!isEditingProjectDomain || !isLeader || projectArchived ? (
+                <div className="team-meta-value-wrap">
+                  <span className="value">{projectDomainLabel}</span>
+                  {isLeader && !projectArchived ? (
+                    <button
+                      type="button"
+                      className="team-inline-edit-trigger"
+                      onClick={() => setIsEditingProjectDomain(true)}
+                      aria-label="Edit project category"
+                      title="Edit project category"
+                    >
+                      Edit
+                    </button>
+                  ) : null}
+                  {projectArchived ? (
+                    <span className="team-inline-note">Archived project categories cannot be changed.</span>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="team-inline-edit">
+                  <div className="team-inline-select">
+                    <StyledSelect
+                      value={projectDomainEditValue}
+                      onChange={(event) => setProjectDomainEditValue(event.target.value)}
+                      disabled={isSavingProjectDomain}
+                    >
+                      <option value="">Select a project category</option>
+                      {PROJECT_DOMAIN_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </StyledSelect>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={saveProjectDomain}
+                    disabled={isSavingProjectDomain || !projectDomainEditValue.trim()}
+                    className="team-inline-btn primary"
+                  >
+                    {isSavingProjectDomain ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingProjectDomain(false);
+                      setProjectDomainEditValue(projectInfo?.projectDomain || teamData?.projectDomain || '');
+                    }}
+                    disabled={isSavingProjectDomain}
+                    className="team-inline-btn secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
