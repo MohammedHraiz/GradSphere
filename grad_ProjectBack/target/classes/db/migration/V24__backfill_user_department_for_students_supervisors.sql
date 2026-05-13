@@ -1,0 +1,4 @@
+UPDATE users
+SET department = 'COMPUTER_SCIENCE'
+WHERE role IN ('ROLE_STUDENT', 'ROLE_SUPERVISOR')
+  AND department IS NULL;

@@ -35,13 +35,11 @@ const AdminSidebar = () => {
     { name: 'All Projects', path: '/admin/projects', icon: '📑' },
     { name: 'Supervisor Requests', path: '/admin/supervisor-requests', icon: '📨' },
     { name: 'Meetings', path: '/admin/meetings', icon: '📅' },
-    { name: 'Import / Export Data', path: '/admin/import', icon: '🗄️' },
     { name: 'Project Approvals', path: '/admin/forms', icon: '📝' },
+     { name: 'Import / Export Data', path: '/admin/import', icon: '🗄️' },
     { section: 'AI Engine' },
     { name: 'AI Allocation Engine', path: '/admin/ai-recommendations', icon: '🧠' },
-    { section: 'System Configuration' },
-    { name: 'System Logs', path: '/admin/logs', icon: '📟' },
-    { name: 'Global Settings', path: '/admin/settings', icon: '⚙️' },
+    
   ];
 
   return (
