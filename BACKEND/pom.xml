@@ -11,8 +11,8 @@
     <groupId>org.groubproject</groupId>
     <artifactId>platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>grad_ProjectBack</name>
-    <description>grad_ProjectBack</description>
+    <name>graduation-project-backend</name>
+    <description>Graduation Project backend service</description>
     <url/>
     <licenses>
         <license/>
