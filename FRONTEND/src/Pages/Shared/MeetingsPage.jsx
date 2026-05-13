@@ -67,6 +67,30 @@ const emptyForm = {
   attendance: [],
 };
 
+const createEmptyDateTimeParts = () => ({
+  date: '',
+  hour: '',
+  minute: '',
+  period: '',
+});
+
+const padDateTimeUnit = (value) => String(value).padStart(2, '0');
+
+const MEETING_HOUR_OPTIONS = Array.from({ length: 12 }, (_, index) => {
+  const hour = index + 1;
+  return { value: padDateTimeUnit(hour), label: String(hour) };
+});
+
+const MEETING_MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) => {
+  const minute = padDateTimeUnit(index);
+  return { value: minute, label: minute };
+});
+
+const MEETING_PERIOD_OPTIONS = [
+  { value: 'AM', label: 'AM' },
+  { value: 'PM', label: 'PM' },
+];
+
 const formatDateTime = (value) => {
   if (!value) return 'Not scheduled';
   const date = new Date(value);
@@ -80,6 +104,70 @@ const toInputDateTime = (value) => {
   const offset = date.getTimezoneOffset();
   const local = new Date(date.getTime() - offset * 60000);
   return local.toISOString().slice(0, 16);
+};
+
+const splitInputDateTime = (value) => {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) return createEmptyDateTimeParts();
+
+  const directMatch = rawValue.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/);
+  if (directMatch) {
+    const [, date, hour24, minute] = directMatch;
+    const hourNumber = Number(hour24);
+    const period = hourNumber >= 12 ? 'PM' : 'AM';
+    const hour12 = hourNumber % 12 || 12;
+    return {
+      date,
+      hour: padDateTimeUnit(hour12),
+      minute,
+      period,
+    };
+  }
+
+  const fallbackDate = new Date(rawValue);
+  if (Number.isNaN(fallbackDate.getTime())) {
+    return createEmptyDateTimeParts();
+  }
+
+  const fallbackHour = fallbackDate.getHours();
+  return {
+    date: [
+      fallbackDate.getFullYear(),
+      padDateTimeUnit(fallbackDate.getMonth() + 1),
+      padDateTimeUnit(fallbackDate.getDate()),
+    ].join('-'),
+    hour: padDateTimeUnit(fallbackHour % 12 || 12),
+    minute: padDateTimeUnit(fallbackDate.getMinutes()),
+    period: fallbackHour >= 12 ? 'PM' : 'AM',
+  };
+};
+
+const buildInputDateTime = (parts) => {
+  if (!parts?.date || !parts?.hour || !parts?.minute || !parts?.period) {
+    return '';
+  }
+
+  const hourNumber = Number(parts.hour);
+  if (!Number.isFinite(hourNumber) || hourNumber < 1 || hourNumber > 12) {
+    return '';
+  }
+
+  let hour24 = hourNumber % 12;
+  if (parts.period === 'PM') {
+    hour24 += 12;
+  }
+
+  return `${parts.date}T${padDateTimeUnit(hour24)}:${parts.minute}`;
+};
+
+const formatMeetingDatePreview = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'full',
+    timeStyle: 'short',
+  }).format(date);
 };
 
 const isArchivedProject = (project) => normalizeProjectStatus(project?.status) === 'ARCHIVED';
@@ -302,6 +390,107 @@ const MeetingTypeSelector = ({ value, onChange }) => (
   </div>
 );
 
+const MeetingDateTimePicker = ({
+  id,
+  value,
+  onChange,
+  hasError = false,
+  errorId,
+}) => {
+  const [draftParts, setDraftParts] = useState(() => splitInputDateTime(value));
+
+  useEffect(() => {
+    setDraftParts(splitInputDateTime(value));
+  }, [value]);
+
+  const previewValue = useMemo(() => buildInputDateTime(draftParts), [draftParts]);
+  const previewText = useMemo(() => formatMeetingDatePreview(previewValue), [previewValue]);
+  const helperId = `${id}-helper`;
+  const describedBy = [helperId, errorId].filter(Boolean).join(' ') || undefined;
+
+  const updateParts = (field, nextValue) => {
+    const nextParts = field === 'date' && !nextValue
+      ? createEmptyDateTimeParts()
+      : { ...draftParts, [field]: nextValue };
+
+    setDraftParts(nextParts);
+    onChange(buildInputDateTime(nextParts));
+  };
+
+  return (
+    <div className={`meetings-datetime-panel ${hasError ? 'has-error' : ''}`}>
+      <div className="meetings-datetime-main">
+        <div className="meetings-datetime-date">
+          <span className="meetings-datetime-mini-label">Date</span>
+          <input
+            id={id}
+            type="date"
+            className={`meetings-input meetings-date-input ${hasError ? 'has-error' : ''}`}
+            value={draftParts.date}
+            onChange={(event) => updateParts('date', event.target.value)}
+            aria-invalid={hasError}
+            aria-describedby={describedBy}
+          />
+        </div>
+
+        <div className="meetings-datetime-time" role="group" aria-label="Meeting time">
+          <div className="meetings-datetime-segment">
+            <span className="meetings-datetime-mini-label">Hour</span>
+            <StyledSelect
+              id={`${id}-hour`}
+              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+              value={draftParts.hour}
+              onChange={(event) => updateParts('hour', event.target.value)}
+              aria-label="Hour"
+            >
+              <option value="">Hour</option>
+              {MEETING_HOUR_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </StyledSelect>
+          </div>
+
+          <div className="meetings-datetime-segment">
+            <span className="meetings-datetime-mini-label">Minute</span>
+            <StyledSelect
+              id={`${id}-minute`}
+              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+              value={draftParts.minute}
+              onChange={(event) => updateParts('minute', event.target.value)}
+              aria-label="Minute"
+            >
+              <option value="">Minute</option>
+              {MEETING_MINUTE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </StyledSelect>
+          </div>
+
+          <div className="meetings-datetime-segment meetings-datetime-period">
+            <span className="meetings-datetime-mini-label">AM / PM</span>
+            <StyledSelect
+              id={`${id}-period`}
+              className={`meetings-input meetings-datetime-select ${hasError ? 'has-error' : ''}`}
+              value={draftParts.period}
+              onChange={(event) => updateParts('period', event.target.value)}
+              aria-label="AM or PM"
+            >
+              <option value="">AM / PM</option>
+              {MEETING_PERIOD_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </StyledSelect>
+          </div>
+        </div>
+      </div>
+
+      <p id={helperId} className="meetings-datetime-helper">
+        {previewText ? `Scheduled for ${previewText}` : 'Choose a date, then set hour, minute, and AM or PM.'}
+      </p>
+    </div>
+  );
+};
+
 const validateForm = (form, selectedProject, options = {}) => {
   const { requireAttendance = false } = options;
   const nextErrors = {};
@@ -311,7 +500,7 @@ const validateForm = (form, selectedProject, options = {}) => {
   }
 
   if (!form.meetingDate) {
-    nextErrors.meetingDate = 'Meeting date is required.';
+    nextErrors.meetingDate = 'Meeting date and time are required.';
   }
   
   if (requireAttendance) {
@@ -1304,15 +1493,13 @@ const MeetingsPage = () => {
                     </div>
 
                     <div className="meetings-field">
-                      <label htmlFor="meeting-date">Meeting Date <span className="meetings-required">*</span></label>
-                      <input
+                      <label htmlFor="meeting-date">Meeting Date &amp; Time <span className="meetings-required">*</span></label>
+                      <MeetingDateTimePicker
                         id="meeting-date"
-                        type="datetime-local"
-                        className={`meetings-input ${formErrors.meetingDate ? 'has-error' : ''}`}
                         value={formState.meetingDate}
-                        onChange={(event) => handleFieldChange('meetingDate', event.target.value)}
-                        aria-invalid={Boolean(formErrors.meetingDate)}
-                        aria-describedby={formErrors.meetingDate ? 'meeting-date-error' : undefined}
+                        onChange={(nextValue) => handleFieldChange('meetingDate', nextValue)}
+                        hasError={Boolean(formErrors.meetingDate)}
+                        errorId={formErrors.meetingDate ? 'meeting-date-error' : undefined}
                       />
                       {formErrors.meetingDate ? <p id="meeting-date-error" className="meetings-field-error">{formErrors.meetingDate}</p> : null}
                     </div>
@@ -1566,14 +1753,12 @@ const MeetingsPage = () => {
                     </div>
 
                     <div className="meetings-field">
-                      <label htmlFor="request-meeting-date">Preferred Date & Time <span className="meetings-required">*</span></label>
-                      <input
+                      <label htmlFor="request-meeting-date">Preferred Date &amp; Time <span className="meetings-required">*</span></label>
+                      <MeetingDateTimePicker
                         id="request-meeting-date"
-                        type="datetime-local"
-                        name="meetingDate"
-                        className={`meetings-input ${formErrors.meetingDate ? 'has-error' : ''}`}
                         value={formState.meetingDate}
-                        onChange={handleFormChange}
+                        onChange={(nextValue) => handleFieldChange('meetingDate', nextValue)}
+                        hasError={Boolean(formErrors.meetingDate)}
                       />
                       {formErrors.meetingDate ? <p className="meetings-field-error">{formErrors.meetingDate}</p> : null}
                     </div>
