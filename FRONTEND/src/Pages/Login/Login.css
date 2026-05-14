@@ -121,7 +121,7 @@
 }
 
 .auth-shell-otp {
-  max-width: 488px;
+  max-width: 520px;
 }
 
 .auth-card {
@@ -179,6 +179,11 @@
   font-weight: 500;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.otp-inline-emphasis {
+  color: #4338ca;
+  font-weight: 800;
 }
 
 .auth-form {
@@ -306,6 +311,13 @@
   color: #4338ca;
 }
 
+.login-helper-link:disabled,
+.auth-back-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .input-box .login-helper-link {
   display: block;
   margin-top: 8px;
@@ -428,8 +440,52 @@
   transform: translateX(-2px);
 }
 
-.otp-field {
-  letter-spacing: 0.1em;
+.otp-secondary-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.otp-code-group {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.otp-digit-input {
+  width: 58px;
+  height: 58px;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #0f172a;
+  text-align: center;
+  font: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease, transform 160ms ease;
+}
+
+.otp-digit-input:hover:not(:disabled) {
+  border-color: #a5b4fc;
+  background: #ffffff;
+}
+
+.otp-digit-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+  transform: translateY(-1px);
+}
+
+.otp-digit-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .password-rules-panel {
@@ -674,6 +730,16 @@
     gap: 6px;
   }
 
+  .otp-code-group {
+    gap: 12px;
+  }
+
+  .otp-digit-input {
+    width: 54px;
+    height: 54px;
+    font-size: 22px;
+  }
+
   .password-rules-panel ul {
     grid-template-columns: 1fr;
   }
@@ -725,6 +791,17 @@
 
   .input-field {
     min-height: 44px;
+  }
+
+  .otp-code-group {
+    gap: 10px;
+  }
+
+  .otp-digit-input {
+    width: 46px;
+    height: 50px;
+    border-radius: 14px;
+    font-size: 20px;
   }
 
   .btn-submit {
