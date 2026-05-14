@@ -232,9 +232,7 @@ public class OtpEmailService {
                                           <div style="font-size:12px; line-height:20px; color:#94a3b8; padding-top:12px; font-weight:600;">
                                             &copy; 2026 AL-BALQA Applied University. All rights reserved.
                                           </div>
-                                          <div style="font-size:12px; line-height:20px; color:#94a3b8; padding-top:14px; letter-spacing:0.3px;">
-                                            Website&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;LinkedIn&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Instagram&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;Email
-                                          </div>
+                                          
                                         </td>
                                       </tr>
                                     </table>

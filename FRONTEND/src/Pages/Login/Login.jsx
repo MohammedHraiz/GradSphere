@@ -779,7 +779,8 @@ const Login = () => {
                   </>
                 ) : isOtpVerifyStep ? (
                   <>
-                    Enter the 6-digit code sent to <strong className="otp-inline-emphasis">{otpEmail}</strong>. We will verify it before allowing password creation.
+                    Enter the 6-digit code sent to <strong className="otp-inline-emphasis">{otpEmail}</strong>. We will verify it before allowing password creation. 
+                    <br /><strong className="otp-inline-emphasis"> CHECK YOUR JUNK (SPAM) EMAIL </strong>
                   </>
                 ) : (
                   <>
