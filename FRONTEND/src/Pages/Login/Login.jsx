@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../api/apiClient';
 import { useAuth } from '../../auth/AuthContext';
 import bauLogo from '../../assets/bau_logo.png';
+import FeedbackToast from '../../components/FeedbackToast';
 import './Login.css';
 
 const EyeIcon = () => (
@@ -46,6 +47,152 @@ const PasswordRule = ({ label, valid, warning }) => (
 );
 
 const SHOW_DEV_ACCESS = false;
+const OTP_LENGTH = 6;
+const OTP_STEPS = {
+  REQUEST: 1,
+  VERIFY: 2,
+  PASSWORD: 3,
+};
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+
+const OtpCodeInput = ({ value, onChange, disabled = false, autoFocus = false }) => {
+  const inputRefs = useRef([]);
+  const digits = Array.from({ length: OTP_LENGTH }, (_, index) => value[index] ?? '');
+
+  const focusDigit = (index) => {
+    const boundedIndex = Math.max(0, Math.min(index, OTP_LENGTH - 1));
+    inputRefs.current[boundedIndex]?.focus();
+  };
+
+  const updateValue = (nextDigits) => {
+    onChange(nextDigits.join('').replace(/\D/g, '').slice(0, OTP_LENGTH));
+  };
+
+  const applyDigits = (startIndex, rawValue) => {
+    const cleanValue = rawValue.replace(/\D/g, '');
+    if (!cleanValue) {
+      return;
+    }
+
+    const nextDigits = [...digits];
+    cleanValue
+      .slice(0, OTP_LENGTH - startIndex)
+      .split('')
+      .forEach((digit, offset) => {
+        nextDigits[startIndex + offset] = digit;
+      });
+
+    updateValue(nextDigits);
+    const nextFocusIndex = Math.min(startIndex + cleanValue.length, OTP_LENGTH - 1);
+    requestAnimationFrame(() => focusDigit(nextFocusIndex));
+  };
+
+  const handleDigitChange = (index, event) => {
+    const nextRawValue = event.target.value;
+    const cleanValue = nextRawValue.replace(/\D/g, '');
+
+    if (!cleanValue) {
+      const nextDigits = [...digits];
+      nextDigits[index] = '';
+      updateValue(nextDigits);
+      return;
+    }
+
+    applyDigits(index, cleanValue);
+  };
+
+  const handleKeyDown = (index, event) => {
+    if (event.key === 'Backspace') {
+      event.preventDefault();
+
+      if (digits[index]) {
+        const nextDigits = [...digits];
+        nextDigits[index] = '';
+        updateValue(nextDigits);
+        return;
+      }
+
+      if (index > 0) {
+        const nextDigits = [...digits];
+        nextDigits[index - 1] = '';
+        updateValue(nextDigits);
+        requestAnimationFrame(() => focusDigit(index - 1));
+      }
+      return;
+    }
+
+    if (event.key === 'Delete') {
+      event.preventDefault();
+      const nextDigits = [...digits];
+      nextDigits[index] = '';
+      updateValue(nextDigits);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      focusDigit(index - 1);
+      return;
+    }
+
+    if (event.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+      event.preventDefault();
+      focusDigit(index + 1);
+    }
+  };
+
+  const handlePaste = (event) => {
+    const pastedValue = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    if (!pastedValue) {
+      return;
+    }
+
+    event.preventDefault();
+    const nextDigits = Array.from({ length: OTP_LENGTH }, (_, index) => pastedValue[index] ?? '');
+    updateValue(nextDigits);
+    requestAnimationFrame(() => focusDigit(Math.min(pastedValue.length - 1, OTP_LENGTH - 1)));
+  };
+
+  useEffect(() => {
+    if (!autoFocus || disabled) {
+      return;
+    }
+
+    const firstEmptyIndex = digits.findIndex((digit) => !digit);
+    const targetIndex = firstEmptyIndex >= 0 ? firstEmptyIndex : OTP_LENGTH - 1;
+    const frame = window.requestAnimationFrame(() => focusDigit(targetIndex));
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocus, disabled]);
+
+  return (
+    <div className="otp-code-group" role="group" aria-label="One-time password">
+      {digits.map((digit, index) => (
+        <input
+          key={`otp-digit-${index}`}
+          id={`otp-digit-${index}`}
+          ref={(element) => {
+            inputRefs.current[index] = element;
+          }}
+          type="text"
+          className="otp-digit-input"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete={index === 0 ? 'one-time-code' : 'off'}
+          enterKeyHint="done"
+          maxLength={1}
+          value={digit}
+          onChange={(event) => handleDigitChange(index, event)}
+          onKeyDown={(event) => handleKeyDown(index, event)}
+          onPaste={handlePaste}
+          onFocus={(event) => event.target.select()}
+          aria-label={`OTP digit ${index + 1}`}
+          disabled={disabled}
+        />
+      ))}
+    </div>
+  );
+};
 
 const getReadableOtpSuccess = (message) => {
   const fallback = 'A verification code has been sent to your email.';
@@ -66,6 +213,25 @@ const getReadableOtpSuccess = (message) => {
   return rawMessage;
 };
 
+const getReadableOtpError = (error, fallbackMessage) => {
+  const status = error?.status || error?.response?.status;
+  const rawMessage = String(error?.response?.data?.message || error?.message || '').trim();
+
+  if (status === 404 || rawMessage === 'EMAIL_NOT_FOUND') {
+    return 'This email is not registered by the admin.';
+  }
+
+  if (rawMessage === 'INVALID_OTP' || /invalid otp/i.test(rawMessage)) {
+    return 'The code you entered is incorrect.';
+  }
+
+  if (rawMessage === 'EXPIRED_OTP' || /expired otp/i.test(rawMessage)) {
+    return 'This code has expired. Please request a new one.';
+  }
+
+  return error?.message || fallbackMessage;
+};
+
 const Login = () => {
   const navigate = useNavigate();
  
@@ -74,10 +240,9 @@ const Login = () => {
   const [isOtpMode, setIsOtpMode] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [otpError, setOtpError] = useState('');
-  const [otpSuccess, setOtpSuccess] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(3);
+  const [toast, setToast] = useState(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -88,7 +253,9 @@ const Login = () => {
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [otpStep, setOtpStep] = useState(1);
+  const [otpStep, setOtpStep] = useState(OTP_STEPS.REQUEST);
+  const [verifiedOtp, setVerifiedOtp] = useState('');
+  const [otpBusyAction, setOtpBusyAction] = useState('');
   const [showOtpPass, setShowOtpPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   
@@ -121,8 +288,11 @@ const Login = () => {
   ]), [confirmPassword.length, doPasswordsMatch, newPassword]);
 
   const canSubmitOtpPassword = useMemo(() => (
-    /^\d{6}$/.test(otp.trim()) && isPasswordValid && doPasswordsMatch
-  ), [doPasswordsMatch, isPasswordValid, otp]);
+    Boolean(verifiedOtp) && isPasswordValid && doPasswordsMatch
+  ), [doPasswordsMatch, isPasswordValid, verifiedOtp]);
+  const isOtpRequestStep = otpStep === OTP_STEPS.REQUEST;
+  const isOtpVerifyStep = otpStep === OTP_STEPS.VERIFY;
+  const showToast = (message, type = 'success') => setToast({ message, type });
 
   const loginAsRole = async (role) => {
     const demoCredentials = {
@@ -255,86 +425,151 @@ const Login = () => {
     }, 1500);
   };
 
+  const requestOtpForEmail = async (targetEmail, successMessage) => {
+    const { data: payload } = await apiClient.post('/v1/auth/request-otp', { email: targetEmail });
+    return successMessage || getReadableOtpSuccess(payload?.message);
+  };
+
+  const openOtpMode = (e) => {
+    e.stopPropagation();
+    setToast(null);
+    setOtpEmail('');
+    setOtp('');
+    setVerifiedOtp('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowOtpPass(false);
+    setShowConfirmPass(false);
+    setOtpBusyAction('');
+    setOtpStep(OTP_STEPS.REQUEST);
+    setIsForgotMode(false);
+    setIsOtpMode(true);
+  };
+
   const handleRequestOtp = async (e) => {
     e.preventDefault();
-    setOtpError('');
-    setOtpSuccess('');
+    const normalizedEmail = otpEmail.trim().toLowerCase();
 
-    if (!otpEmail.trim()) {
-      setOtpError('Please enter your university email.');
+    if (!normalizedEmail) {
+      showToast('Please enter your university email.', 'error');
+      return;
+    }
+
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      showToast('Please enter a valid university email address.', 'error');
       return;
     }
 
     setIsLoading(true);
+    setOtpBusyAction('request');
 
     try {
-      const { data: payload } = await apiClient.post('/v1/auth/request-otp', { email: otpEmail.trim() });
-
-      setOtpSuccess(getReadableOtpSuccess(payload?.message));
-      setOtpStep(2);
+      showToast(await requestOtpForEmail(normalizedEmail));
+      setOtpEmail(normalizedEmail);
+      setOtp('');
+      setVerifiedOtp('');
+      setOtpStep(OTP_STEPS.VERIFY);
     } catch (err) {
-      setOtpError(err?.message || 'Could not connect to the server. Please try again.');
+      showToast(getReadableOtpError(err, 'We could not send a verification code. Please try again.'), 'error');
     } finally {
       setIsLoading(false);
+      setOtpBusyAction('');
     }
   };
 
-  const handleVerifyOtpAndSetPassword = async (e) => {
-    e.preventDefault();
-    setOtpError('');
-    setOtpSuccess('');
+  const handleResendOtp = async () => {
+    const normalizedEmail = otpEmail.trim();
 
-    if (!otp.trim() || !newPassword.trim() || !confirmPassword.trim()) {
-      setOtpError('Please fill in all fields.');
+    setOtp('');
+    setVerifiedOtp('');
+
+    if (!normalizedEmail) {
+      showToast('Return to login and enter your university email to request a new code.', 'error');
       return;
     }
 
-    if (!/^\d{6}$/.test(otp.trim())) {
-      setOtpError('OTP must be exactly 6 digits.');
+    setIsLoading(true);
+    setOtpBusyAction('resend');
+
+    try {
+      showToast(await requestOtpForEmail(normalizedEmail, 'A fresh verification code has been sent to your email.'));
+    } catch (err) {
+      showToast(getReadableOtpError(err, 'Could not send a new verification code. Please try again.'), 'error');
+    } finally {
+      setIsLoading(false);
+      setOtpBusyAction('');
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+
+    if (!new RegExp(`^\\d{${OTP_LENGTH}}$`).test(otp.trim())) {
+      showToast('OTP must be exactly 6 digits.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    setOtpBusyAction('verify');
+
+    try {
+      await apiClient.post('/v1/auth/verify-otp', {
+        email: otpEmail.trim(),
+        otp: otp.trim(),
+      });
+
+      setVerifiedOtp(otp.trim());
+      showToast('OTP verified successfully. You can now set a new password.');
+      setOtpStep(OTP_STEPS.PASSWORD);
+    } catch (err) {
+      showToast(getReadableOtpError(err, 'Verification failed. Please check OTP and try again.'), 'error');
+    } finally {
+      setIsLoading(false);
+      setOtpBusyAction('');
+    }
+  };
+
+  const handleSetOtpPassword = async (e) => {
+    e.preventDefault();
+
+    if (!newPassword.trim() || !confirmPassword.trim()) {
+      showToast('Please fill in all fields.', 'error');
+      return;
+    }
+
+    if (!verifiedOtp) {
+      showToast('Verify your OTP before setting a password.', 'error');
+      setOtpStep(OTP_STEPS.VERIFY);
       return;
     }
 
     if (!isPasswordValid) {
-      setOtpError('Password must satisfy all password rules.');
+      showToast('Password must satisfy all password rules.', 'error');
       return;
     }
 
     if (!doPasswordsMatch) {
-      setOtpError('Passwords do not match.');
+      showToast('Passwords do not match.', 'error');
       return;
     }
 
     setIsLoading(true);
+    setOtpBusyAction('submit');
 
     try {
       await apiClient.post('/v1/auth/setup-password', {
         email: otpEmail.trim(),
-        otp: otp.trim(),
+        otp: verifiedOtp,
         password: newPassword,
       });
 
-      setOtpSuccess('Password has been set successfully.');
       setShowSuccessModal(true);
       setRedirectCountdown(3);
     } catch (err) {
-      const status = err?.status || err?.response?.status;
-      const payload = err?.response?.data || {};
-      if (status === 404) {
-        setOtpError('This email is not registered by the admin.');
-      } else if (status === 400) {
-        const msg = payload?.message || err?.message || '';
-        if (msg.includes('Invalid OTP')) {
-          setOtpError('The code you entered is incorrect.');
-        } else if (msg.includes('Expired OTP')) {
-          setOtpError('This code has expired. Please request a new one.');
-        } else {
-          setOtpError(msg || 'Verification failed. Please check OTP and try again.');
-        }
-      } else {
-        setOtpError(err?.message || 'Verification failed. Please check OTP and try again.');
-      }
+      showToast(getReadableOtpError(err, 'Password setup failed. Please try again.'), 'error');
     } finally {
       setIsLoading(false);
+      setOtpBusyAction('');
     }
   };
 
@@ -349,15 +584,15 @@ const Login = () => {
       clearInterval(interval);
       setShowSuccessModal(false);
       setIsOtpMode(false);
-      setOtpStep(1);
+      setOtpStep(OTP_STEPS.REQUEST);
       setOtpEmail('');
       setOtp('');
+      setVerifiedOtp('');
       setNewPassword('');
       setConfirmPassword('');
       setShowOtpPass(false);
       setShowConfirmPass(false);
-      setOtpError('');
-      setOtpSuccess('');
+      setOtpBusyAction('');
     }, 3000);
 
     return () => {
@@ -370,30 +605,29 @@ const Login = () => {
     e.stopPropagation();
     setIsOtpMode(false);
     setIsForgotMode(false);
-    setOtpStep(1);
-    setOtpError('');
-    setOtpSuccess('');
+    setOtpStep(OTP_STEPS.REQUEST);
+    setLoginError('');
     setOtp('');
+    setVerifiedOtp('');
     setNewPassword('');
     setConfirmPassword('');
     setShowOtpPass(false);
     setShowConfirmPass(false);
     setShowSuccessModal(false);
     setOtpEmail('');
+    setOtpBusyAction('');
   };
 
-  const openOtpMode = (e) => {
+  const goBackToOtpVerification = (e) => {
     e.stopPropagation();
-    setOtpError('');
-    setOtpSuccess('');
-    setOtpStep(1);
-    setIsForgotMode(false);
-    setIsOtpMode(true);
+    setOtpStep(OTP_STEPS.VERIFY);
+    setVerifiedOtp('');
+    setShowOtpPass(false);
+    setShowConfirmPass(false);
   };
 
-  const handleOtpChange = (e) => {
-    setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
-    if (otpError) setOtpError('');
+  const handleOtpChange = (nextOtp) => {
+    setOtp(String(nextOtp || '').replace(/\D/g, '').slice(0, OTP_LENGTH));
   };
 
   return (
@@ -535,26 +769,28 @@ const Login = () => {
           <section className="auth-card otp-auth-card" aria-labelledby="otp-title">
             <div className="auth-card-heading">
               <p className="auth-kicker">First-time access</p>
-              <h1 id="otp-title" className="panel-title">Set Password</h1>
+              <h1 id="otp-title" className="panel-title">
+                {isOtpRequestStep ? 'Request OTP' : isOtpVerifyStep ? 'Verify OTP' : 'Set New Password'}
+              </h1>
               <p className="panel-subtitle">
-                {otpStep === 1 ? 'Request an OTP to your university email.' : 'Verify your OTP and create a new password.'}
+                {isOtpRequestStep ? (
+                  <>
+                    Enter your university email to receive a one-time verification code for first-time password setup.
+                  </>
+                ) : isOtpVerifyStep ? (
+                  <>
+                    Enter the 6-digit code sent to <strong className="otp-inline-emphasis">{otpEmail}</strong>. We will verify it before allowing password creation.
+                  </>
+                ) : (
+                  <>
+                    OTP verified for <strong className="otp-inline-emphasis">{otpEmail}</strong>. Create a strong password to activate your portal access.
+                  </>
+                )}
               </p>
             </div>
 
-            {otpError && (
-              <div className="auth-alert auth-alert-error" role="alert">
-                {otpError}
-              </div>
-            )}
-
-            {otpSuccess && (
-              <div className="auth-alert auth-alert-success" role="status">
-                {otpSuccess}
-              </div>
-            )}
-
-            {otpStep === 1 ? (
-              <form onSubmit={handleRequestOtp} className="auth-form">
+            {isOtpRequestStep ? (
+              <form onSubmit={handleRequestOtp} className="auth-form" noValidate>
                 <div className="input-box">
                   <label className="input-label" htmlFor="otp-email">University Email</label>
                   <input
@@ -565,7 +801,6 @@ const Login = () => {
                     value={otpEmail}
                     onChange={(e) => {
                       setOtpEmail(e.target.value);
-                      if (otpError) setOtpError('');
                     }}
                     autoComplete="email"
                     required
@@ -573,12 +808,8 @@ const Login = () => {
                   />
                 </div>
 
-                <div className="auth-note auth-note-success">
-                  We will send a 6-digit code to your email. Your role must already be assigned by an administrator.
-                </div>
-
                 <button type="submit" className="btn-submit" disabled={isLoading}>
-                  {isLoading ? <span className="spinner" aria-label="Sending OTP" /> : 'Send OTP'}
+                  {isLoading && otpBusyAction === 'request' ? <span className="spinner" aria-label="Sending OTP" /> : 'Send OTP'}
                 </button>
 
                 <button type="button" className="auth-back-link" onClick={goBackToLogin}>
@@ -586,26 +817,37 @@ const Login = () => {
                   Back to Login
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleVerifyOtpAndSetPassword} className="auth-form">
+            ) : isOtpVerifyStep ? (
+              <form onSubmit={handleVerifyOtp} className="auth-form">
                 <div className="input-box">
-                  <label className="input-label" htmlFor="otp-code">One-Time Password</label>
-                  <input
-                    id="otp-code"
-                    type="text"
-                    className="input-field otp-field"
-                    placeholder="Enter 6-digit OTP"
-                    value={otp}
-                    onChange={handleOtpChange}
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    maxLength="6"
-                    autoComplete="one-time-code"
-                    required
-                    disabled={isLoading}
-                  />
+                  <label className="input-label" htmlFor="otp-digit-0">One-Time Password</label>
+                  <div>
+                    <OtpCodeInput
+                      value={otp}
+                      onChange={handleOtpChange}
+                      disabled={isLoading}
+                      autoFocus={isOtpVerifyStep}
+                    />
+                  </div>
                 </div>
 
+                <button type="submit" className="btn-submit" disabled={isLoading}>
+                  {isLoading && otpBusyAction === 'verify' ? <span className="spinner" aria-label="Verifying OTP" /> : 'Verify OTP'}
+                </button>
+
+                <div className="otp-secondary-actions">
+                  <button type="button" className="login-helper-link" onClick={handleResendOtp} disabled={isLoading}>
+                    {isLoading && otpBusyAction === 'resend' ? 'Resending OTP...' : 'Resend OTP'}
+                  </button>
+
+                  <button type="button" className="auth-back-link" onClick={goBackToLogin}>
+                    <ArrowLeftIcon />
+                    Back to Login
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSetOtpPassword} className="auth-form">
                 <div className="input-box">
                   <label className="input-label" htmlFor="new-password">New Password</label>
                   <div className="password-input-wrap">
@@ -617,7 +859,6 @@ const Login = () => {
                       value={newPassword}
                       onChange={(e) => {
                         setNewPassword(e.target.value);
-                        if (otpError) setOtpError('');
                       }}
                       autoComplete="new-password"
                       required
@@ -650,7 +891,6 @@ const Login = () => {
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
-                        if (otpError) setOtpError('');
                       }}
                       autoComplete="new-password"
                       required
@@ -683,12 +923,12 @@ const Login = () => {
                 </div>
 
                 <button type="submit" className="btn-submit" disabled={isLoading || !canSubmitOtpPassword}>
-                  {isLoading ? <span className="spinner" aria-label="Verifying OTP" /> : 'Verify & Set Password'}
+                  {isLoading && otpBusyAction === 'submit' ? <span className="spinner" aria-label="Setting password" /> : 'Set Password'}
                 </button>
 
-                <button type="button" className="auth-back-link" onClick={goBackToLogin}>
+                <button type="button" className="auth-back-link" onClick={goBackToOtpVerification}>
                   <ArrowLeftIcon />
-                  Back to Login
+                  Back to Verify OTP
                 </button>
               </form>
             )}
@@ -718,6 +958,8 @@ const Login = () => {
           <button className="pill" onClick={() => loginAsRole('student')} title="Login as Graduate Student">Student</button>
         </div>
       ) : null}
+
+      <FeedbackToast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
     </div>
   );
 };
