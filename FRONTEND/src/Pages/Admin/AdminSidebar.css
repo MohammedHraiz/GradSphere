@@ -1,74 +1,128 @@
+/* AdminSidebar.css - Premium Dark Theme (matches Student/Supervisor/Dean) */
+
 .admin-sidebar {
-  width: 250px;
+  width: 260px;
   height: 100vh;
-  background-color: #ffffff;
-  border-right: 1px solid #edf2f7;
+  background: #0f172a;
+  color: white;
   display: flex;
   flex-direction: column;
+  padding: 30px 15px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .sidebar-brand {
-  padding: 24px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid #edf2f7;
+  gap: 16px;
+  margin-bottom: 50px;
+  padding-left: 10px;
 }
 
 .brand-icon {
-  background-color: #1a202c;
+  background: transparent;
   color: white;
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 0;
   font-weight: bold;
+  font-size: 24px;
+  flex: 0 0 auto;
 }
 
 .sidebar-brand span {
-  font-weight: 800;
-  color: #1a202c;
-  font-size: 14px;
+  font-weight: 900;
+  color: white;
+  font-size: 16px;
+  letter-spacing: 0.05em;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sidebar-brand span h2 {
+  font-size: 16px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: 1px;
+  color: white;
+  text-align: left;
+}
+
+.sidebar-brand span p {
+  font-size: 10px;
+  font-weight: 700;
+  margin: 0;
+  opacity: 0.5;
+  text-transform: uppercase;
+  text-align: left;
 }
 
 .sidebar-nav {
   flex: 1;
-  padding: 20px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 12px 24px;
+  padding: 14px 20px;
   cursor: pointer;
-  gap: 12px;
-  color: #718096;
-  transition: all 0.2s;
+  gap: 15px;
+  color: #94a3b8;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  position: relative;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  outline: none;
 }
 
 .nav-item:hover {
-  background-color: #f7fafc;
-  color: #1a202c;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  transform: translateX(5px);
 }
 
 .nav-item.active {
-  background-color: #f7fafc;
-  color: #e53e3e; /* اللون الأحمر المميز للأدمن في الصورة */
-  border-right: 3px solid #e53e3e;
-  font-weight: 600;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.3);
+  border-right: none;
+  font-weight: 700;
 }
 
 .sidebar-footer {
-  padding: 20px;
-  border-top: 1px solid #edf2f7;
+  padding: 20px 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
 }
 
 .back-btn {
   background: none;
   border: none;
-  color: #a0aec0;
+  color: #94a3b8;
   font-size: 12px;
   cursor: pointer;
+  transition: color 0.3s;
+}
+
+.back-btn:hover {
+  color: white;
 }

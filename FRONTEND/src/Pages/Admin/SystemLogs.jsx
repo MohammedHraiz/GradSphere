@@ -5,7 +5,7 @@ import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 System Logs - System Admin
- * Premium Master Edition - Dark Mode
+ * Premium Light SaaS Edition
  * Includes Server Live Feed simulation, JSON Trace Modals, and PDF Export.
  */
 
@@ -13,8 +13,8 @@ const logsStyles = `
   .ad-logs-container {
     padding: 20px 30px 60px 30px;
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    color: #f8fafc;
-    background: #0b1121;
+    color: #0f172a;
+    background: #f8fafc;
     min-height: 100vh;
     animation: fadeInPage 0.4s ease-out;
     text-align: left;
@@ -23,70 +23,70 @@ const logsStyles = `
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
   /* --- Premium Header --- */
-  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-kicker { color: #34d399; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
-  .live-dot { width: 10px; height: 10px; background: #34d399; border-radius: 50%; box-shadow: 0 0 10px #34d399; animation: pulseDot 1.5s infinite; }
+  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: transparent; padding: 0; border-radius: 0; border: none; box-shadow: none; }
+  .ad-kicker { color: #d97706; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;}
+  .live-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: pulseDot 1.5s infinite; }
   @keyframes pulseDot { 0% { opacity: 0.5; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.5; transform: scale(0.8); } }
-  .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
+  .ad-title { font-size: 34px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px; }
   
   .ad-header-actions { display: flex; gap: 12px; }
-  .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
+  .btn-ad-outline { background: white; border: 1px solid #d1d5db; color: #0f172a; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ad-outline:hover { background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px); }
 
   /* --- KPI Stats Cards --- */
   .ad-stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-  .ad-stat-pill { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px 25px; display: flex; align-items: center; gap: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
-  .ad-stat-pill:hover { transform: translateY(-5px); border-color: #3b82f6; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.2); }
-  .ad-stat-pill.active-filter { border-color: #06b6d4; background: #172033; }
-  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; background: #1e293b; }
+  .ad-stat-pill { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+  .ad-stat-pill:hover { transform: translateY(-5px); border-color: #cbd5e1; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+  .ad-stat-pill.active-filter { border-color: #4f46e5; background: rgba(79, 70, 229, 0.05); }
+  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; background: #f9fafb; }
   .ad-stat-pill:hover .ad-icon-wrapper { transform: scale(1.1); }
   
-  .icon-blue { color: #3b82f6; } .icon-yellow { color: #fbbf24; } .icon-red { color: #ef4444; } .icon-purple { color: #c084fc; }
-  .ad-stat-info h4 { margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
-  .ad-stat-info p { margin: 5px 0 0 0; font-size: 28px; font-weight: 900; color: #f8fafc; line-height: 1; }
+  .icon-blue { color: #3b82f6; } .icon-yellow { color: #f59e0b; } .icon-red { color: #ef4444; } .icon-purple { color: #8b5cf6; }
+  .ad-stat-info h4 { margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;}
+  .ad-stat-info p { margin: 8px 0 0 0; font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1; }
 
   /* --- Toolbar --- */
-  .ad-toolbar { display: flex; gap: 15px; background: #0f172a; padding: 15px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 25px; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3); }
+  .ad-toolbar { display: flex; gap: 15px; background: white; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .ad-search { flex-grow: 1; }
-  .ad-filter { padding: 10px 15px; border: 1px solid #334155; background: #1e293b; color: #f8fafc; border-radius: 10px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; min-width: 150px; font-family: inherit;}
-  .ad-filter:focus { border-color: #06b6d4; }
+  .ad-filter { padding: 10px 14px; border: 1px solid #d1d5db; background: white; color: #0f172a; border-radius: 10px; font-size: 13px; font-weight: 700; outline: none; cursor: pointer; min-width: 150px; font-family: inherit;}
+  .ad-filter:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
   /* --- Table --- */
-  .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+  .ad-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .ad-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .ad-table th { padding: 18px 25px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
-  .ad-table td { padding: 18px 25px; border-bottom: 1px solid #1e293b; font-size: 13px; font-weight: 600; color: #cbd5e1; vertical-align: middle; transition: 0.2s;}
-  .ad-table tr:hover td { background: #172033; }
+  .ad-table th { padding: 18px 24px; background: #f9fafb; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  .ad-table td { padding: 18px 24px; border-bottom: 1px solid #f3f4f6; font-size: 13px; font-weight: 500; color: #475569; vertical-align: middle; transition: 0.2s;}
+  .ad-table tr:hover td { background: #f9fafb; }
   .ad-table tr:last-child td { border-bottom: none; }
 
-  .log-id { font-family: 'Fira Code', monospace; color: #94a3b8; font-size: 12px;}
-  .log-message { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
-  .log-module { font-size: 11px; font-weight: 800; color: #06b6d4; background: rgba(6, 182, 212, 0.1); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; display: inline-block;}
+  .log-id { font-family: 'Fira Code', monospace; color: #64748b; font-size: 12px;}
+  .log-message { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+  .log-module { font-size: 11px; font-weight: 700; color: #4f46e5; background: rgba(79, 70, 229, 0.1); padding: 4px 10px; border-radius: 8px; text-transform: uppercase; display: inline-block;}
 
   /* Badges */
-  .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; display: inline-block; border: 1px solid transparent;}
-  .badge-info { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border-color: rgba(59, 130, 246, 0.2); }
-  .badge-warn { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
-  .badge-error { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
-  .badge-fatal { background: rgba(153, 27, 27, 0.2); color: #fca5a5; border-color: rgba(220, 38, 38, 0.5); box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);}
+  .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; border: 1px solid transparent;}
+  .badge-info { background: rgba(59, 130, 246, 0.1); color: #2563eb; border-color: rgba(59, 130, 246, 0.2); }
+  .badge-warn { background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.2); }
+  .badge-error { background: rgba(239, 68, 68, 0.1); color: #dc2626; border-color: rgba(239, 68, 68, 0.2); }
+  .badge-fatal { background: rgba(220, 38, 38, 0.1); color: #b91c1c; border-color: rgba(220, 38, 38, 0.3); box-shadow: 0 0 10px rgba(220, 38, 38, 0.15);}
 
   /* Action Buttons */
-  .btn-icon { width: 100%; padding: 8px 12px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: 0.2s; font-size: 12px; font-weight: 800;}
-  .btn-icon:hover { background: #334155; color: #f8fafc; border-color: #475569; transform: translateY(-2px); }
+  .btn-icon { width: 100%; padding: 8px 12px; border-radius: 10px; background: white; border: 1px solid #d1d5db; color: #0f172a; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: 0.2s; font-size: 12px; font-weight: 700;}
+  .btn-icon:hover { background: #f9fafb; color: #0f172a; border-color: #9ca3af; transform: translateY(-2px); }
 
   /* --- Modals (Trace Inspector) --- */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
-  .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; width: 90%; max-width: 700px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; }
-  .modal-header { padding: 20px 30px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; background: #1e293b;}
-  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #f8fafc; display: flex; align-items: center; gap: 10px;}
-  .modal-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s; }
-  .modal-close:hover { color: #f8fafc; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
+  .modal-content { background: white; border: 1px solid #e2e8f0; border-radius: 16px; width: 90%; max-width: 700px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); animation: slideUp 0.3s ease-out; }
+  .modal-header { padding: 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white;}
+  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; display: flex; align-items: center; gap: 10px;}
+  .modal-close { background: none; border: none; color: #64748b; font-size: 20px; cursor: pointer; transition: 0.2s; }
+  .modal-close:hover { color: #0f172a; }
   
-  .modal-body { padding: 30px; }
-  .terminal-trace { background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; font-family: 'Fira Code', monospace; font-size: 13px; color: #cbd5e1; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);}
-  .json-key { color: #38bdf8; }
-  .json-string { color: #a3e635; }
-  .json-number { color: #f472b6; }
+  .modal-body { padding: 24px; }
+  .terminal-trace { background: #f9fafb; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; font-family: 'Fira Code', monospace; font-size: 13px; color: #475569; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; box-shadow: inset 0 0 10px rgba(0,0,0,0.02);}
+  .json-key { color: #2563eb; }
+  .json-string { color: #059669; }
+  .json-number { color: #dc2626; }
 
   /* 💡 Print Media Magic */
   @media print {
@@ -173,7 +173,7 @@ const SystemLogs = () => {
         <div className="ad-header-actions">
           <button className="btn-ad-outline" onClick={() => navigate('/admin/dashboard')}>← Back</button>
           <button className="btn-ad-outline" onClick={() => { alert('Refreshing Logs...'); }}>🔄 Refresh Feed</button>
-          <button className="btn-ad-outline" style={{background: '#0f172a', color: 'white', borderColor: '#0f172a'}} onClick={handleExportPDF}>
+          <button className="btn-ad-outline" style={{background: 'linear-gradient(135deg, #4f46e5, #2563eb)', color: 'white', borderColor: 'transparent', boxShadow: '0 16px 30px -22px rgba(79,70,229,.8)'}} onClick={handleExportPDF}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             Export Logs PDF
           </button>
@@ -204,9 +204,9 @@ const SystemLogs = () => {
       <div className="ad-toolbar">
         <SearchBar
           className="ad-search"
-          variant="dark"
+          variant="light"
           value={searchTerm}
-          onChange={setSearchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
           onClear={() => setSearchTerm('')}
           placeholder="Search by Message or Log ID..."
         />
@@ -238,13 +238,13 @@ const SystemLogs = () => {
             {filteredLogs.length > 0 ? filteredLogs.map(log => (
               <tr key={log.id}>
                 <td>
-                  <div style={{fontWeight: 800, color: '#f8fafc', marginBottom: '4px'}}>{log.timestamp}</div>
+                  <div style={{fontWeight: 800, color: '#0f172a', marginBottom: '4px'}}>{log.timestamp}</div>
                   <div className="log-id">{log.id}</div>
                 </td>
                 <td><span className={`status-badge ${getLevelBadge(log.level)}`}>{log.level}</span></td>
                 <td><span className="log-module">{log.module}</span></td>
                 <td>
-                  <div className="log-message" style={{color: log.level === 'FATAL' || log.level === 'ERROR' ? '#fca5a5' : '#f8fafc'}}>{log.message}</div>
+                  <div className="log-message" style={{color: log.level === 'FATAL' || log.level === 'ERROR' ? '#dc2626' : '#0f172a'}}>{log.message}</div>
                 </td>
                 <td className="actions-cell">
                   <button className="btn-icon" onClick={() => setSelectedTrace(log)}>
@@ -275,7 +275,7 @@ const SystemLogs = () => {
                 <span style={{fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center'}}>{selectedTrace.timestamp}</span>
               </div>
               
-              <div style={{background: '#1e293b', padding: '15px', borderRadius: '12px', border: '1px solid #334155', marginBottom: '20px', fontSize: '14px', fontWeight: 700, color: '#f8fafc'}}>
+              <div style={{background: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '20px', fontSize: '14px', fontWeight: 700, color: '#0f172a'}}>
                 {selectedTrace.message}
               </div>
 

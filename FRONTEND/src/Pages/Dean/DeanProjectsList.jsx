@@ -9,6 +9,14 @@ import ClickableUser from '../../components/ClickableUser';
 import SearchBar from '../../components/SearchBar';
 import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
 import StyledSelect from '../../components/StyledSelect';
+import {
+  coerceProjectDomainFilter,
+  getProjectDomainLabel,
+  getProjectDomainOptions,
+  resolveProjectDomainValue,
+} from '../../utils/projectDomain';
+
+const ALL_CATEGORIES = 'All Categories';
 
 const projectsStyles = `
 .dean-proj-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -73,6 +81,7 @@ const normalizeProject = (project) => ({
   latestFeedback: project?.latestFeedback ?? '',
   pendingSupervisorName: project?.pendingSupervisorName ?? '',
   submittedAt: project?.submittedAt ?? project?.createdAt ?? '',
+  projectDomain: getProjectDomainLabel(resolveProjectDomainValue(project)),
 });
 
 const DeanProjectsList = () => {
@@ -82,6 +91,7 @@ const DeanProjectsList = () => {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState(ALL_CATEGORIES);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState(null);
   const [actionId, setActionId] = useState('');
@@ -133,16 +143,41 @@ const DeanProjectsList = () => {
     }
   }, [location.state]);
 
+  const categoryOptions = useMemo(
+    () => [ALL_CATEGORIES, ...getProjectDomainOptions(projects, (project) => project.projectDomain)],
+    [projects],
+  );
+
+  useEffect(() => {
+    const requestedCategory = new URLSearchParams(location.search).get('category') || '';
+    setCategoryFilter(coerceProjectDomainFilter(requestedCategory, categoryOptions, ALL_CATEGORIES));
+  }, [location.search, categoryOptions]);
+
   const filteredProjects = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
     return projects.filter((project) => {
-      const matchesSearch = !search || [project.title, project.studentName, project.teamName, project.supervisor?.name, formatProjectStatus(project.status)]
+      const matchesSearch = !search || [project.title, project.studentName, project.teamName, project.supervisor?.name, project.projectDomain, formatProjectStatus(project.status)]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(search));
       const matchesStatus = statusFilter === 'All' || normalizeProjectStatus(project.status) === statusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesCategory = categoryFilter === ALL_CATEGORIES || project.projectDomain === categoryFilter;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [projects, searchTerm, statusFilter]);
+  }, [categoryFilter, projects, searchTerm, statusFilter]);
+
+  const updateCategoryFilter = (nextCategory) => {
+    setCategoryFilter(nextCategory);
+    const params = new URLSearchParams(location.search);
+
+    if (!nextCategory || nextCategory === ALL_CATEGORIES) {
+      params.delete('category');
+    } else {
+      params.set('category', nextCategory);
+    }
+
+    const search = params.toString();
+    navigate(`${location.pathname}${search ? `?${search}` : ''}`, { replace: true });
+  };
 
   const counts = useMemo(() => ({
     all: projects.length,
@@ -288,6 +323,9 @@ const DeanProjectsList = () => {
 
       <div className="dp-toolbar">
         <SearchBar className="dp-search" placeholder="Search projects, students, teams, or supervisors..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
+        <StyledSelect className="dp-filter" value={categoryFilter} onChange={(event) => updateCategoryFilter(event.target.value)}>
+          {categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+        </StyledSelect>
         <StyledSelect className="dp-filter" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="All">All Statuses</option>
           <option value="SUBMITTED">Submitted</option>
@@ -325,6 +363,7 @@ const DeanProjectsList = () => {
                   <td>
                     <div className="dp-proj-name">{project.title}</div>
                     <div className="dp-proj-id">{project.teamName || 'Not linked'}</div>
+                    <div className="dp-proj-id" style={{ marginTop: 6 }}>Category: {project.projectDomain}</div>
                   </td>
                   <td>
                     <ClickableUser

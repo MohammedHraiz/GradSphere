@@ -27,7 +27,8 @@ const extraStyles = `
 .sup-progress-bar { height: 10px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
 .sup-progress-fill { height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); }
 .sup-category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
-.sup-category-card { border: 1px solid #bfdbfe; background: linear-gradient(180deg, #eff6ff, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(59,130,246,0.28); }
+.sup-category-card { border: 1px solid #bfdbfe; background: linear-gradient(180deg, #eff6ff, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(59,130,246,0.28); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.sup-category-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12); border-color: #93c5fd; }
 .sup-category-card span { display: block; font-size: 11px; font-weight: 900; color: #1d4ed8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
 .sup-category-card strong { display: block; font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
 .sup-category-card p { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
@@ -70,7 +71,7 @@ const SupervisorDashboard = () => {
           <h1>Dashboard Overview</h1>
         </div>
         <div className="sup-header-actions">
-          <button className="btn-primary" onClick={() => navigate('/supervisor/projects')}>Projects & Requests</button>
+          <button className="btn-primary" onClick={() => navigate('/supervisor/projects')}>Proposal Review</button>
         </div>
       </div>
 
@@ -195,7 +196,7 @@ const SupervisorDashboard = () => {
             {categoryEntries.length ? (
               <div className="sup-category-grid">
                 {categoryEntries.map(([category, count]) => (
-                  <div key={category} className="sup-category-card">
+                  <div key={category} className="sup-category-card" onClick={() => navigate(`/supervisor/my-teams?category=${encodeURIComponent(category)}`)}>
                     <span>Category</span>
                     <strong>{count}</strong>
                     <p>{category}</p>

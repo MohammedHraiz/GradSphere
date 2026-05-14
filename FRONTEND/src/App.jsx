@@ -15,6 +15,7 @@ import SupervisorSidebar from './Pages/Supervisor/SupervisorSidebar';
 import SupervisorDashboard from './Pages/Supervisor/SupervisorDashboard';
 import StudentsList from './Pages/Supervisor/StudentsList';
 import ProjectsList from './Pages/Supervisor/ProjectsList';
+import SupervisorTeamsList from './Pages/Supervisor/SupervisorTeamsList';
 import TaskManager from './Pages/Supervisor/TaskManager';
 import MilestoneManagement from './Pages/Supervisor/MilestoneManagement';
 
@@ -91,7 +92,7 @@ const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang
   const profileAvatarSrc = resolveProfilePhotoUrl(user?.profilePhotoUrl);
 
   const getRoleColor = () => {
-    if (isAdmin) return '#06b6d4';
+    if (isAdmin) return '#4f46e5';
     if (userRole === 'dean') return '#f59e0b';
     if (userRole === 'supervisor') return '#3b82f6';
     return '#4f46e5';
@@ -177,7 +178,7 @@ const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang
   };
 
   // Header Colors
-  const isDark = globalTheme === 'dark' || isAdmin;
+  const isDark = globalTheme === 'dark' && !isAdmin;
   const headerBg = isDark ? '#0b1121' : 'white';
   const headerBorder = isDark ? '1px solid #1e293b' : '1px solid #e2e8f0';
   const textColor = isDark ? '#f8fafc' : '#0f172a';
@@ -308,10 +309,10 @@ const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang
 
               <div className="th-info-label" style={{marginBottom: '10px'}}>Appearance Theme</div>
               <div className="seg-control">
-                <button className={`seg-btn ${globalTheme === 'light' && !isAdmin ? 'active' : ''}`} onClick={() => !isAdmin && setGlobalTheme('light')} disabled={isAdmin} style={{opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer'}} title={isAdmin ? "Admin forced to Dark Mode" : ""}>
+                <button className={`seg-btn ${globalTheme === 'light' || isAdmin ? 'active' : ''}`} onClick={() => setGlobalTheme('light')}>
                   ☀️ Light
                 </button>
-                <button className={`seg-btn ${globalTheme === 'dark' || isAdmin ? 'active' : ''}`} onClick={() => setGlobalTheme('dark')}>
+                <button className={`seg-btn ${globalTheme === 'dark' && !isAdmin ? 'active' : ''}`} onClick={() => !isAdmin && setGlobalTheme('dark')} disabled={isAdmin} style={{opacity: isAdmin ? 0.5 : 1, cursor: isAdmin ? 'not-allowed' : 'pointer'}} title={isAdmin ? 'Admin uses the shared light dashboard theme' : ''}>
                   🌙 Dark
                 </button>
               </div>
@@ -336,7 +337,7 @@ const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang
 
               {isAdmin && (
                 <div style={{textAlign: 'center', marginTop: '15px'}}>
-                  <span style={{color: '#06b6d4', fontSize: '12px', fontWeight: 800, cursor: 'pointer'}} onClick={() => {setShowSettingsModal(false); navigate('/admin/settings');}}>
+                  <span style={{color: '#4f46e5', fontSize: '12px', fontWeight: 800, cursor: 'pointer'}} onClick={() => {setShowSettingsModal(false); navigate('/admin/settings');}}>
                     Advanced Admin Settings →
                   </span>
                 </div>
@@ -353,9 +354,9 @@ const TopHeader = ({ userRole, onLogout, globalTheme, setGlobalTheme, globalLang
 // 🛡️ Safe Placeholder
 // ==========================================
 const SafeAdminPlaceholder = ({ title, icon }) => (
-  <div style={{padding:'40px', background:'#0f172a', minHeight:'100vh', borderRadius: '24px', textAlign: 'left', animation: 'fadeIn 0.4s ease', border: '1px solid #1e293b'}}>
-    <h1 style={{fontSize: '32px', color: '#22d3ee', margin: '0 0 10px 0', fontWeight: 900}}>{title} {icon}</h1>
-    <p style={{color: '#94a3b8', margin: '0 0 30px 0', fontWeight: 500}}>This module is currently under active development.</p>
+  <div style={{padding:'40px', background:'#f8fafc', minHeight:'100vh', borderRadius: '24px', textAlign: 'left', animation: 'fadeIn 0.4s ease', border: '1px solid #e2e8f0'}}>
+    <h1 style={{fontSize: '32px', color: '#0f172a', margin: '0 0 10px 0', fontWeight: 900}}>{title} {icon}</h1>
+    <p style={{color: '#64748b', margin: '0 0 30px 0', fontWeight: 500}}>This module is currently under active development.</p>
   </div>
 );
 
@@ -401,7 +402,7 @@ function App() {
   };
 
   // 💡 Dynamic Background based on Global Theme and Role
-  const isDark = globalTheme === 'dark' || normalizedUserRole === 'admin' || String(currentUser?.role || '').replace(/^ROLE_/i, '').toLowerCase() === 'admin';
+  const isDark = globalTheme === 'dark' && normalizedUserRole !== 'admin' && String(currentUser?.role || '').replace(/^ROLE_/i, '').toLowerCase() !== 'admin';
   const wrapperBg = isDark ? '#0b1121' : '#f8fafc';
 
   return (
@@ -448,6 +449,7 @@ function App() {
                   <Routes>
                     <Route path="dashboard" element={<SupervisorDashboard />} />
                     <Route path="students" element={<StudentsList />} />
+                    <Route path="my-teams" element={<SupervisorTeamsList />} />
                     <Route path="projects" element={<ProjectsList />} />
                     <Route path="tasks" element={<TaskManager />} />
                     <Route path="milestones" element={<MilestoneManagement />} />

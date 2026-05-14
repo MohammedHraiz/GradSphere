@@ -4,7 +4,7 @@ import StyledSelect from '../../components/StyledSelect';
 
 /**
  * 💡 Global Settings - System Admin
- * Premium Master Edition - Dark Mode
+ * Premium Light SaaS Edition
  * Includes interactive Tabs, Toggle Switches, simulated saving, and PDF Export.
  */
 
@@ -12,8 +12,8 @@ const settingsStyles = `
   .ad-settings-container {
     padding: 20px 30px 60px 30px;
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    color: #f8fafc;
-    background: #0b1121;
+    color: #0f172a;
+    background: #f8fafc;
     min-height: 100vh;
     animation: fadeInPage 0.4s ease-out;
     text-align: left;
@@ -22,16 +22,16 @@ const settingsStyles = `
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
   /* --- Premium Header --- */
-  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-kicker { color: #8b5cf6; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
-  .ad-kicker::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #8b5cf6; border-radius: 50%; box-shadow: 0 0 8px #8b5cf6;}
-  .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
+  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: white; padding: 0; border-radius: 0; border: none; box-shadow: none; }
+  .ad-kicker { color: #d97706; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-kicker::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #d97706; border-radius: 50%; }
+  .ad-title { font-size: 34px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px; }
   
   .ad-header-actions { display: flex; gap: 12px; }
-  .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
-  .btn-ad-primary { background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; border: none; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3); }
-  .btn-ad-primary:hover { box-shadow: 0 8px 25px rgba(6, 182, 212, 0.5); background: linear-gradient(135deg, #0891b2, #2563eb); transform: translateY(-2px); }
+  .btn-ad-outline { background: white; border: 1px solid #d1d5db; color: #0f172a; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ad-outline:hover { background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px); }
+  .btn-ad-primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+  .btn-ad-primary:hover { box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3); background: linear-gradient(135deg, #4338ca, #6d28d9); transform: translateY(-2px); }
   .btn-ad-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; animation: pulse 1.5s infinite; }
 
   @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
@@ -40,37 +40,37 @@ const settingsStyles = `
   .settings-layout { display: grid; grid-template-columns: 250px 1fr; gap: 30px; }
 
   /* Settings Sidebar (Tabs) */
-  .settings-nav { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 15px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); align-self: start; }
-  .nav-tab { padding: 12px 18px; background: transparent; border: none; color: #94a3b8; font-size: 14px; font-weight: 800; text-align: left; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
-  .nav-tab:hover { background: #1e293b; color: #f8fafc; }
-  .nav-tab.active { background: rgba(6, 182, 212, 0.1); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.2); }
+  .settings-nav { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); align-self: start; }
+  .nav-tab { padding: 12px 16px; background: transparent; border: none; color: #64748b; font-size: 14px; font-weight: 700; text-align: left; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+  .nav-tab:hover { background: #f9fafb; color: #0f172a; }
+  .nav-tab.active { background: rgba(79, 70, 229, 0.1); color: #4f46e5; border: none; }
 
   /* Settings Content Area */
-  .settings-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 30px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .section-title { font-size: 20px; font-weight: 900; color: #f8fafc; margin: 0 0 5px 0; border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }
-  .section-subtitle { font-size: 13px; color: #94a3b8; font-weight: 500; display: block; margin-top: 5px; }
+  .settings-content { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+  .section-title { font-size: 20px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 25px; }
+  .section-subtitle { font-size: 13px; color: #64748b; font-weight: 500; display: block; margin-top: 5px; }
 
   /* Form Elements */
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
   .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-  .form-label { font-size: 12px; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; }
-  .form-input, .form-select { width: 100%; padding: 12px 15px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: 0.2s; box-sizing: border-box; font-family: inherit;}
-  .form-input:focus, .form-select:focus { border-color: #06b6d4; box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15); }
+  .form-label { font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input, .form-select { width: 100%; padding: 10px 14px; background: #f9fafb; border: 1px solid #d1d5db; color: #0f172a; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; transition: 0.2s; box-sizing: border-box; font-family: inherit;}
+  .form-input:focus, .form-select:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); background: white; }
   
   /* Toggle Switch */
-  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-bottom: 15px; }
-  .toggle-info h4 { margin: 0 0 3px 0; font-size: 14px; font-weight: 800; color: #f8fafc; }
-  .toggle-info p { margin: 0; font-size: 12px; color: #94a3b8; }
+  .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f9fafb; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 15px; }
+  .toggle-info h4 { margin: 0 0 3px 0; font-size: 14px; font-weight: 700; color: #0f172a; }
+  .toggle-info p { margin: 0; font-size: 12px; color: #64748b; }
   
   .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
   .switch input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .3s; border-radius: 24px; }
-  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
-  input:checked + .slider { background-color: #06b6d4; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #d1d5db; transition: .3s; border-radius: 24px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+  input:checked + .slider { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
   input:checked + .slider:before { transform: translateX(20px); }
 
   /* Save Action Area */
-  .save-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end; }
+  .save-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; }
 
   /* 💡 Print Media Magic */
   @media print {
@@ -293,9 +293,9 @@ const Settings = () => {
                 </StyledSelect>
               </div>
               
-              <div style={{background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '15px', borderRadius: '12px', marginTop: '20px'}}>
-                <h4 style={{margin: '0 0 5px 0', fontSize: '13px', color: '#fbbf24'}}>⚠️ Storage Notice</h4>
-                <p style={{margin: 0, fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5}}>
+              <div style={{background: '#fffbeb', border: '1px solid #fde68a', padding: '15px', borderRadius: '12px', marginTop: '20px'}}>
+                <h4 style={{margin: '0 0 5px 0', fontSize: '13px', color: '#b45309'}}>⚠️ Storage Notice</h4>
+                <p style={{margin: 0, fontSize: '12px', color: '#92400e', lineHeight: 1.5}}>
                   Database is approaching 85% capacity. Changing backup frequency to 'Hourly' may impact system performance. Consider archiving old projects via the 'Import/Export' module.
                 </p>
               </div>

@@ -16,8 +16,8 @@ const importStyles = `
   .ad-import-container {
     padding: 20px 30px 60px 30px;
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    color: #f8fafc;
-    background: #0b1121;
+    color: #0f172a;
+    background: #f8fafc;
     min-height: 100vh;
     animation: fadeInPage 0.4s ease-out;
     text-align: left;
@@ -25,48 +25,48 @@ const importStyles = `
 
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-kicker { color: #06b6d4; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
-  .ad-kicker::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; box-shadow: 0 0 8px #06b6d4;}
-  .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
+  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: transparent; padding: 0; border-radius: 0; border: none; box-shadow: none; }
+  .ad-kicker { color: #d97706; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-kicker::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #d97706; border-radius: 50%; }
+  .ad-title { font-size: 34px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px; }
 
   .ad-header-actions { display: flex; gap: 12px; }
-  .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
+  .btn-ad-outline { background: white; border: 1px solid #d1d5db; color: #0f172a; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ad-outline:hover { background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px); }
 
   .ad-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; margin-bottom: 28px; }
   @media (max-width: 1100px) { .ad-grid { grid-template-columns: 1fr; } }
 
-  .ad-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
-  .ad-card-title { font-size: 16px; font-weight: 900; color: #f8fafc; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-card { background: white; border: 1px solid #e2e8f0; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px -22px rgba(15,23,42,0.12); }
+  .ad-card-title { font-size: 18px; font-weight: 900; color: #0f172a; margin: 0 0 18px 0; display: flex; align-items: center; gap: 8px;}
 
-  .ad-helper { margin: 0 0 18px; font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .ad-helper { margin: 0 0 18px; font-size: 13px; color: #64748b; line-height: 1.6; }
   .ad-upload-actions { display: grid; gap: 12px; }
 
-  .btn-upload { width: 100%; padding: 14px; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3); }
-  .btn-upload:hover { box-shadow: 0 8px 25px rgba(6, 182, 212, 0.5); transform: translateY(-2px); }
-  .btn-upload:disabled { background: #334155; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn-upload { width: 100%; padding: 14px; background: linear-gradient(135deg, #4f46e5, #2563eb); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; box-shadow: 0 18px 30px -20px rgba(79, 70, 229, 0.8); }
+  .btn-upload:hover { box-shadow: 0 22px 38px -22px rgba(79, 70, 229, 0.82); transform: translateY(-2px); }
+  .btn-upload:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
 
-  .ad-alert { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.28); color: #fecaca; font-size: 12px; font-weight: 700; }
-  .ad-preview-meta { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: #94a3b8; }
+  .ad-alert { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #fff1f2; border: 1px solid #fecaca; color: #be123c; font-size: 12px; font-weight: 700; }
+  .ad-preview-meta { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; font-weight: 700; color: #64748b; }
 
   .ad-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-  .ad-summary-card { background: #111c33; border: 1px solid #1e293b; border-radius: 18px; padding: 16px; }
-  .ad-summary-card span { display: block; color: #94a3b8; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
-  .ad-summary-card strong { display: block; margin-top: 8px; color: #f8fafc; font-size: 24px; font-weight: 900; }
+  .ad-summary-card { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px; box-shadow: 0 12px 28px -30px rgba(15,23,42,0.38); }
+  .ad-summary-card span { display: block; color: #64748b; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ad-summary-card strong { display: block; margin-top: 8px; color: #0f172a; font-size: 24px; font-weight: 900; }
   .ad-summary-sub { margin-top: 6px; font-size: 11px; color: #64748b; font-weight: 700; }
 
   .ad-override { margin-top: 18px; display: grid; gap: 10px; }
-  .ad-override label { color: #94a3b8; font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ad-override label { color: #64748b; font-size: 12px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
 
-  .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-table-head { padding: 18px 24px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .ad-table-head h3 { margin: 0; font-size: 18px; font-weight: 900; color: #f8fafc; }
-  .ad-table-head p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; font-weight: 700; }
+  .ad-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 16px 34px -30px rgba(15,23,42,0.22); }
+  .ad-table-head { padding: 18px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: white; }
+  .ad-table-head h3 { margin: 0; font-size: 18px; font-weight: 900; color: #0f172a; }
+  .ad-table-head p { margin: 4px 0 0; font-size: 12px; color: #64748b; font-weight: 700; }
   .ad-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .ad-table th { padding: 15px 20px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
-  .ad-table td { padding: 14px 20px; border-bottom: 1px solid #1e293b; font-size: 13px; font-weight: 600; color: #cbd5e1; vertical-align: top; }
-  .ad-table tr:hover td { background: #172033; color: #f8fafc; }
+  .ad-table th { padding: 15px 20px; background: #f8fafc; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; }
+  .ad-table td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600; color: #475569; vertical-align: top; }
+  .ad-table tr:hover td { background: #f8fafc; color: #0f172a; }
   .ad-table tr:last-child td { border-bottom: none; }
 
   .status-pill { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid transparent; }
@@ -75,22 +75,22 @@ const importStyles = `
   .status-duplicate { background: rgba(250, 204, 21, 0.14); color: #facc15; border-color: rgba(250, 204, 21, 0.3); }
   .status-exists { background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
 
-  .ad-empty { margin-top: 18px; padding: 18px; border-radius: 18px; border: 1px dashed #1e293b; color: #94a3b8; font-size: 13px; font-weight: 700; }
+  .ad-empty { margin-top: 18px; padding: 18px; border-radius: 18px; border: 1px dashed #cbd5e1; color: #64748b; font-size: 13px; font-weight: 700; background: rgba(248,250,252,0.82); }
 
   .ad-result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-  .ad-result-card { background: #111c33; border: 1px solid #1e293b; border-radius: 18px; padding: 14px; }
-  .ad-result-card span { display: block; color: #94a3b8; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
-  .ad-result-card strong { display: block; margin-top: 8px; color: #f8fafc; font-size: 22px; font-weight: 900; }
-  .ad-result-errors { margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; color: #e2e8f0; font-size: 12px; font-weight: 600; }
+  .ad-result-card { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; border-radius: 18px; padding: 14px; }
+  .ad-result-card span { display: block; color: #64748b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+  .ad-result-card strong { display: block; margin-top: 8px; color: #0f172a; font-size: 22px; font-weight: 900; }
+  .ad-result-errors { margin-top: 12px; padding: 12px; border-radius: 12px; background: #fff1f2; border: 1px solid #fecaca; color: #be123c; font-size: 12px; font-weight: 600; }
 
-  .ad-file-input .styled-file-input-shell { background: #0b1121; border-color: #334155; }
-  .ad-file-input .styled-file-input-name { color: #cbd5e1; }
+  .ad-file-input .styled-file-input-shell { background: linear-gradient(180deg, #ffffff, #f8fafc); border-color: #dbe2ea; }
+  .ad-file-input .styled-file-input-name { color: #475569; }
   .ad-file-input .styled-file-input-name.is-placeholder { color: #64748b; }
-  .ad-file-input .styled-file-input-button { background: #1e293b; border: 1px solid #334155; color: #f8fafc; }
-  .ad-file-input .styled-file-input-shell:hover { border-color: #22d3ee; }
+  .ad-file-input .styled-file-input-button { background: #eef2ff; border: 1px solid #dbe4ff; color: #312e81; }
+  .ad-file-input .styled-file-input-shell:hover { border-color: #c7d2fe; }
 
-  .ad-select .styled-select-trigger { background: #0b1121; border-color: #334155; color: #f8fafc; }
-  .ad-select .styled-select-trigger:hover { border-color: #22d3ee; }
+  .ad-select .styled-select-trigger { background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); border-color: #dbe2ea; color: #0f172a; }
+  .ad-select .styled-select-trigger:hover { border-color: #c7d2fe; }
 
   @media print {
     .sidebar-wrapper, .top-header, .ad-header-actions, .btn-upload { display: none !important; }
@@ -396,7 +396,7 @@ const ImportProjects = () => {
                     const statusMeta = STATUS_META[row.status] ?? { label: 'Unknown', className: 'status-invalid' };
                     return (
                       <tr key={`${row.rowNumber}-${row.universityId || row.name}`}>
-                        <td style={{ fontWeight: 800, color: '#f8fafc' }}>{row.name || '-'}</td>
+                        <td style={{ fontWeight: 800, color: '#0f172a' }}>{row.name || '-'}</td>
                         <td>{row.universityId || '-'}</td>
                         <td>{row.generatedEmail || '-'}</td>
                         <td>{renderDepartment(row)}</td>

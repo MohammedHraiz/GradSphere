@@ -29,7 +29,8 @@ const styles = `
 .mini-card span { display: block; font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
 .mini-card strong { font-size: 24px; color: #0f172a; }
 .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
-.category-card { border: 1px solid #fde68a; background: linear-gradient(180deg, #fffaf0, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(217,119,6,0.28); }
+.category-card { border: 1px solid #fde68a; background: linear-gradient(180deg, #fffaf0, #ffffff); border-radius: 18px; padding: 16px; box-shadow: 0 16px 28px -28px rgba(217,119,6,0.28); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.category-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12); border-color: #fcd34d; }
 .category-card span { display: block; font-size: 11px; font-weight: 900; color: #92400e; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
 .category-card strong { display: block; font-size: 24px; font-weight: 900; color: #0f172a; margin-bottom: 6px; }
 .category-card p { margin: 0; color: #64748b; font-size: 13px; font-weight: 700; line-height: 1.5; }
@@ -139,7 +140,7 @@ const DeanDashboard = () => {
             {categoryEntries.length ? (
               <div className="category-grid">
                 {categoryEntries.map(([category, count]) => (
-                  <div key={category} className="category-card">
+                  <div key={category} className="category-card" onClick={() => navigate(`/dean/teams?category=${encodeURIComponent(category)}`)}>
                     <span>Category</span>
                     <strong>{count}</strong>
                     <p>{category}</p>

@@ -432,7 +432,7 @@ const ManageUsers = () => {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onClear={() => setSearch('')}
-            variant="dark"
+            variant="light"
           />
         </div>
 

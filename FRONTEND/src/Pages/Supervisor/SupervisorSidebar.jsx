@@ -8,7 +8,7 @@ const sidebarStyles = `
   .logo-icon { width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: transparent; border-radius: 0; padding: 0; flex: 0 0 auto; }
   .logo-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .sidebar-header h2 { font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.03em; line-height: 1.1; color: white; }
-  .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px;}
+  .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex-grow: 1; overflow-y: auto; padding-right: 5px; }
   .sidebar-nav::-webkit-scrollbar { width: 4px; }
   .sidebar-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 12px; color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 700; transition: 0.3s; }
@@ -30,7 +30,8 @@ const SupervisorSidebar = () => {
       <nav className="sidebar-nav">
         <NavLink to="/supervisor/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">📊</span><span className="nav-label">Dashboard</span></NavLink>
         <NavLink to="/supervisor/students" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">👨‍🎓</span><span className="nav-label">My Students</span></NavLink>
-        <NavLink to="/supervisor/projects" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">📁</span><span className="nav-label">Projects</span></NavLink>
+        <NavLink to="/supervisor/my-teams" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">👥</span><span className="nav-label">My Teams</span></NavLink>
+        <NavLink to="/supervisor/projects" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">📁</span><span className="nav-label">Proposal Review</span></NavLink>
         <NavLink to="/supervisor/tasks" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">✅</span><span className="nav-label">Task Manager</span></NavLink>
         <NavLink to="/supervisor/milestones" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">🚩</span><span className="nav-label">Milestones</span></NavLink>
         <NavLink to="/supervisor/meetings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}><span className="nav-icon">📅</span><span className="nav-label">Meetings</span></NavLink>
