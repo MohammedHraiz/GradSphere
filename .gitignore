@@ -57,6 +57,7 @@ __pycache__/
 *.local
 **/application-local.yml
 **/application-local.yaml
+**/application.yaml
 **/application-dev.yml
 **/application-dev.yaml
 **/application-secrets.yml
