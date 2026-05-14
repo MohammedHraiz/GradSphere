@@ -141,7 +141,6 @@ const SupervisorsList = () => {
         </div>
         <div className="ds-header-actions">
           <button className="btn-ds-outline" onClick={() => navigate(`${basePath}/dashboard`)}>Back</button>
-          <button className="btn-ds-outline" style={{ background: '#0f172a', color: 'white', borderColor: '#0f172a' }} onClick={() => window.print()}>Save as PDF</button>
         </div>
       </div>
 

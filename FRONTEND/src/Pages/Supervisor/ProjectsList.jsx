@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   acceptSupervisorRequest,
   downloadProposalFile,
@@ -13,9 +14,10 @@ import StyledSelect from '../../components/StyledSelect';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import FeedbackToast from '../../components/FeedbackToast';
 import ClickableUser from '../../components/ClickableUser';
+import SearchBar from '../../components/SearchBar';
 import { extractBlobFromResult, extractFileNameFromHeaders, openBlobInNewTab, triggerBrowserDownload } from '../../utils/downloadFile';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
-import { formatProjectStatus, normalizeProjectStatus } from '../../utils/projectStatus';
+import { normalizeProjectStatus } from '../../utils/projectStatus';
 
 const styles = `
 .sup-projects { padding: 10px 20px 40px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; text-align: left; display: grid; gap: 24px; justify-items: center; }
@@ -54,12 +56,15 @@ const styles = `
 .sup-alert.error { background: #fff1f2; border: 1px solid #fecaca; color: #be123c; }
 .sup-alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #047857; }
 .sup-empty { padding: 18px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; background: #f8fafc; text-align: center; }
+.sup-toolbar { width: 100%; margin-top: 18px; }
 @media (max-width: 900px) { .sup-header { flex-direction: column; align-items: flex-start; } }
 `;
 
 const ProjectsList = () => {
+  const location = useLocation();
   const [pendingRequests, setPendingRequests] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState('');
   const [rejectMessageById, setRejectMessageById] = useState({});
@@ -92,6 +97,27 @@ const ProjectsList = () => {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setSearchTerm(location.state?.targetProject || '');
+  }, [location.state]);
+
+  const filteredProjects = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    if (!query) {
+      return projects;
+    }
+
+    return projects.filter((project) => [
+      project?.title,
+      project?.teamName,
+      project?.latestFeedback,
+      ...(project?.teamMembers || []).map((member) => member?.name),
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(query)));
+  }, [projects, searchTerm]);
 
   const runAction = async (id, action, message) => {
     setBusyId(id);
@@ -193,8 +219,9 @@ const ProjectsList = () => {
       <style>{styles}</style>
       <header className="sup-header">
         <div>
-          <p className="sup-kicker">Supervisor / Projects</p>
-          <h1 className="sup-title">Supervisor Workspace</h1>
+          <p className="sup-kicker">Supervisor / Proposal Review</p>
+          <h1 className="sup-title">Proposal Review</h1>
+          <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px', fontWeight: 600 }}>Review supervisor requests, assigned proposals, and project submissions.</p>
         </div>
         <button className="sup-refresh" disabled={isLoading} onClick={() => void loadData()}>{isLoading ? 'Refreshing...' : 'Refresh'}</button>
       </header>
@@ -228,13 +255,21 @@ const ProjectsList = () => {
 
         <section className="sup-section">
           <h2>Assigned Projects</h2>
+          <div className="sup-toolbar">
+            <SearchBar
+              placeholder="Search assigned projects, teams, students, or feedback..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onClear={() => setSearchTerm('')}
+            />
+          </div>
           {isLoading ? (
             <div className="sup-empty">Loading assigned projects...</div>
-          ) : projects.length === 0 ? (
-            <div className="sup-empty">No assigned projects yet.</div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="sup-empty">{projects.length === 0 ? 'No assigned projects yet.' : 'No assigned projects match your current search.'}</div>
           ) : (
             <div className="sup-list">
-              {projects.map((project) => {
+              {filteredProjects.map((project) => {
                 const state = feedbackById[project.id] ?? {};
                 const normalizedStatus = normalizeProjectStatus(project.status);
                 const isArchived = normalizedStatus === 'ARCHIVED';

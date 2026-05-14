@@ -884,17 +884,17 @@
 .meetings-modal-header {
   padding: 22px 24px 18px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.12);
-  background: #0f172a;
-  color: #f8fafc;
+  background: #ffffff;
+  color: #0f172a;
   flex: 0 0 auto;
 }
 
 .meetings-modal-header .meetings-section-kicker {
-  color: #a5b4fc;
+  color: var(--meetings-primary);
 }
 
 .meetings-modal-header .meetings-subtitle {
-  color: #cbd5e1;
+  color: var(--meetings-text-soft);
 }
 
 .meetings-modal-subtitle {

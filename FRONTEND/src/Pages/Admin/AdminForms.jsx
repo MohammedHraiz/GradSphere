@@ -12,8 +12,8 @@ const formsStyles = `
   .ad-forms-container {
     padding: 20px 30px 60px 30px;
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    color: #f8fafc;
-    background: #0b1121;
+    color: #0f172a;
+    background: #f8fafc;
     min-height: 100vh;
     animation: fadeInPage 0.4s ease-out;
     text-align: left;
@@ -22,77 +22,77 @@ const formsStyles = `
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
   /* --- Premium Header --- */
-  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-kicker { color: #06b6d4; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
-  .ad-kicker::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; box-shadow: 0 0 8px #06b6d4;}
-  .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
+  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: transparent; padding: 0; border-radius: 0; border: none; box-shadow: none; }
+  .ad-kicker { color: #d97706; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-kicker::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #d97706; border-radius: 50%; }
+  .ad-title { font-size: 34px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px; }
   
   .ad-header-actions { display: flex; gap: 12px; }
-  .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
+  .btn-ad-outline { background: white; border: 1px solid #d1d5db; color: #0f172a; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ad-outline:hover { background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px); }
 
   /* --- KPI Stats Cards --- */
-  .ad-stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-  .ad-stat-pill { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px 25px; display: flex; align-items: center; gap: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
-  .ad-stat-pill:hover { transform: translateY(-5px); border-color: #3b82f6; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.2); }
-  .ad-stat-pill.active-filter { border-color: #06b6d4; background: #172033; }
-  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; background: #1e293b; }
+  .ad-stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 30px; }
+  .ad-stat-pill { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; display: flex; align-items: center; gap: 18px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+  .ad-stat-pill:hover { transform: translateY(-5px); border-color: #cbd5e1; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+  .ad-stat-pill.active-filter { border-color: #4f46e5; background: rgba(79, 70, 229, 0.05); }
+  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; background: #f9fafb; }
   .ad-stat-pill:hover .ad-icon-wrapper { transform: scale(1.1); }
   
-  .icon-blue { color: #3b82f6; } .icon-yellow { color: #fbbf24; } .icon-green { color: #34d399; } .icon-red { color: #ef4444; }
-  .ad-stat-info h4 { margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
-  .ad-stat-info p { margin: 5px 0 0 0; font-size: 28px; font-weight: 900; color: #f8fafc; line-height: 1; }
+  .icon-blue { color: #3b82f6; } .icon-yellow { color: #f59e0b; } .icon-green { color: #10b981; } .icon-red { color: #ef4444; }
+  .ad-stat-info h4 { margin: 0; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;}
+  .ad-stat-info p { margin: 8px 0 0 0; font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1; }
 
   /* --- Toolbar --- */
-  .ad-toolbar { display: flex; gap: 15px; background: #0f172a; padding: 15px; border-radius: 16px; border: 1px solid #1e293b; margin-bottom: 25px; box-shadow: 0 10px 20px -5px rgba(0,0,0,0.3); }
+  .ad-toolbar { display: flex; gap: 15px; background: white; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .ad-search { flex-grow: 1; }
   
   /* --- Table --- */
-  .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+  .ad-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
   .ad-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .ad-table th { padding: 18px 25px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
-  .ad-table td { padding: 18px 25px; border-bottom: 1px solid #1e293b; font-size: 14px; font-weight: 600; color: #cbd5e1; vertical-align: middle; transition: 0.2s;}
-  .ad-table tr:hover td { background: #172033; }
+  .ad-table th { padding: 18px 24px; background: #f9fafb; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  .ad-table td { padding: 18px 24px; border-bottom: 1px solid #f3f4f6; font-size: 14px; font-weight: 600; color: #475569; vertical-align: middle; transition: 0.2s;}
+  .ad-table tr:hover td { background: #f9fafb; }
   .ad-table tr:last-child td { border-bottom: none; }
 
-  .proj-title { font-size: 15px; font-weight: 900; color: #f8fafc; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;}
-  .proj-domain { font-size: 11px; font-weight: 800; color: #06b6d4; background: rgba(6, 182, 212, 0.1); padding: 2px 8px; border-radius: 6px; text-transform: uppercase;}
-  .submitter-info { font-size: 12px; color: #94a3b8; font-weight: 600; }
+  .proj-title { font-size: 15px; font-weight: 900; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;}
+  .proj-domain { font-size: 11px; font-weight: 700; color: #4f46e5; background: rgba(79, 70, 229, 0.1); padding: 4px 10px; border-radius: 8px; text-transform: uppercase;}
+  .submitter-info { font-size: 12px; color: #64748b; font-weight: 600; }
 
   /* Badges */
-  .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid transparent; display: inline-block;}
-  .status-pending { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
-  .status-approved { background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2); }
-  .status-rejected { background: rgba(239, 68, 68, 0.1); color: #f87171; border-color: rgba(239, 68, 68, 0.2); }
+  .status-badge { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid transparent; display: inline-block;}
+  .status-pending { background: rgba(245, 158, 11, 0.1); color: #d97706; border-color: rgba(245, 158, 11, 0.2); }
+  .status-approved { background: rgba(16, 185, 129, 0.1); color: #059669; border-color: rgba(16, 185, 129, 0.2); }
+  .status-rejected { background: rgba(239, 68, 68, 0.1); color: #dc2626; border-color: rgba(239, 68, 68, 0.2); }
 
   /* Action Buttons */
   .actions-cell { display: flex; gap: 8px; }
-  .btn-icon { width: 36px; height: 36px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 14px;}
-  .btn-icon:hover { background: #334155; color: #f8fafc; border-color: #475569; transform: translateY(-2px); }
-  .btn-icon.approve:hover { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: #10b981; }
-  .btn-icon.reject:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444; }
+  .btn-icon { width: 36px; height: 36px; border-radius: 10px; background: white; border: 1px solid #d1d5db; color: #475569; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 14px;}
+  .btn-icon:hover { background: #f9fafb; color: #0f172a; border-color: #9ca3af; transform: translateY(-2px); }
+  .btn-icon.approve:hover { background: rgba(16, 185, 129, 0.1); color: #059669; border-color: #059669; }
+  .btn-icon.reject:hover { background: rgba(239, 68, 68, 0.1); color: #dc2626; border-color: #dc2626; }
 
   /* --- Modals --- */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
-  .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; width: 90%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; }
-  .modal-header { padding: 25px 30px; background: #1e293b; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-  .modal-header h2 { margin: 0; font-size: 20px; font-weight: 900; color: #f8fafc; }
-  .modal-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s; }
-  .modal-close:hover { color: #f8fafc; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
+  .modal-content { background: white; border: 1px solid #e2e8f0; border-radius: 16px; width: 90%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); animation: slideUp 0.3s ease-out; }
+  .modal-header { padding: 24px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { margin: 0; font-size: 20px; font-weight: 900; color: #0f172a; }
+  .modal-close { background: none; border: none; color: #64748b; font-size: 20px; cursor: pointer; transition: 0.2s; }
+  .modal-close:hover { color: #0f172a; }
   
-  .modal-body { padding: 30px; overflow-y: auto; }
+  .modal-body { padding: 24px; overflow-y: auto; }
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
-  .info-item { background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155;}
-  .info-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
-  .info-val { font-size: 14px; font-weight: 700; color: #f8fafc; }
+  .info-item { background: #f9fafb; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;}
+  .info-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+  .info-val { font-size: 14px; font-weight: 700; color: #0f172a; }
   
-  .desc-box { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+  .desc-box { background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; color: #475569; font-size: 14px; line-height: 1.6; }
 
-  .modal-footer { padding: 20px 30px; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: flex-end; gap: 15px; }
-  .btn-modal { padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; border: none;}
-  .btn-modal.approve { background: #10b981; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);}
+  .modal-footer { padding: 20px 24px; background: white; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 15px; }
+  .btn-modal { padding: 10px 24px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; border: none;}
+  .btn-modal.approve { background: #10b981; color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);}
   .btn-modal.approve:hover { background: #059669; transform: translateY(-2px);}
-  .btn-modal.reject { background: #ef4444; color: white; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);}
+  .btn-modal.reject { background: #ef4444; color: white; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);}
   .btn-modal.reject:hover { background: #dc2626; transform: translateY(-2px);}
 
   /* 💡 Print Media Magic */
@@ -225,9 +225,9 @@ const AdminForms = () => {
       <div className="ad-toolbar">
         <SearchBar
           className="ad-search"
-          variant="dark"
+          variant="light"
           value={searchTerm}
-          onChange={setSearchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
           onClear={() => setSearchTerm('')}
           placeholder="Search by Project Title or ID..."
         />
@@ -283,15 +283,15 @@ const AdminForms = () => {
             
             <div className="modal-body">
               <div style={{marginBottom: '20px'}}>
-                <span style={{background: '#1e293b', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 800, color: '#94a3b8', marginRight: '10px'}}>{selectedForm.id}</span>
-                <h3 style={{fontSize: '22px', fontWeight: 900, color: '#f8fafc', margin: '10px 0 5px 0'}}>{selectedForm.title}</h3>
+                <span style={{background: '#eef2ff', border: '1px solid #c7d2fe', padding: '4px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: 800, color: '#4338ca', marginRight: '10px'}}>{selectedForm.id}</span>
+                <h3 style={{fontSize: '22px', fontWeight: 900, color: '#0f172a', margin: '10px 0 5px 0'}}>{selectedForm.title}</h3>
                 <span className={`status-badge ${getStatusClass(selectedForm.status)}`}>{selectedForm.status}</span>
               </div>
 
               <div className="info-grid">
                 <div className="info-item">
                   <div className="info-label">Domain Area</div>
-                  <div className="info-val" style={{color: '#06b6d4'}}>{selectedForm.domain}</div>
+                  <div className="info-val" style={{color: '#4f46e5'}}>{selectedForm.domain}</div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Proposed Supervisor</div>

@@ -31,7 +31,7 @@ const DeanSidebar = () => {
     { name: 'Supervisors', path: '/dean/supervisors', icon: '👨‍🏫' },
     { name: 'All Teams', path: '/dean/teams', icon: '👥' },
     { name: 'All Students', path: '/dean/students', icon: '🎓' },
-    { name: 'Reports', path: '/dean/reports', icon: '📊' },
+    
   ];
 
   return (

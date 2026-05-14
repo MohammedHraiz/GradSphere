@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * 💡 AI Allocation Engine - System Admin
- * Premium Master Edition - Dark Mode
+ * Premium Master Edition - Light Dashboard
  * Includes AI Simulation Terminal, Match Score Progress Bars, and PDF Export.
  */
 
@@ -11,8 +11,8 @@ const aiStyles = `
   .ad-ai-container {
     padding: 20px 30px 60px 30px;
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-    color: #f8fafc;
-    background: #0b1121;
+    color: #0f172a;
+    background: #f8fafc;
     min-height: 100vh;
     animation: fadeInPage 0.4s ease-out;
     text-align: left;
@@ -21,23 +21,23 @@ const aiStyles = `
   @keyframes fadeInPage { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
   /* --- Premium Header --- */
-  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: #0f172a; padding: 25px 30px; border-radius: 20px; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-  .ad-kicker { color: #f43f5e; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 5px 0; display: flex; align-items: center; gap: 8px;}
-  .ad-kicker::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #f43f5e; border-radius: 50%; box-shadow: 0 0 8px #f43f5e;}
-  .ad-title { font-size: 32px; font-weight: 900; margin: 0; color: #f8fafc; letter-spacing: -1px; }
+  .ad-header-box { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; background: transparent; padding: 0; border-radius: 0; border: none; box-shadow: none; }
+  .ad-kicker { color: #d97706; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;}
+  .ad-kicker::before { content: ''; display: inline-block; width: 6px; height: 6px; background: #d97706; border-radius: 50%; }
+  .ad-title { font-size: 34px; font-weight: 900; margin: 0; color: #0f172a; letter-spacing: -1px; }
   
   .ad-header-actions { display: flex; gap: 12px; }
-  .btn-ad-outline { background: #1e293b; border: 1px solid #334155; color: #f8fafc; padding: 12px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-  .btn-ad-outline:hover { background: #334155; border-color: #475569; transform: translateY(-2px); }
+  .btn-ad-outline { background: white; border: 1px solid #d1d5db; color: #0f172a; padding: 10px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-ad-outline:hover { background: #f3f4f6; border-color: #9ca3af; transform: translateY(-2px); }
 
   /* --- AI Engine Runner Panel --- */
   .ai-runner-card {
-    background: linear-gradient(145deg, #1e1b4b, #0f172a);
-    border: 1px solid #312e81;
+    background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+    border: 1px solid #e2e8f0;
     border-radius: 24px;
     padding: 30px;
     margin-bottom: 30px;
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15);
+    box-shadow: 0 24px 48px -34px rgba(79, 70, 229, 0.28);
     position: relative;
     overflow: hidden;
   }
@@ -60,7 +60,7 @@ const aiStyles = `
 
   /* Terminal Simulation */
   .terminal-box {
-    background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 15px; margin-top: 20px;
+    background: #f8fafc; border: 1px solid #dbe2ea; border-radius: 12px; padding: 15px; margin-top: 20px;
     font-family: 'Fira Code', monospace; font-size: 12px; color: #34d399; max-height: 150px; overflow-y: auto;
   }
   .term-line { margin-bottom: 5px; opacity: 0; animation: typeLine 0.1s forwards; }
@@ -68,27 +68,27 @@ const aiStyles = `
 
   /* --- KPI Stats Cards --- */
   .ad-stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
-  .ad-stat-pill { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 20px 25px; display: flex; align-items: center; gap: 18px; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);}
-  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #1e293b; }
+  .ad-stat-pill { background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px 25px; display: flex; align-items: center; gap: 18px; position: relative; overflow: hidden; box-shadow: 0 16px 30px -26px rgba(15,23,42,0.18);}
+  .ad-icon-wrapper { width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: #f8fafc; }
   .icon-indigo { color: #818cf8; } .icon-emerald { color: #34d399; } .icon-rose { color: #fb7185; }
-  .ad-stat-info h4 { margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
-  .ad-stat-info p { margin: 5px 0 0 0; font-size: 28px; font-weight: 900; color: #f8fafc; line-height: 1; }
+  .ad-stat-info h4 { margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
+  .ad-stat-info p { margin: 5px 0 0 0; font-size: 28px; font-weight: 900; color: #0f172a; line-height: 1; }
 
   /* --- Table --- */
-  .ad-table-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
+  .ad-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px -30px rgba(15,23,42,0.18); }
   .ad-table { width: 100%; border-collapse: collapse; text-align: left; }
-  .ad-table th { padding: 18px 25px; background: #1e293b; font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #334155; }
-  .ad-table td { padding: 18px 25px; border-bottom: 1px solid #1e293b; font-size: 14px; font-weight: 600; color: #cbd5e1; vertical-align: middle; transition: 0.2s;}
-  .ad-table tr:hover td { background: #172033; }
+  .ad-table th { padding: 18px 25px; background: #f8fafc; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #e2e8f0; }
+  .ad-table td { padding: 18px 25px; border-bottom: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; color: #475569; vertical-align: middle; transition: 0.2s;}
+  .ad-table tr:hover td { background: #f8fafc; }
   .ad-table tr:last-child td { border-bottom: none; }
 
-  .team-name { font-size: 15px; font-weight: 900; color: #f8fafc; margin-bottom: 4px; }
+  .team-name { font-size: 15px; font-weight: 900; color: #0f172a; margin-bottom: 4px; }
   .proj-domain { font-size: 11px; font-weight: 800; color: #c084fc; background: rgba(192, 132, 252, 0.1); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-top: 4px; display: inline-block;}
 
   /* Match Score Progress */
   .score-container { width: 100%; max-width: 120px; }
   .score-text { display: flex; justify-content: space-between; font-size: 11px; font-weight: 900; margin-bottom: 5px; }
-  .score-track { width: 100%; height: 6px; background: #1e293b; border-radius: 4px; overflow: hidden; }
+  .score-track { width: 100%; height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
   .score-fill { height: 100%; border-radius: 4px; }
 
   /* Badges */
@@ -99,18 +99,18 @@ const aiStyles = `
 
   /* Action Buttons */
   .actions-cell { display: flex; gap: 8px; }
-  .btn-icon { width: 36px; height: 36px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 14px;}
-  .btn-icon:hover { background: #334155; color: #f8fafc; border-color: #475569; transform: translateY(-2px); }
+  .btn-icon { width: 36px; height: 36px; border-radius: 10px; background: white; border: 1px solid #d1d5db; color: #475569; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; font-size: 14px;}
+  .btn-icon:hover { background: #f8fafc; color: #0f172a; border-color: #94a3b8; transform: translateY(-2px); }
   .btn-icon.approve:hover { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: #10b981; }
 
   /* --- Modals --- */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
-  .modal-content { background: #0f172a; border: 1px solid #1e293b; border-radius: 24px; width: 90%; max-width: 550px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; }
-  .modal-header { padding: 25px 30px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; }
-  .modal-header h2 { margin: 0; font-size: 20px; font-weight: 900; color: #f8fafc; display: flex; align-items: center; gap: 10px;}
-  .modal-close { background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; transition: 0.2s; }
-  .modal-close:hover { color: #f8fafc; }
-  .modal-body { padding: 30px; line-height: 1.6; color: #cbd5e1; font-size: 14px;}
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.42); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.2s; }
+  .modal-content { background: white; border: 1px solid #e2e8f0; border-radius: 24px; width: 90%; max-width: 550px; overflow: hidden; box-shadow: 0 25px 50px -22px rgba(15,23,42,0.28); animation: slideUp 0.3s ease-out; }
+  .modal-header { padding: 25px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white; }
+  .modal-header h2 { margin: 0; font-size: 20px; font-weight: 900; color: #0f172a; display: flex; align-items: center; gap: 10px;}
+  .modal-close { background: none; border: none; color: #64748b; font-size: 20px; cursor: pointer; transition: 0.2s; }
+  .modal-close:hover { color: #0f172a; }
+  .modal-body { padding: 30px; line-height: 1.6; color: #475569; font-size: 14px;}
 
   /* 💡 Print Media Magic */
   @media print {
@@ -231,8 +231,8 @@ const AIRecommendations = () => {
       <div className="ai-runner-card">
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
           <div style={{maxWidth: '60%'}}>
-            <h2 style={{margin: '0 0 10px 0', fontSize: '24px', fontWeight: 900}}>Smart Distribution Engine</h2>
-            <p style={{margin: '0 0 20px 0', color: '#94a3b8', fontSize: '14px', lineHeight: 1.5}}>
+            <h2 style={{margin: '0 0 10px 0', fontSize: '24px', fontWeight: 900, color: '#0f172a'}}>Smart Distribution Engine</h2>
+            <p style={{margin: '0 0 20px 0', color: '#64748b', fontSize: '14px', lineHeight: 1.5}}>
               Our proprietary AI evaluates student skills, project requirements, and supervisor workloads to generate the most optimal, conflict-free assignments in seconds.
             </p>
             <button className="btn-run-ai" onClick={handleRunEngine} disabled={isRunning}>
@@ -241,7 +241,7 @@ const AIRecommendations = () => {
           </div>
           
           {/* Progress Ring (Visual flair) */}
-          <div style={{position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '50%', border: '4px solid rgba(99, 102, 241, 0.2)'}}>
+          <div style={{position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(99, 102, 241, 0.08)', borderRadius: '50%', border: '4px solid rgba(99, 102, 241, 0.18)'}}>
              <span style={{fontSize: '24px', fontWeight: 900, color: '#818cf8'}}>{progress}%</span>
           </div>
         </div>
@@ -271,7 +271,7 @@ const AIRecommendations = () => {
           <div className="ad-stat-info"><h4>Conflicts Found</h4><p>4</p></div>
         </div>
         <div className="ad-stat-pill">
-          <div className="ad-icon-wrapper icon-indigo" style={{color: 'white', background: '#4f46e5', cursor: 'pointer'}} onClick={handleApproveAll}>
+          <div className="ad-icon-wrapper icon-indigo" style={{color: 'white', background: 'linear-gradient(135deg, #4f46e5, #2563eb)', cursor: 'pointer'}} onClick={handleApproveAll}>
             💾
           </div>
           <div className="ad-stat-info"><h4>Action</h4><p style={{fontSize: '16px', marginTop:'8px'}}>Approve All</p></div>
@@ -280,8 +280,8 @@ const AIRecommendations = () => {
 
       {/* Recommendations Table */}
       <div className="ad-table-card" style={{ opacity: hasRun ? 1 : 0.4, pointerEvents: hasRun ? 'auto' : 'none', transition: '0.5s' }}>
-        <div style={{padding: '20px 25px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <h3 style={{margin: 0, fontSize: '18px', fontWeight: 900}}>AI Recommendations Matrix</h3>
+        <div style={{padding: '20px 25px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h3 style={{margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a'}}>AI Recommendations Matrix</h3>
         </div>
         <table className="ad-table">
           <thead>
@@ -292,7 +292,7 @@ const AIRecommendations = () => {
               <tr key={alc.id}>
                 <td>
                   <div className="team-name">{alc.team}</div>
-                  <div style={{fontSize: '12px', color: '#94a3b8'}}>📁 {alc.project}</div>
+                  <div style={{fontSize: '12px', color: '#64748b'}}>📁 {alc.project}</div>
                   <div className="proj-domain">{alc.domain}</div>
                 </td>
                 <td style={{fontWeight: 800}}>{alc.supervisor}</td>
@@ -312,7 +312,7 @@ const AIRecommendations = () => {
                       <button className="btn-icon approve" title="Approve Match" onClick={() => handleApprove(alc.id)}>✅</button>
                     )}
                     {alc.status === 'Conflict' && (
-                      <button className="btn-icon" style={{background: '#334155'}} title="Manual Reassign" onClick={() => alert('Opening manual assignment override...')}>✏️</button>
+                      <button className="btn-icon" style={{background: '#eef2ff', color: '#4338ca', borderColor: '#c7d2fe'}} title="Manual Reassign" onClick={() => alert('Opening manual assignment override...')}>✏️</button>
                     )}
                   </div>
                 </td>
@@ -337,18 +337,18 @@ const AIRecommendations = () => {
                     <span style={{fontSize: '18px', fontWeight: 900, color: getScoreColor(selectedMatch.score)}}>{selectedMatch.score}%</span>
                  </div>
                  <div>
-                   <h3 style={{margin: '0 0 5px 0', fontSize: '18px'}}>{selectedMatch.team} → {selectedMatch.supervisor}</h3>
+                   <h3 style={{margin: '0 0 5px 0', fontSize: '18px', color: '#0f172a'}}>{selectedMatch.team} → {selectedMatch.supervisor}</h3>
                    <span className={`status-badge ${selectedMatch.status === 'Approved' ? 'status-approved' : selectedMatch.status === 'Conflict' ? 'status-conflict' : 'status-pending'}`}>{selectedMatch.status}</span>
                  </div>
               </div>
 
-              <div style={{background: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155'}}>
-                <h4 style={{margin: '0 0 10px 0', fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase'}}>Algorithm Rationale:</h4>
+              <div style={{background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0'}}>
+                <h4 style={{margin: '0 0 10px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase'}}>Algorithm Rationale:</h4>
                 <p style={{margin: 0}}>{selectedMatch.reason}</p>
               </div>
 
               {selectedMatch.status === 'Conflict' && (
-                <div style={{marginTop: '15px', padding: '15px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', color: '#fca5a5', fontSize: '13px'}}>
+                <div style={{marginTop: '15px', padding: '15px', background: '#fff1f2', border: '1px solid #fecaca', borderRadius: '12px', color: '#be123c', fontSize: '13px'}}>
                   <strong>Action Required:</strong> The engine cannot automatically approve this due to hard constraints (e.g., workload limits). Please manually reassign or override capacity rules.
                 </div>
               )}

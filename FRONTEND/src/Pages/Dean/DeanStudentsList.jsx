@@ -134,7 +134,6 @@ const DeanStudentsList = () => {
         </div>
         <div className="std-header-actions">
           <button className="btn-std-outline" onClick={() => navigate(`${basePath}/dashboard`)}>Back to Dashboard</button>
-          <button className="btn-std-outline" style={{ background: '#0f172a', color: 'white', borderColor: '#0f172a' }} onClick={() => window.print()}>Save as PDF</button>
         </div>
       </div>
 
