@@ -50,6 +50,23 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "OTP_SENT_SUCCESSFULLY"));
     }
 
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@RequestBody OtpVerificationRequest request) {
+        User user = userRepository.findByEmail(request.email())
+                .orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(404).body(Map.of("message", "EMAIL_NOT_FOUND"));
+        }
+
+        String otpValidationFailure = getOtpValidationFailure(user, request.otp());
+        if (otpValidationFailure != null) {
+            return ResponseEntity.status(400).body(Map.of("message", otpValidationFailure));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "OTP_VERIFIED_SUCCESSFULLY"));
+    }
+
     @PostMapping("/setup-password")
     public ResponseEntity<?> setupPassword(@RequestBody PasswordSetupRequest request) {
         User user = userRepository.findByEmail(request.email())
@@ -59,17 +76,12 @@ public class AuthController {
             return ResponseEntity.status(404).body(Map.of("message", "EMAIL_NOT_FOUND"));
         }
 
-        // 1. Validate OTP exists and matches
-        if (user.getOtpCode() == null || !user.getOtpCode().equals(request.otp())) {
-            return ResponseEntity.status(400).body(Map.of("message", "INVALID_OTP"));
+        String otpValidationFailure = getOtpValidationFailure(user, request.otp());
+        if (otpValidationFailure != null) {
+            return ResponseEntity.status(400).body(Map.of("message", otpValidationFailure));
         }
 
-        // 2. Check expiration
-        if (user.getOtpExpiresAt().isBefore(LocalDateTime.now())) {
-            return ResponseEntity.status(400).body(Map.of("message", "EXPIRED_OTP"));
-        }
-
-        // 3. Hash password and clear OTP fields
+        // Hash password and clear OTP fields only after a final OTP check.
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setOtpCode(null);
         user.setOtpExpiresAt(null);
@@ -106,5 +118,17 @@ public class AuthController {
                 "hasTeam", hasTeam,
                 "token", token
         ));
+    }
+
+    private String getOtpValidationFailure(User user, String otp) {
+        if (user.getOtpCode() == null || otp == null || !user.getOtpCode().equals(otp)) {
+            return "INVALID_OTP";
+        }
+
+        if (user.getOtpExpiresAt() == null || user.getOtpExpiresAt().isBefore(LocalDateTime.now())) {
+            return "EXPIRED_OTP";
+        }
+
+        return null;
     }
 }
