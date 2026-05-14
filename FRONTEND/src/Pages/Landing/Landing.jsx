@@ -59,12 +59,12 @@ const Landing = () => {
             >
               Log in
             </button>
-            <button
+            {/* <button
               className="nav-btn nav-btn-primary"
               onClick={() => navigate('/login')}
             >
               Enter Portal
-            </button>
+            </button> */}
           </div>
         </div>
       </nav>
