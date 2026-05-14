@@ -20,12 +20,20 @@ public class AuthController {
     private final TeamMemberRepository teamMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final OtpEmailService otpEmailService;
 
-    public AuthController(UserRepository userRepository, TeamMemberRepository teamMemberRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthController(
+            UserRepository userRepository,
+            TeamMemberRepository teamMemberRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            OtpEmailService otpEmailService
+    ) {
         this.userRepository = userRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.otpEmailService = otpEmailService;
     }
 
     @PostMapping("/request-otp")
@@ -43,11 +51,15 @@ public class AuthController {
         user.setOtpCode(otp);
         user.setOtpExpiresAt(LocalDateTime.now().plusMinutes(10));
         userRepository.save(user);
-
-        // FOR NOW: Check your IntelliJ Console to see the code!
-        System.out.println(">>> OTP for " + request.email() + " is: " + otp);
+        otpEmailService.sendOtpEmail(request.email(), otp);
 
         return ResponseEntity.ok(Map.of("message", "OTP_SENT_SUCCESSFULLY"));
+    }
+
+    @PostMapping("/test-email")
+    public ResponseEntity<?> testEmail(@RequestBody OtpRequest request) {
+        otpEmailService.sendOtpEmail(request.email(), "123456");
+        return ResponseEntity.ok(Map.of("message", "TEST_EMAIL_SENT_SUCCESSFULLY"));
     }
 
     @PostMapping("/verify-otp")

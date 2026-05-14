@@ -1,6 +1,7 @@
 package com.gradproject.platform.modules.user;
 
 import com.gradproject.platform.modules.project.member.TeamMemberRepository;
+import com.gradproject.platform.modules.user.dto.OtpRequest;
 import com.gradproject.platform.modules.user.dto.OtpVerificationRequest;
 import com.gradproject.platform.modules.user.dto.PasswordSetupRequest;
 import com.gradproject.platform.security.JwtService;
@@ -28,12 +29,13 @@ class AuthControllerTest {
     @Mock TeamMemberRepository teamMemberRepository;
     @Mock PasswordEncoder passwordEncoder;
     @Mock JwtService jwtService;
+    @Mock OtpEmailService otpEmailService;
 
     private AuthController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AuthController(userRepository, teamMemberRepository, passwordEncoder, jwtService);
+        controller = new AuthController(userRepository, teamMemberRepository, passwordEncoder, jwtService, otpEmailService);
     }
 
     @Test
@@ -75,6 +77,31 @@ class AuthControllerTest {
         assertThat(user.getOtpCode()).isNull();
         assertThat(user.getOtpExpiresAt()).isNull();
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void requestOtpGeneratesAndSendsOtp() {
+        User user = userWithOtp("student@bau.edu", null, null);
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ResponseEntity<?> response = controller.requestOtp(new OtpRequest(user.getEmail()));
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(Map.of("message", "OTP_SENT_SUCCESSFULLY"));
+        assertThat(user.getOtpCode()).matches("\\d{6}");
+        assertThat(user.getOtpExpiresAt()).isAfter(LocalDateTime.now());
+        verify(userRepository).save(user);
+        verify(otpEmailService).sendOtpEmail(user.getEmail(), user.getOtpCode());
+    }
+
+    @Test
+    void testEmailUsesFixedOtp() {
+        ResponseEntity<?> response = controller.testEmail(new OtpRequest("student@bau.edu"));
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(Map.of("message", "TEST_EMAIL_SENT_SUCCESSFULLY"));
+        verify(otpEmailService).sendOtpEmail("student@bau.edu", "123456");
     }
 
     private static User userWithOtp(String email, String otp, LocalDateTime expiresAt) {
