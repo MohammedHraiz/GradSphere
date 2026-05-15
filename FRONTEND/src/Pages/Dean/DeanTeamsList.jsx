@@ -1,19 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getAllTeams } from '../../api/deanService';
+import { getDeanProjects } from '../../api/projectService';
 import ProjectHealthBadge from '../../components/ProjectHealthBadge';
 import SearchBar from '../../components/SearchBar';
 import StyledSelect from '../../components/StyledSelect';
 import UserPreviewModal from '../../components/UserPreviewModal';
 import {
-  coerceProjectDomainFilter,
+  ALL_PROJECT_DOMAINS_OPTION,
+  getProjectDomain,
   getProjectDomainLabel,
-  getProjectDomainOptions,
-  resolveProjectDomainValue,
+  PROJECT_DOMAIN_FILTER_OPTIONS,
+  normalizeProjectDomainValue,
 } from '../../utils/projectDomain';
 import { formatDepartmentLabel, getUserInitials, resolveProfilePhotoUrl } from '../../utils/userMeta';
 
-const ALL_CATEGORIES = 'All Categories';
+const ALL_CATEGORIES = ALL_PROJECT_DOMAINS_OPTION.value;
 
 const premiumTeamsStyles = `
   .dean-teams-container { padding: 20px 30px 60px 30px; font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; color: #0f172a; animation: fadeInPage 0.4s ease-out; text-align: left; background: #f8fafc; min-height: 100vh; }
@@ -102,12 +104,68 @@ const colorFor = (value = '') => {
 
 const hasLinkedProject = (team) => Boolean(team?.projectId || team?.projectTitle);
 
+const normalizeLookupKey = (value) => String(value || '').trim().toLowerCase();
+
+const buildProjectDomainIndex = (projects) => {
+  const byProjectId = new Map();
+  const byProjectTitle = new Map();
+  const byTeamName = new Map();
+
+  projects.forEach((project) => {
+    const projectDomain = getProjectDomain(project, '');
+    if (!projectDomain) return;
+
+    if (project?.id) {
+      byProjectId.set(String(project.id), projectDomain);
+    }
+
+    if (project?.title) {
+      byProjectTitle.set(normalizeLookupKey(project.title), projectDomain);
+    }
+
+    if (project?.teamName) {
+      byTeamName.set(normalizeLookupKey(project.teamName), projectDomain);
+    }
+  });
+
+  return { byProjectId, byProjectTitle, byTeamName };
+};
+
+const getCategoryLabelFromIndex = (team, domainIndex) => {
+  if (!hasLinkedProject(team)) {
+    return '';
+  }
+
+  const topLevelDomain = getProjectDomain(team, '');
+  if (topLevelDomain) {
+    return topLevelDomain;
+  }
+
+  const byProjectId = team?.projectId ? domainIndex.byProjectId.get(String(team.projectId)) : '';
+  if (byProjectId) {
+    return getProjectDomainLabel(byProjectId);
+  }
+
+  const byProjectTitle = team?.projectTitle ? domainIndex.byProjectTitle.get(normalizeLookupKey(team.projectTitle)) : '';
+  if (byProjectTitle) {
+    return getProjectDomainLabel(byProjectTitle);
+  }
+
+  const byTeamName = team?.teamName ? domainIndex.byTeamName.get(normalizeLookupKey(team.teamName)) : '';
+  return byTeamName ? getProjectDomainLabel(byTeamName) : getProjectDomainLabel('');
+};
+
+const enrichTeamProjectDomain = (team, domainIndex) => ({
+  ...team,
+  projectDomain: getCategoryLabelFromIndex(team, domainIndex),
+});
+
 const resolveTeamProjectDomain = (team) => {
   if (!hasLinkedProject(team)) {
     return '';
   }
 
-  return getProjectDomainLabel(resolveProjectDomainValue(team));
+  return getProjectDomainLabel(team?.projectDomain, '');
 };
 
 const DeanTeamsList = () => {
@@ -137,9 +195,20 @@ const DeanTeamsList = () => {
       setIsLoading(true);
       setError('');
       try {
-        const data = await getAllTeams(scope);
+        const [teamsData, projectsResponse] = await Promise.all([
+          getAllTeams(scope),
+          getDeanProjects(),
+        ]);
+        const projectsPayload = projectsResponse?.data;
+        const projects = Array.isArray(projectsPayload)
+          ? projectsPayload
+          : Array.isArray(projectsPayload?.projects)
+            ? projectsPayload.projects
+            : [];
+        const domainIndex = buildProjectDomainIndex(projects);
         if (!cancelled) {
-          setTeams(Array.isArray(data) ? data : []);
+          const items = Array.isArray(teamsData) ? teamsData : [];
+          setTeams(items.map((team) => enrichTeamProjectDomain(team, domainIndex)));
         }
       } catch {
         if (!cancelled) {
@@ -159,14 +228,13 @@ const DeanTeamsList = () => {
     };
   }, [scope]);
 
-  const categoryOptions = useMemo(
-    () => [ALL_CATEGORIES, ...getProjectDomainOptions(teams, resolveTeamProjectDomain)],
-    [teams],
-  );
+  const categoryOptions = PROJECT_DOMAIN_FILTER_OPTIONS;
 
   useEffect(() => {
     const requestedCategory = new URLSearchParams(location.search).get('category') || '';
-    setCategoryFilter(coerceProjectDomainFilter(requestedCategory, categoryOptions, ALL_CATEGORIES));
+    const normalizedCategory = normalizeProjectDomainValue(requestedCategory, '');
+    const matchingOption = categoryOptions.find((option) => option.value === normalizedCategory);
+    setCategoryFilter(matchingOption ? matchingOption.value : ALL_CATEGORIES);
   }, [location.search, categoryOptions]);
 
   const filteredTeams = useMemo(() => teams.filter((team) => {
@@ -187,8 +255,8 @@ const DeanTeamsList = () => {
       || (filter === 'With Project' && team.projectId)
       || (filter === 'No Project' && !team.projectId)
       || (filter === 'No Supervisor' && !team.supervisor);
-    const teamCategory = resolveTeamProjectDomain(team);
-    const matchesCategory = categoryFilter === ALL_CATEGORIES || (teamCategory && teamCategory === categoryFilter);
+    const teamCategory = normalizeProjectDomainValue(resolveTeamProjectDomain(team));
+    const matchesCategory = categoryFilter === ALL_CATEGORIES || teamCategory === categoryFilter;
 
     return matchesSearch && matchesFilter && matchesCategory;
   }), [categoryFilter, filter, searchTerm, teams]);
@@ -251,7 +319,7 @@ const DeanTeamsList = () => {
       <div className="dt-toolbar">
         <SearchBar className="dt-search" placeholder="Search teams, projects, supervisors, or members..." value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onClear={() => setSearchTerm('')} />
         <StyledSelect className="dt-filter" value={categoryFilter} onChange={(event) => setCategoryAndUrl(event.target.value)}>
-          {categoryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          {categoryOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </StyledSelect>
       </div>
 
