@@ -515,7 +515,6 @@ const ManageUsers = () => {
                             </div>
                             <div>
                               <span className="admin-users-username">{user.name}</span>
-                              <span className="admin-users-usermeta">{user.id}</span>
                             </div>
                           </div>
                         </td>
