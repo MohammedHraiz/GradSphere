@@ -2,13 +2,10 @@ import axios from 'axios';
 
 // Environment-aware baseURL:
 // - In development we use the Vite proxy at '/api' so requests like '/v1/...' become '/api/v1/...'
-// - In production we use the configured VITE_API_BASE_URL when available, otherwise the current origin
-export const backendRoot = (
-  import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.MODE === 'development' ? 'http://127.0.0.1:8080' : window.location.origin)
-).replace(/\/+$/, '');
+// - In production we always target the current origin under '/api'
+export const backendRoot = window.location.origin;
 
-const baseURL = import.meta.env.MODE === 'development' ? '/api' : `${backendRoot}/api`;
+const baseURL = import.meta.env.MODE === 'development' ? '/api' : `${window.location.origin}/api`;
 
 export const apiClient = axios.create({
   baseURL,
