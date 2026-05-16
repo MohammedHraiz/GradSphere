@@ -52,4 +52,4 @@ app:
     proposals-dir: ${PROPOSALS_DIR:./uploads/proposals}
 
 server:
-  port: ${PORT:8080}
+  port: 5000
