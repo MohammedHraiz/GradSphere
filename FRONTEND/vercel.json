@@ -3,6 +3,10 @@
     {
       "source": "/api/:path*",
       "destination": "http://gradsphere-backend-env.eba-3bhnapgz.eu-north-1.elasticbeanstalk.com/api/:path*"
+    },
+    {
+      "source": "/files/:path*",
+      "destination": "http://gradsphere-backend-env.eba-3bhnapgz.eu-north-1.elasticbeanstalk.com/files/:path*"
     }
   ]
 }
