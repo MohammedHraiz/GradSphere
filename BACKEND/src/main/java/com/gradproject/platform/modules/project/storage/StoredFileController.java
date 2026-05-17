@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/files")
+@RequestMapping("/api/files")
 public class StoredFileController {
 
     private final FileStorageService fileStorageService;
@@ -31,7 +31,8 @@ public class StoredFileController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .contentType(MediaType.parseMediaType(payload.contentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + payload.fileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + payload.fileName() + "\"")
                 .body(payload.resource());
     }
 }
