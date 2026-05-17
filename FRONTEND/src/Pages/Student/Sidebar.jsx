@@ -8,13 +8,13 @@ const Sidebar = () => {
   const location = useLocation();
 
   const menuItems = [
-    { name: 'Overview', path: '/student/overview' },
-    { name: 'Tasks', path: '/student/tasks' },
-    { name: 'Milestones', path: '/student/milestones' },
-    { name: 'Meetings', path: '/student/meetings' },
-    { name: 'My Team', path: '/student/my-team' },
-    { name: 'Invitations', path: '/student/invitations' },
-    { name: 'Project Proposal', path: '/student/project' },
+    { name: 'Overview', path: '/student/overview', icon: '📊' },
+    { name: 'Tasks', path: '/student/tasks', icon: '✅' },
+    { name: 'Milestones', path: '/student/milestones', icon: '🚩' },
+    { name: 'Meetings', path: '/student/meetings', icon: '🗓️' },
+    { name: 'My Team', path: '/student/my-team', icon: '👥' },
+    { name: 'Invitations', path: '/student/invitations', icon: '✉️' },
+    { name: 'Project Proposal', path: '/student/project', icon: '📄' },
   ];
 
   return (
@@ -39,6 +39,7 @@ const Sidebar = () => {
               className={`st-nav-item ${isActive ? 'active' : ''}`}
               onClick={() => navigate(item.path)}
             >
+              <span className="st-nav-icon" aria-hidden="true">{item.icon}</span>
               <span className="st-nav-label">{item.name}</span>
               {isActive && <div className="st-active-dot" />}
             </button>
