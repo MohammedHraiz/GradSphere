@@ -14,9 +14,19 @@ export const getSupervisorMeetings = () => apiClient.get('/meetings/supervisor')
 
 export const requestProjectMeeting = (projectId, payload) => apiClient.post(`/projects/${projectId}/meetings/request`, payload);
 
-export const approveMeeting = (meetingId, payload) => apiClient.patch(`/meetings/${meetingId}/approve`, payload ?? null);
+export const approveMeeting = (meetingId, payload) => (
+  payload
+    ? apiClient.patch(`/meetings/${meetingId}/approve`, payload)
+    : apiClient.patch(`/meetings/${meetingId}/approve`)
+);
 
-export const rejectMeeting = (meetingId, reason) => apiClient.patch(`/meetings/${meetingId}/reject`, reason ? { reason } : null);
+export const rejectMeeting = (meetingId, reason) => {
+  const trimmedReason = typeof reason === 'string' ? reason.trim() : '';
+
+  return trimmedReason
+    ? apiClient.patch(`/meetings/${meetingId}/reject`, { reason: trimmedReason })
+    : apiClient.patch(`/meetings/${meetingId}/reject`);
+};
 
 export const completeMeeting = (meetingId, payload) => apiClient.patch(`/meetings/${meetingId}/complete`, payload);
 

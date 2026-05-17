@@ -3,6 +3,7 @@ package com.gradproject.platform.exception;
 import com.gradproject.platform.dto.MessageResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
@@ -46,6 +47,22 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .map(violation -> violation.getMessage())
                 .orElse("Validation failed");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(message));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<MessageResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
+        String rawMessage = exception.getMostSpecificCause() != null
+                ? exception.getMostSpecificCause().getMessage()
+                : exception.getMessage();
+
+        String message;
+        if (rawMessage != null && rawMessage.contains("Required request body is missing")) {
+            message = "Request body is missing.";
+        } else {
+            message = "Invalid request body.";
+        }
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(message));
     }
 

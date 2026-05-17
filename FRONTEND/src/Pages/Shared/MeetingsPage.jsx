@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import {
   createProjectMeeting,
@@ -234,9 +234,25 @@ const getMeetingsArray = (response) => {
   return [];
 };
 
-const getErrorMessage = (err, fallback) => {
+const getErrorMessage = (err, fallback = 'An unexpected error occurred.') => {
   const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
-  return apiMessage || err?.message || fallback;
+  if (apiMessage) {
+    return apiMessage;
+  }
+
+  if (!err?.response) {
+    const rawMessage = String(err?.message || '').toLowerCase();
+    if (
+      rawMessage.includes('network')
+      || rawMessage.includes('failed to fetch')
+      || rawMessage.includes('load failed')
+      || rawMessage.includes('timeout')
+    ) {
+      return 'Could not connect to the server. Please try again.';
+    }
+  }
+
+  return err?.message || fallback;
 };
 
 const getUserId = (user) => user?.id ?? user?.userId ?? user?.sub ?? user?.claims?.sub ?? null;
@@ -366,6 +382,14 @@ const normalizeRequestPayload = (form) => ({
   meetingType: form.meetingType || null,
   locationOrLink: form.locationOrLink?.trim() || null,
   requestMessage: form.requestMessage?.trim() || null,
+});
+
+const buildMeetingRequestPayload = (meeting) => normalizeRequestPayload({
+  title: meeting?.title ?? '',
+  meetingDate: meeting?.meetingDate ?? '',
+  meetingType: meeting?.meetingType ?? MEETING_TYPE.REVIEW,
+  locationOrLink: meeting?.locationOrLink ?? '',
+  requestMessage: meeting?.requestMessage ?? '',
 });
 
 const normalizeCompletionPayload = (form) => ({
@@ -559,12 +583,23 @@ const MeetingsPage = () => {
   });
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [expandedMeetingId, setExpandedMeetingId] = useState(null);
+  const [meetingActionState, setMeetingActionState] = useState({ meetingId: null, actionType: '' });
+  const [rejectDialog, setRejectDialog] = useState({ meeting: null, reason: '', error: '' });
+  const rejectReasonRef = useRef(null);
 
   const pageTitle = useMemo(() => {
     if (canManage) return 'Project Meetings';
     if (isStudent) return 'My Meetings';
     return 'Meetings Directory';
   }, [canManage, isStudent]);
+
+  const rejectDialogMeeting = rejectDialog.meeting;
+  const isRejectDialogOpen = Boolean(rejectDialogMeeting);
+  const isMeetingActionLoading = (meetingId, actionType) => (
+    meetingActionState.meetingId === meetingId && meetingActionState.actionType === actionType
+  );
+  const isMeetingActionBusy = (meetingId) => meetingActionState.meetingId === meetingId;
+  const isRejectSubmitting = isMeetingActionLoading(rejectDialogMeeting?.id, 'REJECT');
 
   const pageKicker = useMemo(() => {
     if (isStudent) return 'Student Portal / Meetings';
@@ -702,7 +737,7 @@ const MeetingsPage = () => {
   }, [showFormModal]);
 
   useEffect(() => {
-    if (!showFormModal && !meetingToDelete) return undefined;
+    if (!showFormModal && !meetingToDelete && !isRejectDialogOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -710,7 +745,7 @@ const MeetingsPage = () => {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [meetingToDelete, showFormModal]);
+  }, [isRejectDialogOpen, meetingToDelete, showFormModal]);
 
   useEffect(() => {
     setExpandedMeetingId(null);
@@ -840,6 +875,7 @@ const MeetingsPage = () => {
       meetingDate: toInputDateTime(meeting.meetingDate),
       meetingType: meeting.meetingType || MEETING_TYPE.REVIEW,
       locationOrLink: meeting.locationOrLink || '',
+      requestMessage: meeting.requestMessage || '',
       summary: meeting.summary || '',
       progressDiscussed: meeting.progressDiscussed || '',
       tasksAssigned: meeting.tasksAssigned || '',
@@ -868,6 +904,49 @@ const MeetingsPage = () => {
     setFormState(emptyForm);
   };
 
+  const openRejectDialog = (meeting) => {
+    setRejectDialog({
+      meeting,
+      reason: '',
+      error: '',
+    });
+  };
+
+  const closeRejectDialog = () => {
+    if (isRejectSubmitting) return;
+    setRejectDialog({ meeting: null, reason: '', error: '' });
+  };
+
+  const handleRejectReasonChange = (event) => {
+    const { value } = event.target;
+    setRejectDialog((current) => ({
+      ...current,
+      reason: value,
+      error: '',
+    }));
+  };
+
+  useEffect(() => {
+    if (!isRejectDialogOpen) return undefined;
+
+    const frameId = window.requestAnimationFrame(() => {
+      rejectReasonRef.current?.focus();
+    });
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && !isRejectSubmitting) {
+        setRejectDialog({ meeting: null, reason: '', error: '' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isRejectDialogOpen, isRejectSubmitting, rejectDialogMeeting?.id]);
+
   const handleRequestSubmit = async (event) => {
     event.preventDefault();
     if (!selectedProject?.id) return;
@@ -893,19 +972,72 @@ const MeetingsPage = () => {
   };
 
   const handleAction = async (meeting, actionType) => {
+    if (!meeting?.id) return;
+    if (actionType === 'REJECT') {
+      openRejectDialog(meeting);
+      return;
+    }
+
+    setMeetingActionState({ meetingId: meeting.id, actionType });
     try {
       let response;
-      if (actionType === 'APPROVE') response = await approveMeeting(meeting.id);
-      else if (actionType === 'REJECT') {
-        const reason = window.prompt('Optional rejection reason for the student/team:') || '';
-        response = await rejectMeeting(meeting.id, reason.trim());
+      let successMessage = '';
+
+      if (actionType === 'APPROVE') {
+        response = await approveMeeting(meeting.id, buildMeetingRequestPayload(meeting));
+        successMessage = 'Meeting request approved successfully.';
+      } else if (actionType === 'CANCEL') {
+        response = await cancelMeeting(meeting.id);
+        successMessage = meeting.status === 'REQUESTED'
+          ? 'Meeting request canceled successfully.'
+          : 'Meeting canceled successfully.';
       }
-      else if (actionType === 'CANCEL') response = await cancelMeeting(meeting.id);
-      
-      setMeetings((current) => current.map((m) => (m.id === meeting.id ? normalizeMeeting(extractResponsePayload(response)) : m)));
-      setToast({ message: `Meeting ${actionType.toLowerCase()}ed successfully.` });
+
+      if (!response) return;
+
+      setMeetings((current) => current.map((item) => (
+        item.id === meeting.id ? normalizeMeeting(extractResponsePayload(response)) : item
+      )));
+      setToast({ message: successMessage });
     } catch (err) {
-      setToast({ message: err?.message || `Unable to ${actionType.toLowerCase()} meeting.`, type: 'error' });
+      const fallbackMessage = actionType === 'APPROVE'
+        ? 'Unable to approve meeting request.'
+        : 'Unable to cancel meeting.';
+      const message = getErrorMessage(err, fallbackMessage);
+      console.error(`Failed to ${actionType.toLowerCase()} meeting`, err);
+      setToast({ message, type: 'error' });
+    } finally {
+      setMeetingActionState({ meetingId: null, actionType: '' });
+    }
+  };
+
+  const handleRejectSubmit = async (event) => {
+    event.preventDefault();
+    if (!rejectDialogMeeting?.id) return;
+
+    setMeetingActionState({ meetingId: rejectDialogMeeting.id, actionType: 'REJECT' });
+    try {
+      const response = await rejectMeeting(rejectDialogMeeting.id, rejectDialog.reason);
+      setMeetings((current) => current.map((meeting) => (
+        meeting.id === rejectDialogMeeting.id ? normalizeMeeting(extractResponsePayload(response)) : meeting
+      )));
+      setToast({ message: 'Meeting request rejected successfully.' });
+      setRejectDialog({ meeting: null, reason: '', error: '' });
+    } catch (err) {
+      const message = getErrorMessage(err, 'Unable to reject meeting request.');
+      const reasonValidationMessage = err?.fieldErrors?.reason
+        || err?.validationErrors?.reason
+        || (err?.status === 400 && /reason/i.test(message) ? message : '');
+
+      console.error('Failed to reject meeting request', err);
+
+      if (reasonValidationMessage) {
+        setRejectDialog((current) => ({ ...current, error: reasonValidationMessage }));
+      } else {
+        setToast({ message, type: 'error' });
+      }
+    } finally {
+      setMeetingActionState({ meetingId: null, actionType: '' });
     }
   };
 
@@ -945,7 +1077,7 @@ const MeetingsPage = () => {
            setToast({ message: 'Meeting completed successfully.' });
         } else if (isApproving) {
            response = await approveMeeting(editingMeeting.id, normalizeRequestPayload(formState));
-           setToast({ message: 'Meeting approved and scheduled successfully.' });
+           setToast({ message: 'Meeting request approved successfully.' });
         } else {
            response = await updateProjectMeeting(editingMeeting.id, payload);
            setToast({ message: 'Meeting updated successfully.' });
@@ -960,7 +1092,16 @@ const MeetingsPage = () => {
       setEditingMeeting(null);
       setFormState(emptyForm);
     } catch (err) {
-      setToast({ message: err?.message || 'Unable to save meeting.', type: 'error' });
+      const fallbackMessage = isApproving
+        ? 'Unable to approve meeting request.'
+        : isCompleting
+          ? 'Unable to complete meeting.'
+          : editingMeeting?.id
+            ? 'Unable to update meeting.'
+            : 'Unable to create meeting.';
+      const message = getErrorMessage(err, fallbackMessage);
+      console.error('Failed to save meeting', err);
+      setToast({ message, type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -974,7 +1115,9 @@ const MeetingsPage = () => {
       setMeetingToDelete(null);
       setToast({ message: 'Meeting deleted successfully.' });
     } catch (err) {
-      setToast({ message: err?.message || 'Unable to delete meeting.', type: 'error' });
+      const message = getErrorMessage(err, 'Unable to delete meeting.');
+      console.error('Failed to delete meeting', err);
+      setToast({ message, type: 'error' });
     }
   };
 
@@ -988,7 +1131,9 @@ const MeetingsPage = () => {
       const response = await downloadSingleMeetingForm(meeting.id);
       openBlob(response.data, `${meeting.title || 'meeting'}.pdf`);
     } catch (err) {
-      setToast({ message: err?.message || 'Unable to download meeting PDF.', type: 'error' });
+      const message = getErrorMessage(err, 'Unable to download meeting PDF.');
+      console.error('Failed to download meeting PDF', err);
+      setToast({ message, type: 'error' });
     }
   };
 
@@ -1410,21 +1555,47 @@ const MeetingsPage = () => {
                            ) : null}
 
                            {canStudentCancelMeeting(meeting) ? (
-                              <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>
-                                 Cancel Request
+                              <button
+                                type="button"
+                                className="meetings-btn-danger"
+                                onClick={() => handleAction(meeting, 'CANCEL')}
+                                disabled={isMeetingActionBusy(meeting.id)}
+                              >
+                                 {isMeetingActionLoading(meeting.id, 'CANCEL') ? 'Canceling...' : 'Cancel Request'}
                               </button>
                            ) : null}
 
                            {canManage && meeting.status === 'REQUESTED' && !selectedProjectArchived ? (
                               <>
-                                <button type="button" className="meetings-btn" onClick={() => handleAction(meeting, 'APPROVE')}>Approve</button>
-                                <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'REJECT')}>Reject</button>
+                                <button
+                                  type="button"
+                                  className="meetings-btn"
+                                  onClick={() => handleAction(meeting, 'APPROVE')}
+                                  disabled={isMeetingActionBusy(meeting.id)}
+                                >
+                                  {isMeetingActionLoading(meeting.id, 'APPROVE') ? 'Approving...' : 'Approve'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="meetings-btn-danger"
+                                  onClick={() => handleAction(meeting, 'REJECT')}
+                                  disabled={isMeetingActionBusy(meeting.id)}
+                                >
+                                  Reject
+                                </button>
                               </>
                            ) : null}
 
                            {canManage && meeting.status === 'SCHEDULED' && !selectedProjectArchived ? (
                               <>
-                                <button type="button" className="meetings-btn-danger" onClick={() => handleAction(meeting, 'CANCEL')}>Cancel Meeting</button>
+                                <button
+                                  type="button"
+                                  className="meetings-btn-danger"
+                                  onClick={() => handleAction(meeting, 'CANCEL')}
+                                  disabled={isMeetingActionBusy(meeting.id)}
+                                >
+                                  {isMeetingActionLoading(meeting.id, 'CANCEL') ? 'Canceling...' : 'Cancel Meeting'}
+                                </button>
                               </>
                            ) : null}
 
@@ -1695,6 +1866,83 @@ const MeetingsPage = () => {
                 ) : null}
                 <button type="submit" className="meetings-btn" disabled={submitting}>
                   {submitting ? (editingMeeting ? 'Saving...' : 'Scheduling...') : editingMeeting ? 'Save Report' : 'Confirm Schedule'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {isRejectDialogOpen ? (
+        <div className="meetings-modal" onClick={closeRejectDialog} role="presentation">
+          <div
+            className="meetings-modal-card meetings-modal-card-compact"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-meeting-request-title"
+            aria-describedby="reject-meeting-request-description"
+          >
+            <div className="meetings-modal-header">
+              <div>
+                <p className="meetings-section-kicker">Supervisor Action</p>
+                <h2 id="reject-meeting-request-title" className="meetings-modal-title">Reject Meeting Request</h2>
+                <p id="reject-meeting-request-description" className="meetings-subtitle meetings-modal-subtitle">
+                  You can optionally provide a reason for the student/team.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="meetings-close meetings-btn-ghost"
+                onClick={closeRejectDialog}
+                disabled={isRejectSubmitting}
+              >
+                Close
+              </button>
+            </div>
+
+            <form className="meetings-form" onSubmit={handleRejectSubmit}>
+              <div className="meetings-modal-body meetings-modal-body-compact">
+                <section className="meetings-form-section">
+                  <div className="meetings-form-section-head">
+                    <h3>{rejectDialogMeeting?.title || 'Requested meeting'}</h3>
+                    <p>{selectedProject?.title || rejectDialogMeeting?.projectTitle || 'Selected project'}</p>
+                  </div>
+
+                  <div className="meetings-field full">
+                    <label htmlFor="reject-meeting-reason">Rejection Reason</label>
+                    <textarea
+                      id="reject-meeting-reason"
+                      ref={rejectReasonRef}
+                      className={`meetings-textarea meetings-textarea-medium ${rejectDialog.error ? 'has-error' : ''}`}
+                      value={rejectDialog.reason}
+                      onChange={handleRejectReasonChange}
+                      placeholder="Write rejection reason..."
+                      aria-invalid={Boolean(rejectDialog.error)}
+                      aria-describedby={rejectDialog.error ? 'reject-meeting-reason-error' : undefined}
+                    />
+                    {rejectDialog.error ? (
+                      <p id="reject-meeting-reason-error" className="meetings-field-error">{rejectDialog.error}</p>
+                    ) : null}
+                  </div>
+                </section>
+              </div>
+
+              <div className="meetings-modal-footer">
+                <button
+                  type="button"
+                  className="meetings-btn-ghost"
+                  onClick={closeRejectDialog}
+                  disabled={isRejectSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="meetings-btn-danger"
+                  disabled={isRejectSubmitting}
+                >
+                  {isRejectSubmitting ? 'Rejecting...' : 'Reject Request'}
                 </button>
               </div>
             </form>

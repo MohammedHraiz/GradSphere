@@ -881,6 +881,10 @@
   width: min(720px, 100%);
 }
 
+.meetings-modal-card-compact {
+  width: min(640px, 100%);
+}
+
 .meetings-modal-header {
   padding: 22px 24px 18px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.12);
@@ -918,6 +922,11 @@
   -webkit-overflow-scrolling: touch;
   display: grid;
   gap: 18px;
+}
+
+.meetings-modal-body-compact {
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 
 .meetings-form-section {
